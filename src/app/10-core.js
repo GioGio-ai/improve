@@ -74,7 +74,7 @@ function markNav() {
 let renderQueued = false, deferRender = false, ST = null, lastView = null;
 let TR = { open: false };
 const memo = {};
-function scheduleRender() { if (renderQueued) return; renderQueued = true; requestAnimationFrame(() => { renderQueued = false; render(); }); }
+function scheduleRender() { if (renderQueued) return; renderQueued = true; const go = () => { if (!renderQueued) return; renderQueued = false; render(); }; requestAnimationFrame(go); if (document.hidden) setTimeout(go, 30); }
 function render() {
   const ae = document.activeElement;
   const inView = ae && $('#view').contains(ae) && /^(INPUT|TEXTAREA|SELECT)$/.test(ae.tagName);
