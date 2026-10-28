@@ -69,6 +69,15 @@ const FOODS = [
 ];
 const FOOD_INDEX = {};
 FOODS.forEach(f => { FOOD_INDEX[f.id] = f; });
+/* Alimentos propios (agregados con IA): entran a la base y al buscador */
+function syncUserFoods() {
+  for (const d of ((typeof S !== 'undefined' && S.data && S.data.foods) || [])) {
+    if (!d || !d.id || !d.n) continue;
+    const f = FOOD_INDEX[d.id] || { id: d.id, user: true };
+    Object.assign(f, { n: d.n, alias: d.alias || [], p: num(d.p) || 0, c: num(d.c) || 0, f: num(d.f) || 0, kcal: num(d.kcal) || 0, ug: num(d.ug) || 100, unit: d.unit || 'porción', ml: !!d.ml });
+    if (!FOOD_INDEX[d.id]) { FOOD_INDEX[d.id] = f; FOODS.unshift(f); }
+  }
+}
 function foodMacros(food, g) {
   const k = (num(g) || 0) / 100;
   return { p: Math.round(food.p * k * 10) / 10, c: Math.round(food.c * k * 10) / 10, f: Math.round(food.f * k * 10) / 10, kcal: Math.round(food.kcal * k) };

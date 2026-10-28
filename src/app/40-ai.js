@@ -62,6 +62,13 @@ const AIX = {
       'Si algo es dudoso, márcalo con conf "baja". No inventes alimentos que no se ven. La comida es ' + (SLOT_N[o.slot] || 'una comida') + ' de un futbolista de ' + Math.round(ST.weight || 85) + ' kg que no come harinas, procesados ni azúcar (sí miel). ' + AI_STYLE;
     return this.json(prompt, MEAL_SCHEMA, { image: o.image, tier: 'vision' });
   },
+  async fixMeal(o) {
+    const list = o.items.map(i => '- ' + i.n + ': ' + i.g + ' g (' + Math.round(i.p) + ' P, ' + Math.round(i.c) + ' C, ' + Math.round(i.f) + ' G, ' + Math.round(i.kcal) + ' kcal)').join('\n');
+    const prompt = 'Registro actual de una comida' + (o.image ? ' (foto adjunta)' : '') + ':\n' + (list || '(vacío)') + '\n' +
+      'Corrección del usuario: "' + o.text + '".\nDevuelve la lista COMPLETA corregida: aplica la corrección (cambia, quita o agrega alimentos y cantidades) y recalcula los macros de lo que cambie. Mantén igual lo que el usuario no corrige.\n' +
+      'Usa estos valores por 100 g cuando el alimento coincida: ' + FOOD_HINT + '. ' + AI_STYLE;
+    return this.json(prompt, MEAL_SCHEMA, o.image ? { image: o.image, tier: 'vision' } : { tier: 'fast' });
+  },
   async parseMealText(o) {
     const prompt = 'Convierte este registro de comida en alimentos con cantidades en gramos (ml para líquidos) y sus macros. Si no dice cantidad, usa una porción casera típica de Paraguay para un adulto deportista.\n' +
       'Usa estos valores por 100 g cuando el alimento coincida: ' + FOOD_HINT + '.\n' +

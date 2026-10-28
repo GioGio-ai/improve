@@ -206,9 +206,10 @@ function mealConfirmHtml() {
   if (D.error) h += note('warn', esc(D.error));
   if (D.aiNote) h += '<div class="sub">' + ic('spark') + ' ' + esc(D.aiNote) + '</div>';
   if (!D.busy) {
-    h += '<div class="ai-items">' + D.items.map((it, i) => '<div class="ai-item"><div class="nm"><input value="' + esc(it.n) + '" data-bind="meal-item-n" data-i="' + i + '" aria-label="Alimento" autocomplete="off"><div class="s">' + (it.conf ? '<span class="conf ' + (it.conf === 'alta' ? '' : it.conf === 'baja' ? 'low' : 'mid') + '"></span>' : '') + Math.round(it.p) + ' P · ' + Math.round(it.c) + ' C · ' + Math.round(it.f) + ' G · ' + Math.round(it.kcal) + ' kcal</div></div>' +
+    h += '<div class="ai-items">' + D.items.map((it, i) => '<div class="ai-item"><div class="nm"><input value="' + esc(it.n) + '" data-bind="meal-item-n" data-i="' + i + '" aria-label="Alimento" autocomplete="off"><div class="s">' + (it.busy ? '<span class="spinner"></span> Recalculando… ' : '') + (it.conf ? '<span class="conf ' + (it.conf === 'alta' ? '' : it.conf === 'baja' ? 'low' : 'mid') + '"></span>' : '') + Math.round(it.p) + ' P · ' + Math.round(it.c) + ' C · ' + Math.round(it.f) + ' G · ' + Math.round(it.kcal) + ' kcal</div>' + (it.renamed && !it.busy ? '<button class="btn xs ai-recalc" data-act="meal-item-ai" data-i="' + i + '">' + ic('spark') + 'Recalcular con IA</button>' : '') + '</div>' +
       stepperHtml('mi-' + i, it.g, 'meal-g', 'data-i="' + i + '"', it.id && FOOD_INDEX[it.id] && FOOD_INDEX[it.id].ml ? 'ml' : 'g') + '<button class="iconbtn sm plain" data-act="meal-item-del" data-i="' + i + '" aria-label="Quitar ' + esc(it.n) + '">' + ic('x') + '</button></div>').join('') + '</div>';
-    h += '<button class="btn block dash" data-act="meal-add-food">' + ic('plus') + 'Agregar alimento</button>';
+    h += '<div class="grid2"><button class="btn dash" data-act="meal-add-food">' + ic('plus') + 'Agregar alimento</button><button class="btn dash" data-act="meal-fix-open" aria-expanded="' + !!D.fixOpen + '">' + ic('spark') + 'Corregir con IA</button></div>';
+    if (D.fixOpen || D.fixBusy) h += '<div class="card flat tight"><div class="stack-sm"><label for="meal-fix" class="small fg2">Dime qué está mal o qué falta. Gemini corrige la lista y recalcula los totales.</label><textarea class="input" id="meal-fix" data-bind="meal-fix" rows="2" placeholder="No era arroz, era mandioca. Faltó un vaso de leche de cabra." autocapitalize="sentences" autocomplete="off">' + esc(D.fix || '') + '</textarea><button class="btn primary" data-act="meal-fix-go"' + (D.fixBusy ? ' disabled' : '') + '>' + (D.fixBusy ? '<span class="spinner"></span>Corrigiendo' : ic('spark') + 'Corregir') + '</button></div></div>';
     h += '<div class="card flat tight"><div class="mtot" style="font-size:14px"><span class="p">' + t.p + ' g prot</span><span class="c">' + t.c + ' g carb</span><span class="f">' + t.f + ' g grasa</span><span class="k">' + t.kcal + ' kcal</span></div></div>';
     h += '<div class="grid2"><div class="field"><label for="meal-time">Hora' + (D.photoTime ? ' (de la foto)' : '') + '</label><input class="input num" type="time" id="meal-time" data-bind="meal-time" value="' + esc(D.time) + '"></div>' +
       '<div class="field"><label for="meal-slot">Comida</label><select class="input" id="meal-slot" data-bind="meal-slot">' + Object.entries(SLOT_N).map(([k, v]) => '<option value="' + k + '"' + (k === D.slot ? ' selected' : '') + '>' + v + '</option>').join('') + '</select></div></div>';
@@ -244,7 +245,7 @@ function editMeal(id) {
 /* Buscador de alimentos de la base */
 function openFoodSearch(date, intoDraft) {
   if (!intoDraft) { mealDraftNew(date, null, 'manual'); }
-  UI.foodQ = '';
+  UI.foodQ = ''; UI.foodAI = false; UI.foodAIErr = '';
   openSheet({ id: 'food-search', full: true, render: foodSearchHtml });
 }
 function foodSearchHtml() {
@@ -253,8 +254,75 @@ function foodSearchHtml() {
 function foodListHtml() {
   const q = normTxt(UI.foodQ || '');
   const list = FOODS.filter(f => !q || normTxt(f.n + ' ' + f.alias.join(' ')).includes(q)).slice(0, 40);
-  if (!list.length) return '<div class="empty small">Sin resultados. Escríbelo con texto y lo analiza la IA.</div>';
-  return list.map(f => { const g = f.ug || 100, m = foodMacros(f, g); return '<button class="exrow" data-act="food-pick" data-id="' + f.id + '" style="grid-template-columns:44px minmax(0,1fr) auto"><span class="c food" style="width:44px;height:44px;border-radius:14px;display:grid;place-items:center;background:var(--teal-soft);color:var(--teal)">' + ic('fork') + '</span><div style="min-width:0"><div class="t">' + esc(f.n) + '</div><div class="s num">' + (f.unit ? '1 ' + f.unit + ' (' + g + (f.ml ? ' ml' : ' g') + ')' : '100 g') + ' · ' + Math.round(m.p) + ' P · ' + Math.round(m.c) + ' C · ' + m.kcal + ' kcal</div></div>' + ic('plus') + '</button>'; }).join('');
+  const raw = (UI.foodQ || '').trim();
+  const aiRow = raw.length >= 2 ? '<button class="exrow ai-add" data-act="food-ai" style="grid-template-columns:44px minmax(0,1fr) auto"' + (UI.foodAI ? ' disabled' : '') + '><span class="c" style="width:44px;height:44px;border-radius:14px;display:grid;place-items:center;background:var(--blue-soft);color:var(--blue-ink)">' + (UI.foodAI ? '<span class="spinner"></span>' : ic('spark')) + '</span><div style="min-width:0"><div class="t">' + (UI.foodAI ? 'Calculando «' + esc(raw) + '»…' : (list.length ? '¿No está? ' : '') + 'Agregar «' + esc(raw) + '» con IA') + '</div><div class="s">Gemini calcula porción y macros. Queda guardado en tu lista.</div></div>' + ic('plus') + '</button>' : '';
+  if (UI.foodAIErr) return aiRow + note('warn', esc(UI.foodAIErr)) + list.map(foodRowHtml).join('');
+  if (!list.length) return aiRow || '<div class="empty small">Escribe un alimento.</div>';
+  return aiRow + list.map(foodRowHtml).join('');
+}
+function foodRowHtml(f) {
+  const g = f.ug || 100, m = foodMacros(f, g); return '<button class="exrow" data-act="food-pick" data-id="' + f.id + '" style="grid-template-columns:44px minmax(0,1fr) auto"><span class="c food" style="width:44px;height:44px;border-radius:14px;display:grid;place-items:center;background:var(--teal-soft);color:var(--teal)">' + ic('fork') + '</span><div style="min-width:0"><div class="t">' + esc(f.n) + '</div><div class="s num">' + (f.unit ? '1 ' + f.unit + ' (' + g + (f.ml ? ' ml' : ' g') + ')' : '100 g') + ' · ' + Math.round(m.p) + ' P · ' + Math.round(m.c) + ' C · ' + m.kcal + ' kcal</div></div>' + ic('plus') + '</button>';
+}
+/* Guarda en tu base los alimentos que calculó la IA */
+function rememberFoods(items, alias) {
+  for (const it of items) {
+    if (!it || !it.n || !(it.g > 0) || (it.id && FOOD_INDEX[it.id] && !FOOD_INDEX[it.id].user)) continue;
+    const t = normTxt(it.n).replace(/s$/, '');
+    if (FOODS.some(f => !f.user && [f.n].concat(f.alias || []).some(a => { const k = normTxt(a).replace(/s$/, ''); return k === t || k === t + ' casero'; }))) continue;
+    const key = 'uf-' + normTxt(it.n).replace(/[^a-z0-9ñ]+/g, '-').slice(0, 60);
+    const k = 100 / it.g, r = (v) => Math.round((num(v) || 0) * k * 10) / 10;
+    const prev = (S.data.foods || []).find(x => x.id === key);
+    const al = Array.from(new Set(((prev && prev.alias) || []).concat(alias && normTxt(alias) !== normTxt(it.n) ? [alias] : []))).slice(0, 8);
+    put('foods', key, { n: it.n, alias: al, p: r(it.p), c: r(it.c), f: r(it.f), kcal: Math.round((num(it.kcal) || 0) * k), ug: it.g, unit: 'porción' });
+    it.id = key;
+  }
+}
+async function foodAI() {
+  const q = (UI.foodQ || '').trim(); if (!q || UI.foodAI || !UI.meal) return;
+  UI.foodAI = true; UI.foodAIErr = ''; const l = $('#food-list'); if (l) l.innerHTML = foodListHtml();
+  try {
+    const res = await AIX.parseMealText({ text: q });
+    const items = (res.items || []).map(normAiItem).filter(Boolean);
+    if (!items.length) throw { message: 'empty' };
+    rememberFoods(items, q);
+    UI.meal.items.push.apply(UI.meal.items, items);
+    UI.foodAI = false;
+    toast(items.map(i => i.n).join(', ') + ' agregado.', 'ok');
+    const below = LAYERS[LAYERS.length - 2];
+    if (below && below.id === 'meal-confirm') closeSheet(); else replaceSheet({ id: 'meal-confirm', full: true, render: mealConfirmHtml, after: hydrateMealImgs });
+  } catch (e) {
+    UI.foodAI = false; UI.foodAIErr = e && e.message === 'empty' ? 'La IA no reconoció ese alimento. Escríbelo de otra forma.' : aiErrorText(e);
+    const l2 = $('#food-list'); if (l2) l2.innerHTML = foodListHtml();
+  }
+}
+/* Recalcula un alimento renombrado, manteniendo los gramos */
+async function mealItemAI(i) {
+  const D = UI.meal, it = D && D.items[i]; if (!it || it.busy) return;
+  it.busy = true; refreshSheet(true);
+  try {
+    const res = await AIX.parseMealText({ text: it.g + ' g de ' + it.n });
+    const x = (res.items || []).map(normAiItem).filter(Boolean)[0]; if (!x) throw { message: 'empty' };
+    const g = it.g; Object.assign(it, { k: x.k, conf: x.conf, src: 'ia', id: null, renamed: false });
+    mealSetGrams(i, g); rememberFoods([it], null);
+  } catch (e) { toast(aiErrorText(e), 'warn'); }
+  it.busy = false; refreshSheet(true);
+}
+/* Corrige la comida completa con una frase */
+async function mealFixGo() {
+  const D = UI.meal; if (!D) return;
+  const txt = (D.fix || '').trim(); if (!txt) { toast('Escribe qué hay que corregir.', 'warn'); return; }
+  D.fixBusy = true; refreshSheet(true);
+  try {
+    const res = await AIX.fixMeal({ items: D.items, text: txt, image: D.img || null });
+    const items = (res.items || []).map(normAiItem).filter(Boolean); if (!items.length) throw { message: 'empty' };
+    const known = new Set(D.items.map(x => normTxt(x.n)));
+    D.items = items.map(x => { const old = D.items.find(o => normTxt(o.n) === normTxt(x.n) && o.id); if (old) x.id = old.id; return x; });
+    rememberFoods(D.items.filter(x => !known.has(normTxt(x.n))), null);
+    D.fix = ''; D.fixOpen = false;
+    if (res.nota) D.aiNote = res.nota;
+    toast('Comida corregida. Revisa y guarda.', 'ok');
+  } catch (e) { toast(e && e.message === 'empty' ? 'La IA no devolvió alimentos. Prueba con otras palabras.' : aiErrorText(e), 'warn'); }
+  D.fixBusy = false; refreshSheet(true);
 }
 function foodPick(id) {
   const f = FOOD_INDEX[id]; if (!f || !UI.meal) return;

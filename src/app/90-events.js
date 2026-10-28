@@ -221,6 +221,10 @@ document.addEventListener('click', (e) => {
     case 'meal-search': openFoodSearch(g('date') || today, false); return;
     case 'meal-add-food': openFoodSearch(UI.meal ? UI.meal.date : today, true); return;
     case 'food-pick': foodPick(g('id')); return;
+    case 'food-ai': foodAI(); return;
+    case 'meal-item-ai': mealItemAI(Number(g('i'))); return;
+    case 'meal-fix-open': UI.meal.fixOpen = !UI.meal.fixOpen; refreshSheet(true); if (UI.meal.fixOpen) setTimeout(() => { const t = $('#meal-fix'); if (t) t.focus(); }, 60); return;
+    case 'meal-fix-go': mealFixGo(); return;
     case 'meal-ate': eatSuggested(g('date'), g('key')); return;
     case 'meal-undo': remove('meals', g('id')).then(() => toast('Registro deshecho.', 'info')); return;
     case 'meal-edit': editMeal(g('id')); return;
@@ -267,7 +271,8 @@ function handleBind(el, isChange) {
     case 'ag-time': if (isChange && /^\d{1,2}:\d{2}$/.test(v)) { agendaSet(el.getAttribute('data-date'), el.getAttribute('data-key'), { start: hm(v) }).then(() => toast('Hora cambiada a ' + v + '.')); } return;
     case 'sched': if (isChange && /^\d{1,2}:\d{2}$/.test(v)) setSchedule(name, v); return;
     case 'meal-text': UI.meal.text = v; return;
-    case 'meal-item-n': { const it = UI.meal.items[Number(el.getAttribute('data-i'))]; if (it) it.n = v; return; }
+    case 'meal-item-n': { const it = UI.meal.items[Number(el.getAttribute('data-i'))]; if (it && it.n !== v) { it.n = v; it.renamed = !!v.trim(); } if (it && isChange && it.renamed) setTimeout(() => refreshSheet(true), 0); return; }
+    case 'meal-fix': UI.meal.fix = v; return;
     case 'meal-g': { const i = Number(el.getAttribute('data-i')); mealSetGrams(i, parseNum(v)); if (isChange) refreshSheet(true); return; }
     case 'meal-time': if (/^\d{1,2}:\d{2}$/.test(v)) { UI.meal.time = v; if (!UI.meal.slotFixed && isChange) { UI.meal.slot = slotForTime(UI.meal.date, v); refreshSheet(true); } } return;
     case 'meal-slot': UI.meal.slot = v; UI.meal.slotFixed = true; return;
@@ -280,7 +285,7 @@ document.addEventListener('input', (e) => {
   if (!el.getAttribute) return;
   if (el.hasAttribute('data-bind')) { handleBind(el, false); return; }
   if (el.getAttribute('data-pick')) { UI.pick.q = el.value; clearTimeout(UI.pickTimer); UI.pickTimer = setTimeout(updatePickList, 150); return; }
-  if (el.getAttribute('data-food-q')) { UI.foodQ = el.value; const l = $('#food-list'); if (l) l.innerHTML = foodListHtml(); return; }
+  if (el.getAttribute('data-food-q')) { UI.foodQ = el.value; UI.foodAIErr = ''; const l = $('#food-list'); if (l) l.innerHTML = foodListHtml(); return; }
   const k = el.getAttribute('data-input');
   if (k) { if (k === 'bank-q') { UI.bank.q = el.value; UI.bank.limit = 30; } if (k === 'lib-q') { UI.lib.q = el.value; UI.lib.limit = 40; } clearTimeout(UI.inputTimer); UI.inputTimer = setTimeout(scheduleRender, 200); }
 });

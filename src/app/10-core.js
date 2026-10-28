@@ -4,7 +4,7 @@
 const VERSION = '3.0.0';
 const COLS = {
   profile: 'single', settings: 'single', weights: 'list', injuries: 'list', tests: 'list', checkins: 'list', sessions: 'list',
-  custom: 'list', traducciones: 'list', templates: 'list', agenda: 'list', meals: 'list', nutri: 'list',
+  custom: 'list', traducciones: 'list', templates: 'list', agenda: 'list', meals: 'list', nutri: 'list', foods: 'list',
 };
 const S = { mode: 'loading', user: null, data: {}, loaded: {}, canWrite: true };
 Object.keys(COLS).forEach(c => { S.data[c] = COLS[c] === 'single' ? null : []; });
@@ -84,6 +84,7 @@ function render() {
   UI.view = currentView(); markNav();
   if (!allLoaded()) { $('#view').innerHTML = skeletonView(); return; }
   for (const k in memo) delete memo[k];
+  syncUserFoods();
   ST = deriveState(engineData(), todayStr());
   const fn = RENDERERS[UI.view] || RENDERERS.hoy;
   const view = $('#view');
