@@ -121,6 +121,7 @@ async function importObject(j) {
     if (COLS[col] === 'single') { await put(col, 'main', d[col]); n++; }
     else for (const doc of d[col]) if (doc && doc.id) { await put(col, doc.id, doc); n++; }
   }
+  for (const m of (d.media || [])) if (m && m.id && m.data) { await FB.set('media', m.id, { data: m.data, updatedAt: Date.now() }); MEDIA[m.id] = m.data; n++; }
   return n;
 }
 function importData(ev) {

@@ -296,7 +296,11 @@ function bootApp(fb) {
   buildNav();
   UI.view = currentView(); markNav();
   initStore(fb);
-  window.IMPROVE = { version: VERSION, importObject, exportData };
+  window.IMPROVE = {
+    version: VERSION, importObject, exportData,
+    async putMedia(id, data) { if (!/^data:image\/(jpeg|png|webp);base64,/.test(String(data))) throw new Error('imagen no válida'); await FB.set('media', id, { data, updatedAt: Date.now() }); MEDIA[id] = data; scheduleRender(); return true; },
+    counts() { const o = {}; Object.keys(COLS).forEach(c => { o[c] = COLS[c] === 'single' ? (S.data[c] ? 1 : 0) : (S.data[c] || []).length; }); return o; },
+  };
   setInterval(() => { if (!TR.open && UI.view === 'hoy' && !DRAG.active && !LAYERS.length) scheduleRender(); }, 60000);
   setTimeout(() => { if (!allLoaded()) $('#view').innerHTML = '<section class="card"><div class="stack-sm"><div class="h2">No se pudieron cargar tus datos</div><p class="sub">Revisa la conexión y vuelve a abrir la app.</p><button class="btn" onclick="location.reload()">Reintentar</button></div></section>'; }, 20000);
   if (loadDraft() && currentView() === 'hoy') scheduleRender();
