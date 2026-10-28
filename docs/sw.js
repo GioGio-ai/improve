@@ -1,8 +1,8 @@
 /* IMPROVE · service worker: la app abre sin conexión. Los datos los sincroniza Firestore. */
-const VERSION = '3.0.0-fd4c24';
+const VERSION = '3.0.0-f9aba2';
 const CACHE = 'improve-' + VERSION;
 const LIB = 'improve-lib-1';
-const PRECACHE = ["./","./index.html","./manifest.webmanifest","./assets/app-af15c4a6ab.js","./assets/app-3d313b36fd.css","./fonts/geist-latin-wght-normal.woff2","./fonts/geist-mono-latin-wght-normal.woff2","./icons/icon.svg","./icons/icon-192.png","./icons/apple-touch-icon.png"];
+const PRECACHE = ["./","./index.html","./manifest.webmanifest","./assets/app-0151e678c9.js","./assets/app-3d313b36fd.css","./fonts/geist-latin-wght-normal.woff2","./fonts/geist-mono-latin-wght-normal.woff2","./icons/icon.svg","./icons/icon-192.png","./icons/apple-touch-icon.png"];
 self.addEventListener('install', (e) => {
   e.waitUntil(caches.open(CACHE).then((c) => c.addAll(PRECACHE)).then(() => self.skipWaiting()));
 });
