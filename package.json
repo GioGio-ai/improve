@@ -1,16 +1,21 @@
 {
   "name": "improve",
-  "version": "1.0.0",
-  "description": "",
-  "main": "index.js",
+  "version": "3.0.0",
+  "description": "IMPROVE: entrenamiento, recuperación y comida (PWA)",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "build": "node scripts/build.mjs",
+    "serve": "sh test/serve.sh",
+    "test": "node test/flows.mjs"
   },
   "keywords": [],
   "author": "",
-  "license": "ISC",
+  "license": "UNLICENSED",
   "dependencies": {
+    "@fontsource-variable/geist": "^5.3.0",
+    "@fontsource-variable/geist-mono": "^5.3.0",
     "esbuild": "^0.28.2",
     "firebase": "^13.1.0"
-  }
+  },
+  "private": true,
+  "type": "commonjs"
 }

@@ -1,0 +1,108 @@
+/* ============================================================
+   IMPROVE — tokens de diseño
+   Color con significado:
+   azul = plan y acción · lima = completado y logros · ámbar/naranja = carga e intensidad
+   rojo = dolor (exclusivo) · violeta = sueño y recuperación
+   verde azulado = proteína / nutrición · dorado = carbohidratos · rosa = grasas · cian = hidratación
+   ============================================================ */
+@font-face {
+  font-family: 'Geist Variable';
+  font-style: normal;
+  font-display: swap;
+  font-weight: 100 900;
+  src: url('../fonts/geist-latin-wght-normal.woff2') format('woff2-variations');
+}
+@font-face {
+  font-family: 'Geist Mono Variable';
+  font-style: normal;
+  font-display: swap;
+  font-weight: 100 900;
+  src: url('../fonts/geist-mono-latin-wght-normal.woff2') format('woff2-variations');
+}
+
+:root {
+  color-scheme: dark;
+  --bg: #04060d;
+  --bg-1: #070b17;
+  --bg-2: #0b1122;
+  --solid: #0d1430;
+  --solid-2: #121b3c;
+  --line: rgba(255, 255, 255, 0.075);
+  --line-2: rgba(255, 255, 255, 0.13);
+  --line-3: rgba(255, 255, 255, 0.2);
+  --fg: #eef2ff;
+  --fg-2: #bcc5df;
+  --fg-3: #8791b0;
+  --fg-4: #5f6a8a;
+
+  --blue: #4a85ff;
+  --blue-2: #2457f5;
+  --blue-ink: #aac4ff;
+  --blue-soft: rgba(74, 133, 255, 0.16);
+  --blue-line: rgba(120, 165, 255, 0.34);
+
+  --lime: #c8f250;
+  --lime-2: #98e02a;
+  --lime-ink: #e4ffa6;
+  --lime-soft: rgba(200, 242, 80, 0.13);
+  --lime-line: rgba(200, 242, 80, 0.36);
+
+  --amber: #ffb020;
+  --orange: #ff6d1f;
+  --load-ink: #ffd394;
+  --load-soft: rgba(255, 150, 40, 0.15);
+  --load-line: rgba(255, 170, 70, 0.38);
+
+  --red: #ff4d6a;
+  --red-ink: #ffb8c4;
+  --red-soft: rgba(255, 77, 106, 0.15);
+  --red-line: rgba(255, 90, 120, 0.42);
+
+  --violet: #9d7dff;
+  --violet-ink: #d7cbff;
+  --violet-soft: rgba(157, 125, 255, 0.15);
+  --violet-line: rgba(170, 145, 255, 0.36);
+
+  --teal: #2fd6b5;
+  --teal-ink: #a9f6e5;
+  --teal-soft: rgba(47, 214, 181, 0.14);
+  --teal-line: rgba(60, 220, 190, 0.36);
+
+  --gold: #f5c451;
+  --gold-soft: rgba(245, 196, 81, 0.14);
+  --pink: #f6a6d6;
+  --pink-soft: rgba(246, 166, 214, 0.14);
+  --cyan: #3ccbf2;
+  --cyan-soft: rgba(60, 203, 242, 0.14);
+
+  --r-xs: 10px;
+  --r-sm: 14px;
+  --r-md: 18px;
+  --r-lg: 24px;
+  --r-xl: 30px;
+
+  --ease: cubic-bezier(0.23, 1, 0.32, 1);
+  --ease-io: cubic-bezier(0.65, 0, 0.35, 1);
+  --t-fast: 160ms;
+  --t: 260ms;
+  --t-slow: 420ms;
+
+  --shadow: 0 18px 40px -26px rgba(0, 0, 0, 0.85), 0 2px 10px -4px rgba(0, 0, 0, 0.45);
+  --shadow-lg: 0 30px 70px -30px rgba(0, 0, 0, 0.95), 0 6px 18px -8px rgba(0, 0, 0, 0.5);
+  --hl: inset 0 1px 0 rgba(255, 255, 255, 0.06);
+  --blur: saturate(160%) blur(20px);
+
+  --glass: linear-gradient(165deg, rgba(36, 48, 90, 0.52) 0%, rgba(16, 22, 44, 0.56) 100%);
+  --glass-2: linear-gradient(165deg, rgba(44, 58, 104, 0.6) 0%, rgba(20, 28, 54, 0.6) 100%);
+
+  --safe-t: env(safe-area-inset-top, 0px);
+  --safe-b: env(safe-area-inset-bottom, 0px);
+  --safe-l: env(safe-area-inset-left, 0px);
+  --safe-r: env(safe-area-inset-right, 0px);
+  --gutter: 16px;
+  --tabbar-h: 66px;
+
+  --font: 'Geist Variable', 'Geist', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  --mono: 'Geist Mono Variable', ui-monospace, 'SF Mono', 'Roboto Mono', Menlo, monospace;
+}
+@media (min-width: 400px) { :root { --gutter: 20px; } }
