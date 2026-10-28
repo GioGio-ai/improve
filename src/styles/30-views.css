@@ -146,3 +146,5 @@
 .grecaptcha-badge { visibility: hidden !important; }
 .tl-blk .su-in { font-weight: 500; color: rgba(225, 233, 255, 0.62); font-size: 12.5px; }
 .water .cups .btn { white-space: nowrap; padding: 0 8px; font-family: var(--mono); font-weight: 650; }
+body.locked #view, body.locked #nav { display: none; }
+#login-root { position: relative; z-index: 45; }
