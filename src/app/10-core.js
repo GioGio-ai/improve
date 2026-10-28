@@ -276,3 +276,24 @@ function hydrateMedia(root) {
 const PHOTO_BY_TYPE = { fuerzaA: 'f1', fuerzaMax: 'f1', fuerzaCorta: 'f1', superior: 'f1', prevencion: 'f1', libre: 'f1', test: 'f4', golpeo: 'f6', golpeoTec: 'f6', sprint: 'f3', rt: 'f3', potenciaB: 'f5', potencia: 'f5', activacion: 'f3', juego: 'f5', equipo: 'f3', partido: 'f2', prueba: 'f2', movilidad: 'f4', recuperacion: 'f4', descanso: 'f4' };
 function photoImg(key) { const p = PHOTOS[key] || PHOTOS.f3; const src = MEDIA[key] || ''; return '<img data-media="' + (PHOTOS[key] ? key : 'f3') + '"' + (src ? ' src="' + src + '" class="in"' : '') + ' alt="" decoding="async" style="object-position:' + p.pos + '">'; }
 function avatarImg() { return photoImg('avatar'); }
+const PHOTO_SLOTS = [['avatar', 'Perfil'], ['f5', 'Portada'], ['f1', 'Fuerza'], ['f3', 'Velocidad'], ['f6', 'Golpeo'], ['f4', 'Test y descanso'], ['f2', 'Progreso']];
+async function setMedia(id, data) {
+  if (!/^data:image\/(jpeg|png|webp);base64,/.test(String(data))) throw new Error('imagen no válida');
+  await FB.set('media', id, { data, updatedAt: Date.now() });
+  MEDIA[id] = data; delete mediaLoading[id]; scheduleRender(); return true;
+}
+let mediaPickKey = null;
+function pickMediaPhoto(k) {
+  mediaPickKey = k;
+  let inp = document.getElementById('media-x');
+  if (!inp) {
+    inp = document.createElement('input'); inp.type = 'file'; inp.accept = 'image/*'; inp.id = 'media-x'; inp.hidden = true;
+    document.body.appendChild(inp);
+    inp.addEventListener('change', async () => {
+      const f = inp.files && inp.files[0]; inp.value = ''; const key = mediaPickKey; if (!f || !key) return;
+      try { toast('Guardando foto…', 'info'); const data = await resizeImage(f, key === 'avatar' ? 360 : 1080, 0.8); await setMedia(key, data); toast('Foto actualizada.', 'ok'); }
+      catch (e) { toast('No se pudo guardar la foto.', 'warn'); }
+    });
+  }
+  inp.click();
+}

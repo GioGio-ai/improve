@@ -96,6 +96,7 @@ document.addEventListener('click', (e) => {
     case 'trial-del': { const v = g('v'); updateProfile(p => { p.trials = (p.trials || []).filter(x => x !== v); }); return; }
     case 'sched-nap': setSchedule('nap', !(scheduleOf(S.data.profile).nap !== false)); return;
     case 'export': exportData(); return;
+    case 'photo-set': pickMediaPhoto(el.dataset.k); return;
     case 'sign-out': openConfirm('Cerrar sesión', 'Tus datos quedan guardados en tu cuenta. Para volver a entrar necesitas tu contraseña.', 'do-sign-out'); return;
     case 'do-sign-out': closeAllSheets(); if (FB && FB.signOut) FB.signOut(); return;
     /* ---- tests ---- */
@@ -297,7 +298,7 @@ function bootApp(fb) {
   initStore(fb);
   window.IMPROVE = {
     version: VERSION, importObject, exportData,
-    async putMedia(id, data) { if (!/^data:image\/(jpeg|png|webp);base64,/.test(String(data))) throw new Error('imagen no válida'); await FB.set('media', id, { data, updatedAt: Date.now() }); MEDIA[id] = data; scheduleRender(); return true; },
+    putMedia(id, data) { return setMedia(id, data); },
     counts() { const o = {}; Object.keys(COLS).forEach(c => { o[c] = COLS[c] === 'single' ? (S.data[c] ? 1 : 0) : (S.data[c] || []).length; }); return o; },
   };
   setInterval(() => { if (!TR.open && UI.view === 'hoy' && !DRAG.active && !LAYERS.length) scheduleRender(); }, 60000);
