@@ -160,7 +160,8 @@ function normAiItem(x) {
   const g = Math.max(1, Math.round(num(x.g) || 100));
   const fd = matchFood(x.n);
   const it = { n: String(x.n).slice(0, 60), g, p: num(x.p) || 0, c: num(x.c) || 0, f: num(x.f) || 0, kcal: num(x.kcal) || 0, conf: x.conf || 'media', src: 'ia' };
-  if (!it.kcal) it.kcal = Math.round(it.p * 4 + it.c * 4 + it.f * 9);
+  const kc = Math.round(it.p * 4 + it.c * 4 + it.f * 9);
+  if (!it.kcal || (kc > 20 && Math.abs(it.kcal - kc) / kc > 0.25)) it.kcal = kc;
   if (fd && !(num(x.p) || num(x.c) || num(x.f))) Object.assign(it, foodMacros(fd, g), { id: fd.id });
   it.k = { p: it.p / g, c: it.c / g, f: it.f / g, kcal: it.kcal / g };
   return it;
