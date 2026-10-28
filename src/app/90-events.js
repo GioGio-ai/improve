@@ -10,7 +10,6 @@ function afterRender() {
   if (imp && !imp.getAttribute('data-bound')) { imp.setAttribute('data-bound', '1'); imp.addEventListener('change', importData); }
   const t = LAYERS[LAYERS.length - 1];
   if (t && t.kind === 'sheet') refreshSheet();
-  if (TR.open) renderTrainSoft();
 }
 function updateSession(id, fn) { const s = (S.data.sessions || []).find(x => x.id === id); if (!s) return Promise.resolve(); const d = clone(s); delete d.id; fn(d); return put('sessions', id, d); }
 function agendaSet(date, key, patch) {

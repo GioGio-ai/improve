@@ -153,7 +153,8 @@ function sessionReviewHtml(log, planned) {
     }).join('') + '</div>';
   }
   if (log.notes) h += note('info', esc(log.notes));
-  if (planned && (planned.items.length || planned.field)) {
+  if (log.plan && (log.plan.items || log.plan.field)) planned = { items: (log.plan.items || []).map(it => Object.assign({}, it)), field: log.plan.field || null };
+  if (planned && ((planned.items || []).length || planned.field)) {
     const plan = fieldSummary(planned) + (planned.items.length ? '<div class="exlist">' + planned.items.map(it => itemRow(it, true)).join('') + '</div>' : '');
     h += '<details><summary>' + ic('cal') + 'Plan original</summary><div class="in">' + plan + '</div></details>';
   }

@@ -84,11 +84,12 @@ function mealDone(slot, date) { return mealsFor(date).filter(m => m.slot === slo
 function nextHero(day, ag, today) {
   const now = nowMin();
   const cand = ag.items.filter(x => !x.marker && x.kind !== 'nap' && x.end > now - 30);
-  let nx = null;
-  for (const it of cand) {
-    if (it.kind === 'train' || it.kind === 'recup') { if (!blockDone(it.block, today).all) { nx = it; break; } }
-    else if (it.kind === 'meal' && !it.optional) { if (!mealDone(it.slot, today).length && it.end > now - 15) { nx = it; break; } }
-  }
+  const nTrain = cand.find(it => (it.kind === 'train' || it.kind === 'recup') && !blockDone(it.block, today).all) || null;
+  const nMeal = cand.find(it => it.kind === 'meal' && !it.optional && !mealDone(it.slot, today).length && it.end > now - 15) || null;
+  let nx = null, side = null;
+  if (nTrain && nMeal) {
+    if (nTrain.start - now <= 90 || nTrain.start <= nMeal.start) { nx = nTrain; side = nMeal; } else { nx = nMeal; side = nTrain; }
+  } else nx = nTrain || nMeal;
   if (!nx) {
     const trainings = ag.items.filter(x => x.kind === 'train' || x.kind === 'recup');
     const allDone = trainings.length && trainings.every(t => blockDone(t.block, today).all);
@@ -96,6 +97,7 @@ function nextHero(day, ag, today) {
     return '<section class="hero k-done"><span class="tag"><span class="d done"></span>Hoy</span><div class="t">' + (allDone ? 'Día completo' : 'Sin pendientes ahora') + '</div><div class="meta"><span>' + ic('check') + plural(logsFor(today).filter(l => l.done !== false).length, 'sesión registrada', 'sesiones registradas') + '</span></div><div class="cta"><button class="btn white" data-act="day" data-date="' + today + '">Revisar el día' + ic('chev') + '</button></div></section>';
   }
   const when = now >= nx.start && now < nx.end ? 'Ahora' : now >= nx.end ? 'Pendiente' : 'Siguiente';
+  const sideRow = side && side.kind === 'meal' ? '<button class="banner" style="background:linear-gradient(135deg,rgba(47,214,181,.24),rgba(47,214,181,.06));border-color:var(--teal-line)" data-act="ag-open" data-date="' + today + '" data-key="' + side.key + '">' + ic('fork') + '<div class="grow"><div class="h3">' + esc(side.title) + ' · ' + fmtHM(side.start) + '</div><div class="sub">' + (now >= side.end ? 'Pendiente de registrar' : esc(mealMenuFor(today, side).name)) + '</div></div>' + ic('chev') + '</button>' : '';
   const t = fmtHM(nx.start) + '–' + fmtHM(nx.end);
   if (nx.kind === 'meal') {
     const menu = mealMenuFor(today, nx);
@@ -110,7 +112,7 @@ function nextHero(day, ag, today) {
     '<span class="tag"><span class="d' + (b.intense ? ' load' : '') + '"></span>' + when + ' · ' + t + (b.intense ? ' · intenso' : '') + '</span>' +
     '<div class="t">' + esc(nx.title) + ' · ' + esc(b.short) + '</div>' +
     '<div class="meta"><span>' + ic('clock') + '≈ ' + fmtDur(nx.dur) + '</span><span>' + ic('layers') + plural(steps, 'paso', 'pasos') + '</span>' + (dn.some ? '<span>' + ic('check') + 'En parte hecho</span>' : '') + '</div>' +
-    '<div class="cta"><button class="btn white lg" data-act="start-block" data-date="' + today + '" data-key="' + b.key + '">' + ic('play') + (dn.some ? 'Seguir' : 'Empezar') + '</button><button class="btn glass lg" data-act="ag-open" data-date="' + today + '" data-key="' + nx.key + '" aria-label="Ver detalle">' + ic('list') + '</button></div></section>';
+    '<div class="cta"><button class="btn white lg" data-act="start-block" data-date="' + today + '" data-key="' + b.key + '">' + ic('play') + (dn.some ? 'Seguir' : 'Empezar') + '</button><button class="btn glass lg" data-act="ag-open" data-date="' + today + '" data-key="' + nx.key + '" aria-label="Ver detalle">' + ic('list') + '</button></div></section>' + sideRow;
 }
 function dayHero(day, date, today) {
   const past = date < today, blocks = dayBlocks(day);
