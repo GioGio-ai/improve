@@ -171,8 +171,13 @@ function registerSW() {
       const nw = reg.installing; if (!nw) return;
       nw.addEventListener('statechange', () => {
         if (nw.state === 'installed' && navigator.serviceWorker.controller) {
-          const t = document.getElementById('toast');
-          if (t) { t.innerHTML = '<span>Nueva versión lista.</span><button id="sw-reload">Actualizar</button>'; t.hidden = false; const b = document.getElementById('sw-reload'); if (b) b.onclick = () => location.reload(); }
+          // Solo avisa si esta pestaña corre un código distinto al publicado
+          const mine = ([...document.scripts].map(x => x.src).find(x => /assets\/app-[0-9a-f]+\.js/.test(x)) || '').split('/').pop();
+          fetch('index.html?v=' + Date.now(), { cache: 'no-store' }).then(r => r.text()).then(html => {
+            const m = html.match(/app-[0-9a-f]+\.js/); if (!m || m[0] === mine) return;
+            const t = document.getElementById('toast');
+            if (t) { t.innerHTML = '<span>Nueva versión lista.</span><button id="sw-reload">Actualizar</button>'; t.hidden = false; const b = document.getElementById('sw-reload'); if (b) b.onclick = () => location.reload(); }
+          }).catch(() => {});
         }
       });
     });

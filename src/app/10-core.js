@@ -196,7 +196,7 @@ window.addEventListener('popstate', () => {
   if (t.kind === 'sheet') closeSheet(true);
   else if (t.kind === 'train') { LAYERS.pop(); minimizeTraining(true); }
 });
-window.addEventListener('hashchange', () => { clearLayers(); scheduleRender(); });
+window.addEventListener('hashchange', () => { clearLayers(); const ae = document.activeElement; if (ae && ae !== document.body && $('#view').contains(ae) && ae.blur) ae.blur(); deferRender = false; scheduleRender(); });
 document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && LAYERS.length) { const t = LAYERS[LAYERS.length - 1]; if (t.kind === 'sheet') closeSheet(); } });
 
 let toastTimer = null;
