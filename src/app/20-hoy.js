@@ -17,6 +17,7 @@ function viewHoy(st, today) {
   h += statusChips(st, today);
   h += trainingBanner();
   h += pendingPainPrompts(st, today);
+  if (isToday) h += pastBlockPrompts(ag, today);
   h += readinessCard(ci, adv);
   h += weekStrip(today, date);
   h += isToday ? nextHero(day, ag, today) : dayHero(day, date, today);
@@ -52,6 +53,19 @@ function pendingPainPrompts(st, today) {
     const k = s.kick || s.spr, lvl = s.kick ? KICK[k.level].n : SPRINT[k.level].n;
     return '<section class="card t-pain tight"><div class="stack-sm"><div class="micro" style="color:var(--red-ink)">Dolor al día siguiente</div><div class="h3">¿Cómo amaneció el recto femoral tras ' + (s.kick ? 'el golpeo ' : 'el sprint ') + lvl + ' del ' + DOW_LONG[weekday(s.date)] + '?</div>' +
       scaleHtml('pn', null, { pain: true, act: 'pn', data: ' data-id="' + esc(s.id) + '"', l: '0 nada', r: '≥ 3 baja de nivel' }) + '<p class="sub">Esta respuesta decide si subes de nivel.</p></div></section>';
+  }).join('');
+}
+/* Bloque de hoy que ya pasó su horario y nadie registró: pregunta en vez de desaparecer solo */
+function pastBlockPrompts(ag, today) {
+  const now = nowMin();
+  const items = ag.items.filter(x => (x.kind === 'train' || x.kind === 'recup') && x.end < now - 30 && !blockDone(x.block, today).all);
+  return items.map(it => {
+    const b = it.block, pend = b.sessions.find(s => !findLog(today, s.type));
+    if (!pend) return '';
+    return '<section class="card t-blue tight"><div class="stack-sm"><div class="micro" style="color:var(--blue-ink)">Sin registrar</div><div class="h3">¿Hiciste ' + esc(it.title.toLowerCase()) + ' · ' + esc(b.short) + '?</div>' +
+      '<div class="grid3"><button class="btn sm" data-act="block-done" data-date="' + today + '" data-key="' + it.key + '">' + ic('check') + 'Tal cual</button>' +
+      '<button class="btn sm" data-act="did-other" data-date="' + today + '" data-type="' + pend.type + '">' + ic('edit') + 'Lo que hice</button>' +
+      '<button class="btn sm ghost" data-act="not-done" data-date="' + today + '" data-type="' + pend.type + '">' + ic('x') + 'No la hice</button></div></div></section>';
   }).join('');
 }
 function readinessCard(ci, adv) {

@@ -29,8 +29,10 @@ function viewPerfil(st, today) {
     '<div class="field"><span class="lab">Día de descanso</span>' + dayBtns('restDay', false) + '</div>' +
     '<div class="field"><span class="lab">Entrenamientos con un club</span>' + dayBtns('teamDays', true) + '</div>' +
     '<div class="field"><span class="lab">Días de partido</span>' + dayBtns('matchDays', true) + '<span class="hint">Desde F5, con club y partidos marcados, el plan se organiza por día de partido.</span></div></div></section>';
-  const off = p.equipmentOff || [];
-  h += '<section class="card"><div class="stack-sm"><span class="h3">Equipamiento disponible</span><p class="sub">Desmarca lo que no tengas: el plan elige alternativas solo.</p><div class="pills">' + EQUIPMENT.map(e => { const on = !off.includes(e); return '<button type="button" class="pill' + (on ? ' on' : '') + '" data-act="equip" data-v="' + esc(e) + '" aria-pressed="' + on + '">' + esc(e) + '</button>'; }).join('') + '</div></div></section>';
+  const places = placesOf(p);
+  h += '<section class="card"><div class="stack"><span class="h3">Lugares</span><p class="sub">Desmarca lo que no tengas en cada lugar: el plan elige alternativas solo.</p>' +
+    PLACES.map(pl => '<div class="field"><span class="lab">' + PLACE_NAMES[pl] + '</span><div class="pills">' + PLACES_DEFAULT[pl].eq.map(e => { const on = places[pl].eq.includes(e); return '<button type="button" class="pill' + (on ? ' on' : '') + '" data-act="place-eq" data-place="' + pl + '" data-v="' + esc(e) + '" aria-pressed="' + on + '">' + esc(e) + '</button>'; }).join('') + '</div></div>').join('') +
+    '</div></section>';
   // Fotos
   h += '<section class="card"><div class="stack-sm"><div><span class="h3">Fotos de la app</span><p class="sub">Toca una para cambiarla. Se guardan en tu cuenta, no en el código público.</p></div><div class="ph-grid">' +
     PHOTO_SLOTS.map(([k, n]) => '<button type="button" class="ph-slot' + (k === 'avatar' ? ' av' : '') + '" data-act="photo-set" data-k="' + k + '" aria-label="Cambiar foto: ' + n + '">' + photoImg(k) + '<span class="lb">' + n + '</span><span class="ed">' + ic('camera') + '</span></button>').join('') + '</div></div></section>';
@@ -61,7 +63,7 @@ function profileHtml() {
 function saveProfile() {
   const p = clone(UI.pf); delete p.id;
   p.heightCm = num(p.heightCm);
-  ['restDay', 'teamDays', 'matchDays', 'equipmentOff', 'trials', 'schedule'].forEach(k => { if (p[k] === undefined && S.data.profile && S.data.profile[k] !== undefined) p[k] = S.data.profile[k]; });
+  ['restDay', 'teamDays', 'matchDays', 'equipmentOff', 'places', 'trials', 'schedule'].forEach(k => { if (p[k] === undefined && S.data.profile && S.data.profile[k] !== undefined) p[k] = S.data.profile[k]; });
   if (p.restDay === undefined) p.restDay = 6;
   put('profile', 'main', p).then(() => toast('Perfil guardado.'));
   closeSheet();

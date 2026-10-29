@@ -11,7 +11,7 @@
   background: linear-gradient(180deg, rgba(4, 6, 13, 0.92) 70%, rgba(4, 6, 13, 0)); }
 .tbar .mid { flex: 1; min-width: 0; display: grid; gap: 2px; text-align: center; }
 .tbar .mid .t { font-size: 13px; font-weight: 620; color: var(--fg-2); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.tbar .clk { font: 700 18px/1 var(--mono); letter-spacing: -0.03em; }
+.tbar .clk { font: 700 18px/1 var(--num-display); letter-spacing: -0.01em; }
 /* Estado del guardado: siempre visible, discreto */
 .svst { display: inline-flex; align-items: center; justify-content: center; gap: 6px; font-size: 11px; font-weight: 560; letter-spacing: 0.01em; color: var(--fg-3); white-space: nowrap; }
 .svst i { width: 6px; height: 6px; border-radius: 50%; background: var(--blue-ink); box-shadow: 0 0 0 3px rgba(74, 133, 255, 0.16); flex: none; }
@@ -91,7 +91,7 @@
 .fbrow button.on small { color: inherit; opacity: 0.8; }
 
 .counter { display: grid; justify-items: center; gap: 14px; padding: 18px 0 6px; }
-.counter .big { font: 760 76px/0.95 var(--mono); letter-spacing: -0.06em; }
+.counter .big { font: 760 76px/0.95 var(--num-display); letter-spacing: -0.01em; }
 .counter .big.bump { animation: bump 220ms var(--ease); }
 @keyframes bump { 0% { transform: scale(1); } 35% { transform: scale(1.12); } 100% { transform: scale(1); } }
 .counter .big small { font-size: 26px; color: var(--fg-3); letter-spacing: -0.03em; margin-left: 4px; }
@@ -128,7 +128,7 @@
 .tfoot .acts .iconbtn { width: 56px; height: 56px; border-radius: 18px; }
 .restbar { display: flex; align-items: center; gap: 12px; padding: 10px 10px 10px 16px; border-radius: 20px; width: 100%;
   background: linear-gradient(135deg, rgba(74, 133, 255, 0.42), rgba(36, 87, 245, 0.18)); border: 1px solid var(--blue-line); box-shadow: var(--shadow-lg); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); text-align: left; }
-.restbar .v { font: 760 30px/1 var(--mono); letter-spacing: -0.05em; }
+.restbar .v { font: 760 30px/1 var(--num-display); letter-spacing: -0.01em; }
 .restbar.hold { background: linear-gradient(135deg, rgba(200, 242, 80, 0.32), rgba(152, 224, 42, 0.1)); border-color: var(--lime-line); }
 
 /* Descanso a pantalla completa: visible desde lejos */
@@ -143,7 +143,7 @@
 .rest.hold .lbl { color: var(--lime); } .rest.last .lbl { color: var(--amber); }
 .rest .dial { position: relative; width: min(84vw, 52dvh, 420px); aspect-ratio: 1; display: grid; place-items: center; }
 .rest .dial svg { position: absolute; inset: 0; width: 100%; height: 100%; transform: rotate(-90deg); }
-.rest .digits { position: relative; font: 760 clamp(84px, 26vw, 168px)/1 var(--mono); letter-spacing: -0.07em; color: #fff; text-shadow: 0 0 40px rgba(74, 133, 255, 0.5); }
+.rest .digits { position: relative; font: 760 clamp(84px, 26vw, 168px)/1 var(--num-display); letter-spacing: -0.01em; color: #fff; text-shadow: 0 0 40px rgba(74, 133, 255, 0.5); }
 .rest.last .digits { color: #ffd394; text-shadow: 0 0 40px rgba(255, 140, 30, 0.6); }
 .rest.hold .digits { color: var(--lime-ink); text-shadow: 0 0 40px rgba(152, 224, 42, 0.5); }
 .rest .next { width: 100%; max-width: 560px; display: grid; gap: 4px; padding: 14px 16px; border-radius: 20px; background: rgba(255, 255, 255, 0.05); border: 1px solid var(--line-2); }

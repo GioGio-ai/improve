@@ -48,6 +48,7 @@ function buildAgenda(day, st, agendaDoc, opts) {
   const blocks = dayBlocks(day);
   const B = {};
   for (const b of blocks) B[b.key] = b;
+  for (const k of Object.keys(B)) { if (ov[k] && ov[k].place) B[k].place = ov[k].place; }
   const train = {};
   // ---- Gimnasio
   if (B.gym) {

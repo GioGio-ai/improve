@@ -49,6 +49,9 @@ fs.writeFileSync(path.join(OUT, 'assets', cssName), css);
 const fontDir = path.join(ROOT, 'node_modules', '@fontsource-variable');
 cp(path.join(fontDir, 'geist', 'files', 'geist-latin-wght-normal.woff2'), path.join(OUT, 'fonts', 'geist-latin-wght-normal.woff2'));
 cp(path.join(fontDir, 'geist-mono', 'files', 'geist-mono-latin-wght-normal.woff2'), path.join(OUT, 'fonts', 'geist-mono-latin-wght-normal.woff2'));
+const barlowDir = path.join(ROOT, 'node_modules', '@fontsource', 'barlow-condensed', 'files');
+cp(path.join(barlowDir, 'barlow-condensed-latin-600-normal.woff2'), path.join(OUT, 'fonts', 'barlow-condensed-latin-600-normal.woff2'));
+cp(path.join(barlowDir, 'barlow-condensed-latin-700-normal.woff2'), path.join(OUT, 'fonts', 'barlow-condensed-latin-700-normal.woff2'));
 for (const f of fs.readdirSync(path.join(SRC, 'static', 'icons'))) cp(path.join(SRC, 'static', 'icons', f), path.join(OUT, 'icons', f));
 const libSrc = path.join(ASSETS_SRC, 'lib');
 if (fs.existsSync(libSrc)) for (const f of fs.readdirSync(libSrc)) { const dst = path.join(OUT, 'lib', f); if (!fs.existsSync(dst) || fs.statSync(dst).size !== fs.statSync(path.join(libSrc, f)).size) cp(path.join(libSrc, f), dst); }
@@ -57,7 +60,7 @@ if (fs.existsSync(libSrc)) for (const f of fs.readdirSync(libSrc)) { const dst =
 const html = fs.readFileSync(path.join(SRC, 'static', 'index.html'), 'utf8').replace('{{CSS}}', cssName).replace('{{JS}}', jsName);
 fs.writeFileSync(path.join(OUT, 'index.html'), html);
 cp(path.join(SRC, 'static', 'manifest.webmanifest'), path.join(OUT, 'manifest.webmanifest'));
-const pre = ['./', './index.html', './manifest.webmanifest', './assets/' + jsName, './assets/' + cssName, './fonts/geist-latin-wght-normal.woff2', './fonts/geist-mono-latin-wght-normal.woff2', './icons/icon.svg', './icons/icon-192.png', './icons/apple-touch-icon.png'];
+const pre = ['./', './index.html', './manifest.webmanifest', './assets/' + jsName, './assets/' + cssName, './fonts/geist-latin-wght-normal.woff2', './fonts/geist-mono-latin-wght-normal.woff2', './fonts/barlow-condensed-latin-600-normal.woff2', './fonts/barlow-condensed-latin-700-normal.woff2', './icons/icon.svg', './icons/icon-192.png', './icons/apple-touch-icon.png'];
 const swVer = version + '-' + hash(js + css).slice(0, 6);
 fs.writeFileSync(path.join(OUT, 'sw.js'), fs.readFileSync(path.join(SRC, 'static', 'sw.js'), 'utf8').replace('{{VERSION}}', swVer).replace('{{PRECACHE}}', JSON.stringify(pre)));
 

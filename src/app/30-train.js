@@ -95,10 +95,12 @@ function startBlockTraining(date, key) {
   if (!it || !it.block) return;
   const sessions = it.block.sessions.filter(s => { const l = findLog(date, s.type); return !l || l.done === false; });
   if (!sessions.length) { toast('Este bloque ya está registrado.', 'info'); return; }
-  startTraining({ date, key, title: it.title + ' · ' + sessions.map(s => s.short).join(' + '), sessions, warmup: mergeWarmups(sessions.map(s => s.warmup)) });
+  const place = it.block.place || placeOf(key, ST.profile);
+  startTraining({ date, key, title: it.title + ' · ' + sessions.map(s => s.short).join(' + '), sessions, place, warmup: mergeWarmups(sessions.map(s => warmupFor(s.type, ST, place))) });
 }
 function startSessionTraining(sess, opts) {
-  startTraining({ date: sess.date, key: blockKind(sess.type), title: sess.title, sessions: [sess], warmup: sess.warmup }, opts);
+  const place = sess.place || placeOf(blockKind(sess.type), ST.profile);
+  startTraining({ date: sess.date, key: blockKind(sess.type), title: sess.title, sessions: [sess], place, warmup: warmupFor(sess.type, ST, place) }, opts);
 }
 function startTraining(spec, opts) {
   opts = opts || {};
@@ -114,7 +116,7 @@ function startTraining(spec, opts) {
   }
   ensureAudio();
   if (spec.date === todayStr() && !spec.libre) freezeDay(spec.date);
-  TR = { open: false, id: uid('tr'), date: spec.date, key: spec.key || 'gym', title: spec.title, startedAt: Date.now(), libre: !!spec.libre,
+  TR = { open: false, id: uid('tr'), date: spec.date, key: spec.key || 'gym', title: spec.title, startedAt: Date.now(), libre: !!spec.libre, place: spec.place || null,
     sessions: spec.sessions.map(s => ({ type: s.type, title: s.title, short: s.short, est: s.est || null, plan: planSnapshot(s) })),
     steps: buildTrainSteps(spec), cur: 0, rest: null, hold: null, modified: !!opts.modified, compressed: opts.compressed || null, fromTemplate: opts.template || null };
   if (!TR.steps.length) { toast('Esta sesión no tiene pasos para entrenar.', 'info'); TR = { open: false }; return; }
@@ -268,7 +270,7 @@ function quickRow(s) {
   const busy = s.eq && s.eq.some(e => BUSY_EQ.includes(e));
   return '<div class="quick">' +
     '<button class="pill ai" data-act="tr-ai">' + ic('spark') + 'Cómo se hace</button>' +
-    (busy && !s.warmup ? '<button class="pill busy" data-act="tr-busy">' + ic('swap') + 'Máquina ocupada</button>' : '') +
+    (busy && !s.warmup && TR.place !== 'cancha' ? '<button class="pill busy" data-act="tr-busy">' + ic('swap') + 'Máquina ocupada</button>' : '') +
     (s.warmup && busy ? '<button class="pill busy" data-act="tr-busy">' + ic('swap') + 'Alternativa</button>' : '') +
     '<a class="pill" href="' + googleLink(s.n + ' ejercicio') + '" target="_blank" rel="noopener">' + ic('google') + 'Google</a>' +
     (!s.warmup ? '<button class="pill" data-act="tr-menu">' + ic('dots') + 'Más</button>' : '') + '</div>';
@@ -513,7 +515,7 @@ async function trCopy() {
 }
 /* Máquina ocupada o sin equipo: 1-3 alternativas */
 function busyAlternatives(s) {
-  const ctx = { phase: ST.phase, injuryActive: ST.injuryActive, equipmentOff: ST.equipmentOff, bank: ST.bank };
+  const ctx = { phase: ST.phase, injuryActive: ST.injuryActive, equipmentOff: ST.equipmentOff, bank: ST.bank, place: TR.place, profile: ST.profile };
   const ex = exInfo(s.id) || {}, busyEq = (ex.eq || []).filter(e => BUSY_EQ.includes(e));
   const ok = (e) => e && e.id !== s.id && exEligible(e, ctx) && !(e.eq || []).some(q => busyEq.includes(q));
   const out = [];

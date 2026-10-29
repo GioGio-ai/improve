@@ -45,6 +45,7 @@ document.addEventListener('click', (e) => {
     case 'ag-reset': { const d = g('date'); remove('agenda', d).then(() => toast('Horario sugerido restaurado.')); return; }
     case 'ag-undo': { const u = UI.agUndo; if (!u) return; const doc = clone(agendaDoc(u.date) || { date: u.date, items: {} }); delete doc.id; doc.items = doc.items || {}; if (u.prev) doc.items[u.key] = u.prev; else delete doc.items[u.key]; put('agenda', u.date, doc); UI.agUndo = null; $('#toast').hidden = true; return; }
     case 'ag-hide': agendaSet(g('date'), g('key'), { hidden: true }).then(() => toast('Quitado de la agenda de hoy.')); closeSheet(); return;
+    case 'blk-place': agendaSet(g('date'), g('key'), { place: g('v') }).then(() => refreshSheet(true)); return;
     case 'checkin': openCheckin(); return;
     case 'ck-step': { const v = UI.checkinDraft; v.sleepH = clamp((num(v.sleepH) || 9) + Number(g('d')) * 0.25, 3, 13); refreshSheet(true); return; }
     case 'ck-scale': UI.checkinDraft[g('name')] = Number(g('v')); refreshSheet(true); return;
@@ -91,7 +92,7 @@ document.addEventListener('click', (e) => {
     case 'wt-step': UI.wt.kg = Math.max(0, Math.round(((num(UI.wt.kg) || 88) + Number(g('d')) * 0.1) * 10) / 10); refreshSheet(true); return;
     case 'wt-save': { const kg = num(UI.wt.kg); if (!kg) { toast('Escribe el peso en kg.', 'warn'); return; } put('weights', 'w-' + (UI.wt.date || today), { date: UI.wt.date || today, kg }).then(() => toast('Peso guardado.')); closeSheet(); return; }
     case 'cal': { const key = g('key'), i = Number(g('i')); updateProfile(p => { if (key === 'restDay') p.restDay = i; else { const arr = (p[key] || []).slice(); const ix = arr.indexOf(i); if (ix >= 0) arr.splice(ix, 1); else arr.push(i); p[key] = arr.sort(); } }); return; }
-    case 'equip': { const v = g('v'); updateProfile(p => { const off = (p.equipmentOff || []).slice(); const ix = off.indexOf(v); if (ix >= 0) off.splice(ix, 1); else off.push(v); p.equipmentOff = off; }); return; }
+    case 'place-eq': { const pl = g('place'), v = g('v'); updateProfile(p => { p.places = p.places || {}; p.places[pl] = p.places[pl] || { off: [] }; const off = (p.places[pl].off || []).slice(); const ix = off.indexOf(v); if (ix >= 0) off.splice(ix, 1); else off.push(v); p.places[pl].off = off; if (pl === 'gimnasio') delete p.equipmentOff; }); return; }
     case 'trial-add': { const v = ($('#trial-date') || {}).value; if (!v) { toast('Elige una fecha.', 'warn'); return; } updateProfile(p => { const t = (p.trials || []).slice(); if (!t.includes(v)) t.push(v); p.trials = t.sort(); }).then(() => toast('Prueba agregada: el plan se ajusta.')); return; }
     case 'trial-del': { const v = g('v'); updateProfile(p => { p.trials = (p.trials || []).filter(x => x !== v); }); return; }
     case 'sched-nap': setSchedule('nap', !(scheduleOf(S.data.profile).nap !== false)); return;
@@ -193,7 +194,7 @@ document.addEventListener('click', (e) => {
     case 'tr-ai': { const s = curStep(); if (s && s.kind === 'ex') openExerciseAI(s.id, s.n); return; }
     case 'tr-busy': trBusy(); return;
     case 'tr-alt': trAlt(g('id'), g('mode')); return;
-    case 'tr-noeq': { const eqs = String(g('eq') || '').split('|').filter(Boolean); updateProfile(p => { const off = (p.equipmentOff || []).slice(); eqs.forEach(q => { if (!off.includes(q)) off.push(q); }); p.equipmentOff = off; }).then(() => toast('Marcado como no disponible: el plan elige alternativas.')); const r = busyAlternatives(curStep()); if (r.list[0]) trAlt(r.list[0].id, 'hoy'); else closeAllSheets(); return; }
+    case 'tr-noeq': { const eqs = String(g('eq') || '').split('|').filter(Boolean); const pl = TR.place || 'gimnasio'; updateProfile(p => { p.places = p.places || {}; p.places[pl] = p.places[pl] || { off: [] }; const off = (p.places[pl].off || []).slice(); eqs.forEach(q => { if (!off.includes(q)) off.push(q); }); p.places[pl].off = off; if (pl === 'gimnasio') delete p.equipmentOff; }).then(() => toast('Marcado como no disponible: el plan elige alternativas.')); const r = busyAlternatives(curStep()); if (r.list[0]) trAlt(r.list[0].id, 'hoy'); else closeAllSheets(); return; }
     case 'tr-swap': { const s = curStep(); openSwap(s.slot, s.id, 'tr'); return; }
     case 'tr-swap-pick': { const ex = exInfo(g('id')); const s = curStep(); if (!ex || !s) return; trReplaceCurrent(makeItem(ex, g('slot'), s.spec), { from: s.id, reason: 'variante' }); return; }
     case 'tr-pickswap': openPicker('tr-swapany'); return;

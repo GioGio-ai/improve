@@ -258,8 +258,10 @@ function estimateSession(s) {
 }
 
 /* ---------- Calentamiento automático: cada paso es un ejercicio real ---------- */
-function warmupFor(type, st) {
+function warmupFor(type, st, lugar) {
   const inj = st.injuryActive, ph = st.phase;
+  /* En cancha no hay banco: la isometría de RF en zancada se hace contra la pared */
+  const rfId = lugar === 'cancha' ? 'iso_rf_zancada_pared' : 'iso_rf_zancada';
   const W = (id, spec, min, note, side) => { const b = BANK_INDEX[id] || {}; return { id, n: b.n || id, spec: Object.assign({}, spec), min, d: note || fmtSpec(spec, side), side: !!side, img: b.img || null, warmup: true }; };
   let items = [];
   if (['fuerzaA', 'fuerzaMax', 'fuerzaCorta', 'prevencion', 'test'].includes(type)) {
@@ -268,13 +270,13 @@ function warmupFor(type, st) {
     if (inj) items.push(W('iso_ext_90', { s: 2, t: [30, 30] }, 2, '2 × 30 s por pierna al 50-70 %, sin dolor', true));
   } else if (['potenciaB', 'potencia'].includes(type)) {
     items = [W('bici_suave', { min: 4 }, 4, '4 min · ritmo suave'), W(ph >= 3 ? 'mov_dinamica' : 'mov_9090', ph >= 3 ? { min: 3 } : { s: 1, r: [5, 5] }, 3, ph >= 3 ? 'Balanceos frontales y laterales, rango progresivo' : '5 por lado')];
-    if (inj) items.push(W('iso_rf_zancada', { s: 2, t: [20, 20] }, 2, '2 × 20 s por pierna', true));
+    if (inj) items.push(W(rfId, { s: 2, t: [20, 20] }, 2, '2 × 20 s por pierna', true));
     items.push(W('pogo', { s: 2, c: 10 }, 2, '2 × 10 contactos'), W('saltos_sub', { s: 1, r: [3, 3] }, 1, '3 saltos al 70 %'));
   } else if (type === 'superior') {
     items = [W('mov_toracica', { s: 2, r: [8, 8] }, 2, '2 × 8 por lado'), W('pull_apart', { s: 2, r: [12, 12] }, 2, '2 × 12'), W('rot_ext_banda', { s: 1, r: [12, 12] }, 1, '', true)];
   } else if (type === 'golpeo' || type === 'golpeoTec') {
     items = [W('trote_suave', { min: 5 }, 5, '5 min'), W(ph >= 3 ? 'mov_dinamica' : 'mov_9090', ph >= 3 ? { min: 3 } : { s: 1, r: [5, 5] }, 3, ph >= 3 ? 'Balanceos frontales y laterales' : 'Controlada, rango sin dolor')];
-    if (inj) items.push(W('iso_rf_zancada', { s: 2, t: [20, 20] }, 2, '2 × 20 s, pierna lesionada atrás', true));
+    if (inj) items.push(W(rfId, { s: 2, t: [20, 20] }, 2, '2 × 20 s, pierna lesionada atrás', true));
     items.push(W('pases_prog', { s: 1, r: [10, 10] }, 2, '10 pases, de cerca a lejos'));
   } else if (type === 'sprint') {
     items = [W('trote_suave', { min: 4 }, 4, '4 min'), W('a_skip', { s: 2, m: 20 }, 3, '2 × 20 m de cada uno'), W('acel_prog', { s: 3, m: 20 }, 3, '3 × 20 m al 50, 60 y 70 %')];
@@ -282,7 +284,7 @@ function warmupFor(type, st) {
     items = [W('trote_suave', { min: 4 }, 4, '4 min'), W('skips', { s: 2, m: 20 }, 2, '2 × 20 m'), W('acel_prog', { s: 2, m: 15 }, 2, '2 × 15 m suaves')];
   } else if (type === 'juego' || type === 'prueba') {
     items = [W('trote_suave', { min: 5 }, 5, '5 min'), W('mov_dinamica', { min: 3 }, 3, 'Balanceos y aperturas')];
-    if (inj) items.push(W('iso_rf_zancada', { s: 2, t: [20, 20] }, 2, '2 × 20 s', true));
+    if (inj) items.push(W(rfId, { s: 2, t: [20, 20] }, 2, '2 × 20 s', true));
     items.push(W('activ_gluteo', { s: 1, r: [10, 10] }, 2, ''), W('acel_prog', { s: 3, m: 20 }, 3, 'Aceleraciones y cambios de dirección'), W('pases_prog', { s: 3, r: [5, 5] }, 4, 'Golpeo progresivo al 50, 70 y 85 %'));
   }
   if (!items.length) return null;
@@ -470,10 +472,51 @@ const TEST_STEPS = [
   { key: 'palp', kind: 'scale', n: 'Palpación', min: 1, d: 'Presiona la zona de la lesión con 2-3 dedos. Marca el dolor, no la presión.' },
 ];
 
+/* ---------- Lugares ---------- */
+/* Equipo disponible en cada lugar, con lo que el perfil desmarcó */
+function placesOf(profile) {
+  profile = profile || {};
+  const raw = profile.places || {};
+  const out = {};
+  for (const k of PLACES) {
+    const def = PLACES_DEFAULT[k] || { eq: [], space: false };
+    const legacyOff = k === 'gimnasio' && !raw.gimnasio ? (profile.equipmentOff || []) : [];
+    const off = (raw[k] && raw[k].off) || legacyOff;
+    out[k] = { eq: def.eq.filter(e => !off.includes(e)), off, allEq: def.eq, space: !!def.space };
+  }
+  return out;
+}
+/* Lugar por defecto de un bloque (gym/campo/club/recup), salvo que el perfil o el día lo cambien */
+function placeOf(blockKey, profile, override) {
+  if (override) return override;
+  const custom = profile && profile.places && profile.places.blockDefault && profile.places.blockDefault[blockKey];
+  if (custom) return custom;
+  return PLACE_BY_BLOCK[blockKey] || 'gimnasio';
+}
+/* ¿Se puede hacer este ejercicio en este lugar con el equipo que hay? */
+function exAvailable(ex, lugar, profile) {
+  if (!lugar) return true;
+  const eq = (ex.eq || []).filter(e => e && e !== 'peso corporal');
+  if (!eq.length) return true;
+  const places = placesOf(profile);
+  const avail = (places[lugar] || places.gimnasio).eq;
+  return eq.every(e => avail.includes(e));
+}
+/* Equipo que necesita un bloque entero (para "qué llevar") */
+function blockNeeds(block) {
+  const eq = new Set();
+  for (const s of (block && block.sessions) || []) {
+    for (const it of (s.items || [])) { const ex = BANK_INDEX[it.id]; (ex && ex.eq || []).forEach(e => { if (e && e !== 'peso corporal') eq.add(e); }); }
+    if (s.field && (s.field.kind === 'sprint' || s.field.kind === 'golpeo')) eq.add('espacio');
+  }
+  return Array.from(eq);
+}
+
 /* ---------- Ejercicios ---------- */
 function exEligible(ex, ctx) {
   if (ctx.injuryActive && (ex.f || 1) > ctx.phase) return false;
   if (ctx.equipmentOff && ctx.equipmentOff.length && (ex.eq || []).some(e => ctx.equipmentOff.includes(e))) return false;
+  if (ctx.place && !exAvailable(ex, ctx.place, ctx.profile)) return false;
   return true;
 }
 function pickExercise(slot, ctx, used) {
@@ -495,8 +538,9 @@ function makeItem(ex, slot, spec) {
 function makeSession(type, date, st, opts) {
   opts = opts || {};
   const ph = st.phase, T = STYPES[type] || { n: type, short: type, cat: 'gym' };
-  const s = { key: date + ':' + type, type, date, title: T.n, short: T.short, cat: T.cat, icon: T.icon, items: [], intense: false, notes: [], field: null };
-  const ctx = { bank: st.bank, phase: ph, injuryActive: st.injuryActive, choices: st.choices, equipmentOff: st.equipmentOff };
+  const place = opts.place || placeOf(blockKind(type), st.profile);
+  const s = { key: date + ':' + type, type, date, title: T.n, short: T.short, cat: T.cat, icon: T.icon, items: [], intense: false, notes: [], field: null, place };
+  const ctx = { bank: st.bank, phase: ph, injuryActive: st.injuryActive, choices: st.choices, equipmentOff: st.equipmentOff, place, profile: st.profile };
   if (GYM_TYPES.includes(type)) {
     const used = new Set();
     for (const slot of sessionSlots(type, ph, st.injuryActive)) {
@@ -558,7 +602,7 @@ function makeSession(type, date, st, opts) {
   }
   if (type === 'descanso') s.field = { kind: 'rest' };
   if (type === 'fuerzaCorta') s.notes.push('Semana cargada: mismo peso, la mitad de series.');
-  s.warmup = warmupFor(type, st);
+  s.warmup = warmupFor(type, st, place);
   s.estRaw = estimateSession(s);
   s.est = s.estRaw;
   if (s.items.length && st.durFactor && Math.abs(st.durFactor - 1) >= 0.05) s.est = Math.max(5, Math.round(s.estRaw * st.durFactor / 5) * 5);
@@ -600,7 +644,8 @@ function dayBlocks(day) {
     const warm = mergeWarmups(ss.map(x => x.warmup));
     const est = ss.reduce((a, x) => a + Math.max(0, (x.est || 0) - (x.warmup ? x.warmup.min : 0)), 0) + (warm ? warm.min : 0);
     out.push({ key: k, kind: k, sessions: ss, types: ss.map(x => x.type), warmup: warm, est: Math.max(10, Math.round(est / 5) * 5), intense: ss.some(x => x.intense),
-      title: k === 'gym' ? 'Gimnasio' : k === 'campo' ? 'Cancha' : k === 'club' ? (ss[0].title || 'Club') : 'Recuperación', short: ss.map(x => x.short).join(' + ') });
+      title: k === 'gym' ? 'Gimnasio' : k === 'campo' ? 'Cancha' : k === 'club' ? (ss[0].title || 'Club') : 'Recuperación', short: ss.map(x => x.short).join(' + '),
+      place: ss[0].place || PLACE_BY_BLOCK[k] || 'gimnasio' });
   }
   return out;
 }
@@ -1170,9 +1215,10 @@ function deriveState(data, today) {
     || (data.checkins || []).some(c => c.date >= addDays(today, -13) && (num(c.rfPain) || 0) >= 3);
   const phaseSince = injury && injury.phaseLog && injury.phaseLog.length ? injury.phaseLog[injury.phaseLog.length - 1].date : null;
   const checkins = (data.checkins || []).slice().sort(byDate);
+  const places = placesOf(profile);
   const st = {
     today, injury, phase, injuryActive, sessions, kick, sprint, rt, tests, test: T, latestTestDoc: lt, side, profile, settings, weight, weights, checkins,
-    bank, custom, choices: settings.choices || {}, equipmentOff: profile.equipmentOff || [], lastTestDate: lt ? lt.date : null, recentPain, phaseSince,
+    bank, custom, choices: settings.choices || {}, equipmentOff: places.gimnasio.off, places, lastTestDate: lt ? lt.date : null, recentPain, phaseSince,
     durFactor: durationFactor(sessions, today),
   };
   st.criteria = injury && phase <= 5 ? phaseCriteria(phase, { test: T, kick, sprint, injury, today, phaseSince, recentPain }) : null;

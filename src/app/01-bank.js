@@ -29,6 +29,12 @@ const BANK = [
     { why: 'Carga el recto femoral exactamente en la posición de armado del golpeo, que es donde se lesiona el recto femoral al patear.', prog: 'iso_rf_zancada_carga' }),
   X('iso_rf_zancada_carga', 'Isometría de RF en zancada con carga', 'rodilla', 'iso', 'S', 'U', 'FM', 4, 'rf cuad cadera', 'rf_iso_largo', 3, 'banco,mancuernas', 'Recto femoral',
     'Igual que la versión base, con mancuernas o chaleco. Más carga, mismo ángulo.', null, { reg: 'iso_rf_zancada' }),
+  X('iso_rf_zancada_pared', 'Isometría de RF en zancada (empeine contra la pared)', 'rodilla', 'iso', 'S', 'U', 'FM', 3, 'rf cuad cadera', 'rf_iso_largo', 2, 'pared', 'Recto femoral',
+    'Pierna lesionada atrás, empeine contra la pared, rodilla flexionada y cadera extendida. Empuja el empeine contra la pared y sostén.', null,
+    { why: 'Misma carga que en zancada con banco, para la cancha, donde no hay banco.', reg: 'iso_rf_zancada' }),
+  X('iso_rf_arco_banda', 'Isometría de RF con banda atada al arco', 'rodilla', 'iso', 'S', 'U', 'FM', 3, 'rf cuad cadera', 'rf_iso_largo', 2, 'banda,arco', 'Recto femoral',
+    'Banda atada al arco y al tobillo de la pierna lesionada, de espaldas al arco. Rodilla flexionada y cadera extendida: resiste la tracción de la banda sin que te acerque al arco.', null,
+    { why: 'Alternativa con banda en la cancha cuando no hay una pared cerca.', reg: 'iso_rf_zancada' }),
   X('iso_rf_polea_armado', 'Isometría en posición de armado con polea', 'flex_cadera', 'iso', 'S', 'U', 'FM', 3, 'rf cadera', 'rf_iso_largo flex_cadera', 2, 'polea', 'Recto femoral, psoas',
     'Tobillera en la polea baja detrás de ti. Pierna atrás como al armar el golpe; sostén contra la polea sin dejar que te lleve.', null),
   X('rev_nordic_asist', 'Reverse Nordic asistido con banda', 'rodilla', 'exc', 'S', 'B', 'FM', 3, 'rf cuad rodilla', 'rf_exc', 2, 'banda', 'Recto femoral, cuádriceps',
@@ -449,6 +455,17 @@ const KEY_PATTERNS = ['sentadilla', 'bisagra', 'unilateral', 'rodilla', 'flex_ca
 const EQUIPMENT = ['extensora', 'polea', 'banda', 'barra', 'mancuernas', 'kettlebell', 'banco', 'trineo', 'cajón', 'step', 'balón medicinal', 'máquina aductores',
   'prensa', 'barra hexagonal', 'curl femoral', 'deslizadores', 'landmine', 'barra dominadas', 'paralelas', 'rodillo', 'vallas', 'conos', 'balón', 'fitball',
   'rueda abdominal', 'máquina sóleo', 'máquina belt squat', 'banco 45°', 'bicicleta', 'esterilla', 'cuerda'];
+
+/* -------- Lugares: dónde se entrena y qué equipo hay en cada uno -------- */
+const PLACES = ['cancha', 'gimnasio', 'casa'];
+const PLACE_NAMES = { cancha: 'Cancha', gimnasio: 'Gimnasio', casa: 'Casa' };
+const PLACES_DEFAULT = {
+  cancha: { eq: ['conos', 'balón', 'banda', 'pared', 'arco'], space: true },
+  gimnasio: { eq: EQUIPMENT.slice(), space: false },
+  casa: { eq: ['banda'], space: false },
+};
+/* Bloque del día → lugar por defecto */
+const PLACE_BY_BLOCK = { gym: 'gimnasio', campo: 'cancha', club: 'cancha', recup: 'casa' };
 
 const BANK_INDEX = {};
 BANK.forEach(b => { BANK_INDEX[b.id] = b; });
