@@ -76,7 +76,8 @@ function fieldSteps(s) {
   else if (f.kind === 'test') {
     const doc = (S.data.tests || []).find(t => t.id === 't-' + s.date) || {};
     f.steps.forEach(t => out.push({ kind: 'test', sess: s.type, key: t.key, tkind: t.kind, unit: t.unit || '', n: t.n, d: t.d, img: t.img || null, val: clone(doc[t.key] !== undefined ? doc[t.key] : (t.kind === 'pair' ? {} : null)), rnPain: t.key === 'rn' ? (doc.rnPain ?? null) : undefined, saved: doc[t.key] !== undefined }));
-  } else if (f.kind === 'list') out.push({ kind: 'list', sess: s.type, items: f.steps.map(x => ({ n: x.n, d: x.d, min: x.min, done: false })) });
+  } else if (f.kind === 'balon') f.drills.forEach((d, i) => out.push({ kind: 'balon', sess: s.type, idx: i, id: d.id, n: d.n, d: d.d, foot: d.foot, metric: d.metric, unit: d.unit, lowerBetter: !!d.lowerBetter, headerStrong: !!d.headerStrong, target: d.target, count: 0, hits: 0, attempts: 0 }));
+  else if (f.kind === 'list') out.push({ kind: 'list', sess: s.type, items: f.steps.map(x => ({ n: x.n, d: x.d, min: x.min, done: false })) });
   else if (f.kind === 'club') out.push({ kind: 'list', sess: s.type, items: [{ n: s.title, d: 'Registra minutos y esfuerzo al terminar.', done: false }] });
   return out;
 }
@@ -170,6 +171,7 @@ function stepComplete(s) {
   if (s.kind === 'golpeo') return s.count >= Math.ceil(s.target * 0.6) && (s.tec || num(s.pd) !== null);
   if (s.kind === 'sprint' || s.kind === 'rt') return s.done.every(Boolean);
   if (s.kind === 'test') return !!s.saved;
+  if (s.kind === 'balon') return (s.metric === 'hits' ? s.attempts : s.count) >= Math.ceil(s.target * 0.6);
   return false;
 }
 function stepLabel(s) {
@@ -179,6 +181,7 @@ function stepLabel(s) {
   if (s.kind === 'rt') return 'Circuito RT ' + String(s.level).replace('x', '×');
   if (s.kind === 'test') return s.n;
   if (s.kind === 'list') return s.items[0] ? s.items[0].n : 'Lista';
+  if (s.kind === 'balon') return s.n;
   return '';
 }
 function renderTrain(reset) {
@@ -200,6 +203,7 @@ function renderTrain(reset) {
   else if (step.kind === 'rt') body = trRepsHtml(step, 'rt');
   else if (step.kind === 'test') body = trTestHtml(step);
   else if (step.kind === 'list') body = trListHtml(step);
+  else if (step.kind === 'balon') body = trBalonHtml(step);
   root.innerHTML = '<div class="train enter' + (step.warmup ? ' warm' : '') + '" role="dialog" aria-label="Modo entrenamiento"><div class="train-in">' +
     '<div class="tbar"><button class="iconbtn" data-act="tr-min" aria-label="Pausar y salir">' + ic('chevL') + '</button><div class="mid"><div class="t">' + esc(TR.title) + '</div><div class="clk" id="tr-clock">0:00</div>' + saveStatusHtml() + '</div><button class="btn sm primary" data-act="tr-finish">Terminar</button></div>' +
     '<div class="tprog" aria-hidden="true">' + TR.steps.map((s, i) => '<i class="' + (s.warmup ? 'w ' : '') + (i === TR.cur ? 'c' : stepComplete(s) ? 'd' : '') + '"></i>').join('') + '</div>' +
@@ -221,6 +225,7 @@ function patchExcard() {
   else if (s.kind === 'rt') body = trRepsHtml(s, 'rt');
   else if (s.kind === 'test') body = trTestHtml(s);
   else if (s.kind === 'list') body = trListHtml(s);
+  else if (s.kind === 'balon') body = trBalonHtml(s);
   card.innerHTML = body;
   hydrateThumbs(card);
 }
@@ -239,7 +244,9 @@ function patchCounter() {
   const big = $('.counter .big');
   if (!big) { patchExcard(); patchProg(); return; }
   const s = curStep();
-  big.innerHTML = s.count + '<small>/' + s.target + '</small>';
+  if (s.kind === 'balon' && s.metric === 'hits') big.innerHTML = s.hits + '<small>/' + s.attempts + '</small>';
+  else if (s.kind === 'balon') big.innerHTML = s.count + '<small> ' + esc(s.unit) + '</small>';
+  else big.innerHTML = s.count + '<small>/' + s.target + '</small>';
   big.classList.remove('bump'); void big.offsetWidth; big.classList.add('bump');
   patchProg();
 }
@@ -354,6 +361,20 @@ function trRepsHtml(s, kind) {
 }
 function trListHtml(s) {
   return '<div class="stack-sm">' + s.items.map((x, k) => '<button class="blk' + (x.done ? ' done' : '') + '" data-act="tr-ck" data-k="' + k + '"><div class="grow"><div class="t">' + esc(x.n) + '</div>' + (x.d || x.min ? '<div class="s">' + esc([x.min ? x.min + ' min' : '', x.d || ''].filter(Boolean).join(' · ')) + '</div>' : '') + '</div><span class="st0' + (x.done ? ' done' : '') + '">' + (x.done ? ic('check') : '') + '</span></button>').join('') + '</div>';
+}
+function trBalonHtml(s) {
+  const footTxt = s.foot === 'izq' ? 'Pie izquierdo' : s.foot === 'der-suave' ? 'Pie menos hábil' : 'Ambos pies';
+  let h = '<div class="exhead"><div class="badgek b">' + ic('ball') + '</div><div class="stack-xs"><div class="kicker">Balón · ' + esc(footTxt) + (s.headerStrong ? ' · fuerza alta' : '') + '</div><button class="exname" data-act="tr-copy">' + esc(s.n) + '</button></div></div><div class="excue">' + esc(s.d) + '</div>';
+  if (s.metric === 'hits') {
+    h += '<div class="counter"><div class="big num" aria-live="polite">' + s.hits + '<small>/' + s.attempts + '</small></div>' +
+      '<div class="ctl"><button class="plus" data-act="tr-ball" data-k="hit" aria-label="Acierto">' + ic('check') + ' Acierto</button><button data-act="tr-ball" data-k="miss" aria-label="Fallo">Fallo</button></div>' +
+      '<div class="sub">' + esc(s.unit) + ' · meta ' + s.target + '</div></div>';
+  } else {
+    h += '<div class="counter"><div class="big num" aria-live="polite">' + s.count + '<small> ' + esc(s.unit) + '</small></div>' +
+      '<div class="ctl"><button data-act="tr-count" data-d="-1" aria-label="Restar">−1</button><button class="plus" data-act="tr-count" data-d="1" aria-label="Sumar">+1</button><button data-act="tr-count" data-d="5" aria-label="Sumar cinco">+5</button></div>' +
+      '<div class="sub">meta ' + s.target + ' ' + esc(s.unit) + (s.lowerBetter ? ' · menos es mejor' : '') + '</div></div>';
+  }
+  return h;
 }
 function trTestHtml(s) {
   const inj = ST.side || 'd', hea = inj === 'd' ? 'i' : 'd';
@@ -628,6 +649,7 @@ function stepHasWork(s) {
   if (s.kind === 'sprint' || s.kind === 'rt') return s.done.some(Boolean);
   if (s.kind === 'test') return !!s.saved;
   if (s.kind === 'list') return s.items.some(x => x.done);
+  if (s.kind === 'balon') return s.metric === 'hits' ? s.attempts > 0 : s.count > 0;
   return false;
 }
 function trToLogs(tr, f, auto) {
@@ -654,6 +676,10 @@ function trToLogs(tr, f, auto) {
         if (log.spr.reps < Math.ceil(s.done.length * 0.6)) log.spr.partial = true;
       } else if (s.kind === 'rt') log.rt = { level: s.level, series: s.done.filter(Boolean).length };
       else if (s.kind === 'test') { log.tests = log.tests || []; if (s.saved) log.tests.push(s.key); }
+      else if (s.kind === 'balon') {
+        log.ball = log.ball || { drills: [] };
+        log.ball.drills.push({ id: s.id, n: s.n, metric: s.metric, unit: s.unit, count: s.count, hits: s.hits, attempts: s.attempts, target: s.target, headerStrong: s.headerStrong, lowerBetter: s.lowerBetter });
+      }
     }
     const planIds = ((ss.plan && ss.plan.items) || []).map(i => i.id).join(',');
     const doneIds = log.exercises.filter(e => !e.warmup).map(e => e.id).join(',');

@@ -25,6 +25,7 @@ function viewProgreso(st, today) {
     } else if (st.phase === 6) h += '<section class="card"><div class="stack"><p class="body">Fase final. El recto femoral recibe mantenimiento 2 veces por semana.</p><div class="grid2"><button class="btn" data-act="resolve-injury">Cerrar lesión</button><button class="btn ghost" data-act="phase-down">Volver a F5</button></div></div></section>';
   } else h += '<div class="empty"><b>Sin lesión activa.</b><span class="small">El plan trabaja en modo rendimiento.</span><button class="btn sm" data-act="new-injury">Registrar lesión</button></div>';
   h += levelsCard(st);
+  h += ballCard(st, today);
   h += testsCard(st);
   const tl = trainingLSI(st.sessions, st.side);
   if (tl.length) h += '<section class="card"><div class="stack-sm"><span class="h3">Entre piernas · entrenamiento</span><p class="sub">Estimado con el peso y las repeticiones de cada lado. Orienta entre tests.</p>' + tl.map(r => '<div class="lrow"><span class="fg2">' + esc(r.n) + ' · ' + fmtDate(r.date) + '</span><b class="num ' + (r.lsi >= 90 ? 'c-lime' : 'c-load') + '">' + fmtNum(r.lsi) + ' %</b></div>').join('') + '</div></section>';
@@ -46,6 +47,29 @@ function levelsCard(st) {
     '<details><summary>' + ic('info') + 'Reglas de los niveles</summary><div class="in"><ul class="crit">' + [
       ['Sesión limpia', 'Dolor ≤ 2 durante y 0 al día siguiente.'], ['K5, K7, S4 y S6', 'Piden 2 limpias seguidas: son los umbrales donde te lesionaste.'], ['Dolor 3 o más', 'Bajas un nivel.'], ['Una variable a la vez', 'Distancia, intensidad, tipo de golpe, volumen o carrera.'],
     ].map(([a, b]) => '<li><span class="mk">' + ic('info') + '</span><div class="small"><b>' + a + '</b><div class="fg3">' + b + '</div></div><span></span></li>').join('') + '</ul></div></details></div></section>';
+}
+/* ---------- Balón: récords por estación ---------- */
+function ballRecords(sessions) {
+  const best = {};
+  for (const s of sessions) {
+    if (s.done === false || !s.ball) continue;
+    for (const d of s.ball.drills || []) {
+      const val = d.metric === 'hits' ? d.hits : d.count;
+      if (!val && val !== 0) continue;
+      const cur = best[d.id];
+      const better = !cur ? true : d.lowerBetter ? (val > 0 && val < cur.val) : val > cur.val;
+      if (better) best[d.id] = { id: d.id, n: d.n, val, date: s.date, metric: d.metric, unit: d.unit, attempts: d.attempts, lowerBetter: !!d.lowerBetter };
+    }
+  }
+  return best;
+}
+function ballCard(st, today) {
+  const best = ballRecords(st.sessions), ids = Object.keys(best);
+  const headers = ballHeaderCount(st.sessions, weekStartOf(today));
+  let h = '<section class="card"><div class="stack-sm"><div class="row between"><span class="h3">Balón · récords</span>' + chip('cabeceo fuerza alta ' + headers + '/' + BALL_HEADER_CAP, headers >= BALL_HEADER_CAP ? 'warn' : '') + '</div>';
+  if (!ids.length) h += '<p class="sub">Todavía no registraste trabajo con balón.</p>';
+  else h += ids.map(id => { const r = best[id]; return '<div class="lrow"><span class="fg2">' + esc(r.n) + ' <span class="fg4">· ' + fmtDate(r.date) + '</span></span><b class="num">' + (r.metric === 'hits' ? r.val + '/' + r.attempts : r.val + ' ' + esc(r.unit)) + '</b></div>'; }).join('');
+  return h + '</div></section>';
 }
 function testsCard(st) {
   const T = st.test;

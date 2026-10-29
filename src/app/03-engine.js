@@ -34,6 +34,7 @@ const STYPES = {
   test: { n: 'Test de control', short: 'Test', cat: 'test', icon: 'flask' },
   golpeo: { n: 'Golpeo', short: 'Golpeo', cat: 'campo', icon: 'ball' },
   golpeoTec: { n: 'Técnica con balón', short: 'Técnica', cat: 'campo', icon: 'ball' },
+  balon: { n: 'Balón', short: 'Balón', cat: 'campo', icon: 'ball' },
   sprint: { n: 'Sprint', short: 'Sprint', cat: 'campo', icon: 'run' },
   rt: { n: 'Circuito RT', short: 'RT', cat: 'campo', icon: 'cones' },
   juego: { n: 'Juego reducido', short: 'Juego', cat: 'campo', icon: 'ball' },
@@ -72,8 +73,8 @@ const SCAP = [0, 0, 2, 4, 6, 6, 6];
 const TEMPLATES = {
   1: [['fuerzaA', 'superior'], ['movilidad'], ['fuerzaA', 'prevencion'], ['movilidad', 'superior'], ['fuerzaA', 'prevencion'], ['movilidad'], ['descanso']],
   2: [['rt', 'golpeoTec', 'superior'], ['golpeo', 'fuerzaA'], ['sprint', 'rt', 'movilidad'], ['golpeo', 'fuerzaA'], ['sprint', 'rt', 'movilidad'], ['golpeo', 'prevencion', 'superior'], ['descanso']],
-  3: [['rt', 'golpeoTec', 'superior'], ['sprint', 'golpeo', 'fuerzaA'], ['movilidad', 'prevencion'], ['sprint', 'golpeo', 'potenciaB'], ['rt', 'superior'], ['sprint', 'golpeo', 'fuerzaA'], ['descanso']],
-  4: [['rt', 'golpeoTec', 'superior'], ['sprint', 'golpeo', 'fuerzaA'], ['movilidad', 'prevencion'], ['sprint', 'golpeo', 'potenciaB'], ['superior', 'movilidad'], ['golpeo', 'rt', 'juego'], ['descanso']],
+  3: [['rt', 'golpeoTec', 'superior'], ['sprint', 'golpeo', 'fuerzaA'], ['movilidad', 'prevencion', 'balon'], ['sprint', 'golpeo', 'potenciaB'], ['rt', 'superior', 'balon'], ['sprint', 'golpeo', 'fuerzaA'], ['descanso']],
+  4: [['rt', 'golpeoTec', 'superior'], ['sprint', 'golpeo', 'fuerzaA'], ['movilidad', 'prevencion', 'balon'], ['sprint', 'golpeo', 'potenciaB'], ['superior', 'movilidad', 'balon'], ['golpeo', 'rt', 'juego'], ['descanso']],
   off: [['fuerzaMax'], ['sprint', 'golpeo', 'prevencion'], ['superior', 'movilidad'], ['potencia', 'rt'], ['juego', 'prevencion'], ['fuerzaMax', 'superior'], ['descanso']],
 };
 
@@ -250,6 +251,7 @@ function fieldSec(f) {
   if (f.kind === 'test') return 20 * 60;
   if (f.kind === 'list') return f.steps.reduce((a, x) => a + (x.min || 0) * 60, 0);
   if (f.kind === 'club') return (f.minutes || 90) * 60;
+  if (f.kind === 'balon') return (f.drills || []).length * 480;
   return 0;
 }
 function estimateSession(s) {
@@ -512,6 +514,56 @@ function blockNeeds(block) {
   return Array.from(eq);
 }
 
+/* ---------- Balón: selección de estaciones y dosis ---------- */
+function ballEligible(d, st) {
+  if ((d.minPhase || 1) > st.phase) return false;
+  if (d.kMin && Math.min(st.kick.level, KCAP[st.phase] || 0) < d.kMin) return false;
+  if (d.sMin && Math.min(st.sprint.level, SCAP[st.phase] || 0) < d.sMin) return false;
+  return true;
+}
+function ballHeaderCount(sessions, weekStart) {
+  const end = addDays(weekStart, 6);
+  let n = 0;
+  for (const s of sessions) {
+    if (s.done === false || s.date < weekStart || s.date > end || !s.ball) continue;
+    n += (s.ball.drills || []).filter(x => x.headerStrong).length;
+  }
+  return n;
+}
+function ballDrillsFor(date, st) {
+  const wd = weekday(date);
+  const focus = (BALL_FOCUS[wd] || BALL_FOCUS[0]).map(id => BALL_DRILL_INDEX[id]).filter(Boolean);
+  const pool = focus.filter(d => ballEligible(d, st));
+  const fallback = BALL_DRILLS.filter(d => ballEligible(d, st) && !pool.includes(d));
+  let picks = (pool.length >= 3 ? pool : pool.concat(fallback)).slice(0, 3);
+  if (picks.some(d => d.headerStrong) && ballHeaderCount(st.sessions, weekStartOf(date)) >= BALL_HEADER_CAP) {
+    picks = picks.filter(d => !d.headerStrong);
+    const extra = fallback.find(d => !d.headerStrong && !picks.includes(d));
+    if (extra) picks.push(extra);
+  }
+  return picks;
+}
+/* Presupuesto de 90 min de campo: recorta primero RT, luego Balón (golpeo y sprint no se tocan) */
+function trimFieldForBudget(sessions) {
+  const campo = sessions.filter(s => blockKind(s.type) === 'campo');
+  if (!campo.length) return [];
+  const total = () => campo.reduce((a, s) => a + (s.est || 0), 0);
+  const BUD = 90;
+  let trimmedRT = false, trimmedBall = false;
+  const rt = campo.find(s => s.type === 'rt');
+  while (total() > BUD && rt && rt.field && rt.field.series > 2) { rt.field.series--; rt.estRaw = estimateSession(rt); rt.est = rt.estRaw; trimmedRT = true; }
+  const ball = campo.find(s => s.type === 'balon');
+  while (total() > BUD && ball && ball.field && ball.field.drills && ball.field.drills.length > 1) {
+    ball.field.drills.pop();
+    ball.title = 'Balón · ' + ball.field.drills.map(d => d.n).join(', '); ball.short = 'Balón';
+    ball.estRaw = estimateSession(ball); ball.est = ball.estRaw; trimmedBall = true;
+  }
+  const notes = [];
+  if (trimmedRT) notes.push('Circuito RT recortado por el presupuesto de 90 min de campo.');
+  if (trimmedBall) notes.push('Balón recortado por el presupuesto de 90 min de campo.');
+  return notes;
+}
+
 /* ---------- Ejercicios ---------- */
 function exEligible(ex, ctx) {
   if (ctx.injuryActive && (ex.f || 1) > ctx.phase) return false;
@@ -589,6 +641,16 @@ function makeSession(type, date, st, opts) {
     s.field = { kind: 'rt', level: lv, reps: r, series: ser, rest: 150 };
     s.notes.push('Sube tras 2 sesiones al mismo nivel con RPE ≤ 7.');
   }
+  if (type === 'balon') {
+    const picks = ballDrillsFor(date, st);
+    const mult = BALL_DOSE_MULT[ph] || 1;
+    const drills = picks.map(d => ({ id: d.id, n: d.n, d: d.d, foot: d.foot, metric: d.metric, unit: d.unit, lowerBetter: !!d.lowerBetter, headerStrong: !!d.headerStrong, target: Math.max(1, Math.round((d.base || 10) * mult)) }));
+    s.field = { kind: 'balon', drills };
+    s.title = 'Balón · ' + drills.map(d => d.n).join(', ');
+    s.short = 'Balón';
+    if (drills.some(d => d.headerStrong)) s.notes.push('Incluye cabeceo con salto (fuerza alta): máximo ' + BALL_HEADER_CAP + ' veces por semana.');
+    if (drills.some(d => d.foot === 'der-suave')) s.notes.push('Trabajo con el pie menos hábil: habilitado por tu nivel de golpeo actual.');
+  }
   if (type === 'juego') { s.intense = true; s.field = { kind: 'list', steps: [{ n: 'Juego reducido 4c4 o 5c5', d: '4 × 4 min con 2 min de pausa. Con remates y duelos.', min: 24 }] }; }
   if (type === 'test') {
     s.field = { kind: 'test', steps: TEST_STEPS.filter(t => !t.minPhase || ph >= t.minPhase).map(t => Object.assign({}, t)) };
@@ -635,7 +697,7 @@ function mergeWarmups(list) {
 function dayBlocks(day) {
   const by = { gym: [], campo: [], recup: [], club: [] };
   for (const s of day.sessions) { const k = blockKind(s.type); if (by[k]) by[k].push(s); }
-  const rank = (x) => x.type === 'sprint' ? 0 : x.type === 'golpeoTec' ? 1 : x.type === 'golpeo' ? (x.level >= 8 ? 3 : 1) : x.type === 'rt' ? 2 : 4;
+  const rank = (x) => x.type === 'sprint' ? 0 : x.type === 'golpeoTec' ? 1 : x.type === 'golpeo' ? (x.level >= 8 ? 4 : 1) : x.type === 'balon' ? 2 : x.type === 'rt' ? 3 : 5;
   by.campo.sort((a, b) => rank(a) - rank(b));
   by.gym.sort((a, b) => (a.type === 'test' ? -1 : b.type === 'test' ? 1 : 0));
   const out = [];
@@ -939,6 +1001,7 @@ function buildWeekCore(st, weekStart, today, carry) {
       if (d.date === today && realIntense(today)) intense = true;
       if (d.date === today) d.notes.push(...adjustSessionsForState(sessions, st, today));
     }
+    d.notes.push(...trimFieldForBudget(sessions));
     if (intense) count++;
     prevIntense = intense;
     out.push({ date: d.date, md: d.md, sessions, intense, notes: d.notes, override: d.override, past, trial: d.trial, types: d.types.slice(), phase: d.phase, projectedPhase: !past && d.phase !== st.phase });
@@ -1018,6 +1081,7 @@ function weeklyLoads(sessions, today, weeks) {
 /* ---------- Cobertura ---------- */
 const FIELD_TAGS = {
   golpeo: { pat: ['golpeo'], z: ['rf', 'aductor', 'cadera'], c: ['pliom'], pl: ['S', 'T'] },
+  balon: { pat: ['balon'], z: [], c: ['mixta'], pl: ['S', 'F'] },
   sprint: { pat: ['sprint'], z: ['isquio', 'rf', 'pantorrilla'], c: ['pliom'], pl: ['S'] },
   rt: { pat: ['resistencia', 'sprint', 'cod'], z: ['cuad', 'isquio'], c: ['mixta'], pl: ['S', 'T'] },
   juego: { pat: ['cod', 'sprint', 'golpeo'], z: ['aductor', 'rodilla', 'tobillo'], c: ['mixta'], pl: ['S', 'F', 'T'] },

@@ -151,7 +151,8 @@ function fiveLabel(key, v) {
 function coachContext(st, today) {
   const prof = st.profile;
   const exLine = (e) => (e.n || (exInfo(e.id, e) || {}).n || e.id) + (e.sets && e.sets.length ? ' ' + fmtSetsShort(e.sets.filter(x => x && x.done !== false)) : '') + (e.fb ? ' [' + e.fb + ']' : '');
-  const last14 = st.sessions.filter(s => s.date >= addDays(today, -13)).sort(byDate).map(s => ({ fecha: s.date, sesion: s.title || s.type, hecha: s.done !== false, min: s.minutes, rpe: s.rpe, intensa: isIntenseLog(s), ejercicios: (s.exercises || []).filter(e => !e.warmup).slice(0, 12).map(exLine), dolorDurante: (s.kick || s.spr || {}).pd, dolorDiaSiguiente: (s.kick || s.spr || {}).pn }));
+  const ballLine = (d) => d.n + ' ' + (d.metric === 'hits' ? d.hits + '/' + d.attempts : d.count + ' ' + (d.unit || '')) + (d.headerStrong ? ' [fuerza alta]' : '');
+  const last14 = st.sessions.filter(s => s.date >= addDays(today, -13)).sort(byDate).map(s => ({ fecha: s.date, sesion: s.title || s.type, hecha: s.done !== false, min: s.minutes, rpe: s.rpe, intensa: isIntenseLog(s), ejercicios: (s.exercises || []).filter(e => !e.warmup).slice(0, 12).map(exLine), dolorDurante: (s.kick || s.spr || {}).pd, dolorDiaSiguiente: (s.kick || s.spr || {}).pn, balon: s.ball ? (s.ball.drills || []).map(ballLine) : null }));
   const ci = (S.data.checkins || []).filter(c => c.date >= addDays(today, -6)).sort(byDate).map(c => ({ fecha: c.date, sueno: c.sleepH, calidad: fiveLabel('sleepQ', c.sleepQ), energia: fiveLabel('fatigue', c.fatigue), dolorMuscular: fiveLabel('soreness', c.soreness), estres: fiveLabel('stress', c.stress), dolorRF: c.rfPain }));
   const week = weekPlan(weekStartOf(today)).map(d => ({ fecha: d.date, intenso: d.intense, sesiones: d.sessions.map(s => s.title), ajustes: d.notes }));
   const cov = coverage(st.sessions, today, 28);

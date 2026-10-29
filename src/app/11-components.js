@@ -119,6 +119,7 @@ function blockSub(s) {
   else if (s.field && s.field.kind === 'sprint') parts.push(SPRINT[s.field.level].t.toLowerCase());
   else if (s.field && s.field.kind === 'rt') parts.push(s.field.reps + ' rep × ' + s.field.series + ' series');
   else if (s.field && s.field.kind === 'test') parts.push('decide el paso de fase');
+  else if (s.field && s.field.kind === 'balon') parts.push(plural(s.field.drills.length, 'estación', 'estaciones'));
   else if (s.items.length) parts.push(plural(s.items.length, 'ejercicio', 'ejercicios'));
   return parts.join(' · ');
 }

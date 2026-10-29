@@ -52,6 +52,7 @@ function logLine(log) {
   if (num(log.rpe) !== null) parts.push('RPE ' + log.rpe);
   const k = log.kick || log.spr;
   if (k) parts.push('dolor ' + (k.pd ?? '—') + '/' + (k.pn ?? '—'));
+  if (log.ball) parts.push(plural((log.ball.drills || []).length, 'estación', 'estaciones'));
   return parts.join(' · ');
 }
 
@@ -70,6 +71,7 @@ function fieldSummary(s) {
   if (f.kind === 'test') return '<div class="stack-sm">' + f.steps.map(x => '<div class="lrow"><span class="fg2">' + esc(x.n) + '</span><span class="sub">' + (x.min ? x.min + ' min' : '') + '</span></div>').join('') + '</div>';
   if (f.kind === 'list') return '<div class="stack-sm">' + f.steps.map(x => '<div class="lrow"><span class="fg2">' + esc(x.n) + '<br><span class="sub">' + esc(x.d || '') + '</span></span><span class="sub">' + (x.min ? x.min + ' min' : '') + '</span></div>').join('') + '</div>';
   if (f.kind === 'club') return note('info', 'Sesión con el club. Registra minutos y esfuerzo al terminar.');
+  if (f.kind === 'balon') return '<div class="stack-sm">' + f.drills.map(d => '<div class="lrow"><span class="fg2">' + esc(d.n) + (d.headerStrong ? ' ' + chip('fuerza alta', 'load') : '') + '<br><span class="sub">' + esc(d.d || '') + '</span></span><span class="sub">meta ' + d.target + ' ' + esc(d.unit) + '</span></div>').join('') + '</div><button class="btn sm ghost" data-act="guide" data-g="balon">' + ic('info') + 'Guía de balón</button>';
   return '';
 }
 function sessionSheetHtml(date, type) {

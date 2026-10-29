@@ -173,6 +173,7 @@ document.addEventListener('click', (e) => {
     case 'tr-skip': { const s = curStep(); s.skipped = true; if (s.kind === 'ex') TR.modified = true; closeAllSheets(); if (TR.cur < TR.steps.length - 1) trNav(1); else renderTrain(); return; }
     case 'tr-skipwarm': trSkipWarm(); return;
     case 'tr-count': { const s = curStep(); s.count = Math.max(0, s.count + Number(g('d'))); haptic(8); patchCounter(); saveDraft(); return; }
+    case 'tr-ball': { const s = curStep(); if (g('k') === 'hit') s.hits++; s.attempts++; haptic(8); patchCounter(); saveDraft(); return; }
     case 'tr-pd': curStep().pd = Number(g('v')); if (Number(g('v')) >= 3) beep(1, 440); patchStep(); saveDraft(); return;
     case 'tr-rep': { const s = curStep(), k = Number(g('k')); s.done[k] = !s.done[k]; if (s.done[k] && s.done.some(d => !d)) startRest(s.rest); else TR.rest = null; haptic(14); renderTrain(); saveDraft(); return; }
     case 'tr-step': trStep(Number(g('k')), g('f'), Number(g('d'))); return;
