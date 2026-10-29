@@ -47,6 +47,20 @@ document.addEventListener('click', (e) => {
     case 'ag-hide': agendaSet(g('date'), g('key'), { hidden: true }).then(() => toast('Quitado de la agenda de hoy.')); closeSheet(); return;
     case 'blk-place': agendaSet(g('date'), g('key'), { place: g('v') }).then(() => refreshSheet(true)); return;
     case 'checkin': openCheckin(); return;
+    /* ---- molestias ---- */
+    case 'mol-new': { const s0 = TR.open ? curStep() : null; openMolestia({ from: g('from') || (TR.open ? 'train' : 'hoy'), during: s0 ? s0.kind : null }); return; }
+    case 'mol-open': openMolDetail(g('id')); return;
+    case 'mol-view': UI.mol.view = g('v'); refreshSheet(true); return;
+    case 'mol-zone': UI.mol.zona = g('z'); UI.mol.lado = g('s'); haptic(10); refreshSheet(true); return;
+    case 'mol-side': UI.mol.lado = g('v'); refreshSheet(true); return;
+    case 'mol-tipo': UI.mol.tipo = g('v'); refreshSheet(true); return;
+    case 'mol-lvl': UI.mol.nivel = Number(g('v')); refreshSheet(true); return;
+    case 'mol-save': saveMolestia(); return;
+    case 'mol-follow': molFollow(g('id'), g('v')); return;
+    case 'mol-undo': molSetNoAdjust(g('id'), g('date') || today, true); $('#toast').hidden = true; refreshSheet(true); return;
+    case 'mol-redo': molSetNoAdjust(g('id'), g('date') || today, false); refreshSheet(true); return;
+    case 'mol-del': openConfirm('Borrar molestia', 'Se borra el registro y el plan deja de ajustarse por ella.', 'do-mol-del', { id: g('id') }, true); return;
+    case 'do-mol-del': remove('molestias', g('id')).then(() => toast('Molestia borrada.')); closeAllSheets(); return;
     case 'ck-step': { const v = UI.checkinDraft; v.sleepH = clamp((num(v.sleepH) || 9) + Number(g('d')) * 0.25, 3, 13); refreshSheet(true); return; }
     case 'ck-scale': UI.checkinDraft[g('name')] = Number(g('v')); refreshSheet(true); return;
     case 'ck-save': saveCheckin(); return;
@@ -278,6 +292,8 @@ function handleBind(el, isChange) {
     case 'wt-step': UI.wt.kg = parseNum(v); return;
     case 'cx': UI.cx[name] = v; return;
     case 'coach-q': UI.coach.draft = v; return;
+    case 'mol-z': if (UI.mol) { UI.mol.zona = v || null; if (v) { UI.mol.view = ZONE_VIEW[v] || UI.mol.view; if (!UI.mol.lado) UI.mol.lado = ST.side || 'd'; } if (isChange) refreshSheet(true); } return;
+    case 'mol-nota': if (UI.mol) UI.mol.nota = v; return;
     case 'ag-time': if (isChange && /^\d{1,2}:\d{2}$/.test(v)) { agendaSet(el.getAttribute('data-date'), el.getAttribute('data-key'), { start: hm(v) }).then(() => toast('Hora cambiada a ' + v + '.')); } return;
     case 'sched': if (isChange && /^\d{1,2}:\d{2}$/.test(v)) setSchedule(name, v); return;
     case 'meal-text': UI.meal.text = v; return;
@@ -301,6 +317,8 @@ document.addEventListener('input', (e) => {
 });
 document.addEventListener('change', (e) => { const el = e.target; if (el.getAttribute && el.hasAttribute('data-bind')) handleBind(el, true); });
 document.addEventListener('focusin', (e) => { const el = e.target; if (el && el.tagName === 'INPUT' && el.closest && (el.closest('.stepper') || el.classList.contains('num'))) { try { el.select(); } catch (err) { /* nada */ } } });
+/* Zonas del mapa (SVG) accesibles con teclado */
+document.addEventListener('keydown', (e) => { const t = e.target; if ((e.key === 'Enter' || e.key === ' ') && t && t.tagName === 'polygon' && t.hasAttribute('data-act')) { e.preventDefault(); t.dispatchEvent(new MouseEvent('click', { bubbles: true })); } });
 document.addEventListener('keydown', (e) => {
   if (e.key !== 'Enter' || !e.target || e.target.tagName !== 'INPUT') return;
   if (e.target.id === 'tr-ball-in') { e.preventDefault(); ballRecord(e.target.value); return; }

@@ -32,6 +32,7 @@ function viewProgreso(st, today) {
   h += sleepCard(st, today);
   h += loadCard(st, today);
   h += coverageCard(st, today);
+  h += molestiasCard(st, today);
   h += weightCard(st);
   return h;
 }

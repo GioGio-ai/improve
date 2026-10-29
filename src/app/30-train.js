@@ -304,6 +304,7 @@ function quickRow(s) {
     (busy && !s.warmup && TR.place !== 'cancha' ? '<button class="pill busy" data-act="tr-busy">' + ic('swap') + 'Máquina ocupada</button>' : '') +
     (s.warmup && busy ? '<button class="pill busy" data-act="tr-busy">' + ic('swap') + 'Alternativa</button>' : '') +
     '<a class="pill" href="' + googleLink(s.n + ' ejercicio') + '" target="_blank" rel="noopener">' + ic('google') + 'Google</a>' +
+    '<button class="pill" data-act="mol-new">' + ic('warn') + 'Molestia</button>' +
     (!s.warmup ? '<button class="pill" data-act="tr-menu">' + ic('dots') + 'Más</button>' : '') + '</div>';
 }
 function setValText(stp, x) {
@@ -344,6 +345,8 @@ function trExHtml(s) {
   if (s.warmup && s.note && s.note !== presc) h += '<div class="excue">' + esc(s.note) + '</div>';
   else if (ex.cue) h += '<div class="excue">' + esc(ex.cue.length > 170 ? ex.cue.slice(0, 167).trim() + '…' : ex.cue) + '</div>';
   if (s.doms) h += note('warn', 'Hoy va en isométrica por el dolor muscular del check-in.');
+  const molS = molForStep(s);
+  if (molS && !s.warmup) h += '<div class="note pain">' + ic('warn') + '<div>Dolor ' + molS.nivelAct + '/10 en ' + esc(zoneName(molS.zona, molS.lado).toLowerCase()) + ': este ejercicio carga la zona. Mejor saltarlo hoy.<div><button class="btn sm" data-act="tr-skip">' + ic('chev') + 'Saltar este ejercicio</button></div></div></div>';
   if (s.doneAs) h += note('blue', 'Variante de hoy en lugar de ' + esc((exInfo(s.doneAs.from) || {}).n || s.doneAs.from) + '.');
   if (!s.warmup) {
     h += '<div class="target">' + (s.lastTxt ? '<span>Última vez · ' + esc(s.lastDate) + (s.lastFb && FEEDBACK[s.lastFb] ? ' · ' + FEEDBACK[s.lastFb].n.toLowerCase() : '') + '</span><b>' + esc(s.lastTxt) + '</b>' : '<span>Primera vez con este ejercicio</span><b>Anota el peso</b>') + '</div>';
@@ -368,8 +371,9 @@ function trGolpeoHtml(s) {
   h += '<div class="field"><span class="lab">Dolor en el recto femoral durante el golpeo</span>' + scaleHtml('pd', s.pd, { pain: true, act: 'tr-pd', l: '0 nada', r: '≥ 3 para' }) + '</div>';
   if (num(s.pd) !== null && s.pd >= 3) h += note('pain', 'Dolor ' + s.pd + '/10: para el golpeo. Mañana el plan baja un nivel.');
   h += s.tec ? note('info', 'Técnica: no cuenta para subir de nivel.') : note('blue', 'Para subir: dolor ≤ 2 hoy y 0 mañana. Golpes de calidad, no cantidad.');
-  return h;
+  return h + molLink();
 }
+function molLink() { return '<button class="linkbtn mol-link" data-act="mol-new">' + ic('warn') + 'Reportar molestia</button>'; }
 /* Contador grande: −1 · +1 · +5 · +10 */
 function countBtns(what) {
   return '<div class="ctl four"><button data-act="tr-count" data-d="-1" aria-label="Restar uno">−1</button><button class="plus" data-act="tr-count" data-d="1" aria-label="Sumar un ' + what + '">+1</button><button data-act="tr-count" data-d="5" aria-label="Sumar cinco">+5</button><button data-act="tr-count" data-d="10" aria-label="Sumar diez">+10</button></div>';
@@ -389,7 +393,7 @@ function trRepsHtml(s, kind) {
     h += '<div class="field"><span class="lab">Dolor en el recto femoral durante el sprint</span>' + scaleHtml('pd', s.pd, { pain: true, act: 'tr-pd', l: '0 nada', r: '≥ 3 para' }) + '</div>';
     if (num(s.pd) !== null && s.pd >= 3) h += note('pain', 'Dolor ' + s.pd + '/10: para el sprint.');
   }
-  return h;
+  return h + molLink();
 }
 function trListHtml(s) {
   return '<div class="stack-sm">' + s.items.map((x, k) => '<button class="blk' + (x.done ? ' done' : '') + '" data-act="tr-ck" data-k="' + k + '"><div class="grow"><div class="t">' + esc(x.n) + '</div>' + (x.d || x.min ? '<div class="s">' + esc([x.min ? x.min + ' min' : '', x.d || ''].filter(Boolean).join(' · ')) + '</div>' : '') + '</div><span class="st0' + (x.done ? ' done' : '') + '">' + (x.done ? ic('check') : '') + '</span></button>').join('') + '</div>';
@@ -460,7 +464,7 @@ function trBalonHtml(s) {
       '<div class="sub">Intentos: ' + (x.tries.length ? x.tries.join(' · ') : 'ninguno') + ' · meta ' + s.target + '</div>';
   }
   h += '</div><button class="btn block' + (s.done ? ' lime' : '') + '" data-act="tr-ball-done">' + ic('check') + (s.done ? 'Estación lista' : 'Terminar estación') + '</button>';
-  return h;
+  return h + molLink();
 }
 /* Tanda con tiempo (cuenta atrás) o cronómetro (cuenta hacia arriba) */
 function updateBallTimer(now) {
@@ -630,6 +634,7 @@ function trMenu() {
     '<div class="grid2"><button class="btn sm" data-act="tr-move" data-d="-1"' + (i <= 0 ? ' disabled' : '') + '>' + ic('up') + 'Antes</button><button class="btn sm" data-act="tr-move" data-d="1"' + (i >= TR.steps.length - 1 ? ' disabled' : '') + '>' + ic('down') + 'Después</button></div>' +
     '<button class="btn block" data-act="ex" data-id="' + esc(s.id) + '">' + ic('book') + 'Ficha del ejercicio</button>' +
     '<button class="btn block" data-act="tr-skip">' + ic('chev') + 'Saltar este ejercicio</button>' +
+    '<button class="btn block" data-act="mol-new">' + ic('warn') + 'Reportar molestia</button>' +
     '<button class="btn block danger" data-act="tr-remove">' + ic('trash') + 'Quitar del entrenamiento</button>' +
     '<a class="btn block ghost" href="' + ytLink(s.n) + '" target="_blank" rel="noopener">' + ic('ext') + 'Ver técnica en YouTube</a></div></div>' });
 }

@@ -658,6 +658,7 @@ function trimFieldForBudget(sessions) {
 /* ---------- Ejercicios ---------- */
 function exEligible(ex, ctx) {
   if (ctx.injuryActive && (ex.f || 1) > ctx.phase) return false;
+  if (ctx.avoid && ctx.avoid.length) { const mg = exMg(ex); if (ctx.avoid.some(g => (mg[g] || 0) >= 0.5)) return false; }
   if (ctx.place) { if (!exAvailable(ex, ctx.place, ctx.profile)) return false; }
   else if (ctx.equipmentOff && ctx.equipmentOff.length && (ex.eq || []).some(e => ctx.equipmentOff.includes(e))) return false;
   return true;
@@ -715,7 +716,7 @@ function makeSession(type, date, st, opts) {
   const ph = st.phase, T = STYPES[type] || { n: type, short: type, cat: 'gym' };
   const place = opts.place || placeFor(st, date, blockKind(type));
   const s = { key: date + ':' + type, type, date, title: T.n, short: T.short, cat: T.cat, icon: T.icon, items: [], intense: false, notes: [], field: null, place };
-  const ctx = { bank: st.bank, phase: ph, injuryActive: st.injuryActive, choices: st.choices, equipmentOff: st.equipmentOff, place, profile: st.profile };
+  const ctx = { bank: st.bank, phase: ph, injuryActive: st.injuryActive, choices: st.choices, equipmentOff: st.equipmentOff, place, profile: st.profile, avoid: opts.avoid || null };
   if (GYM_TYPES.includes(type)) {
     const used = new Set();
     const prefer = type === 'superiorB' ? { traccion_h: 'remo_pecho_apoyado', biceps: 'curl_martillo', triceps: 'press_frances', cuello: 'cuello_banda' } : null;
@@ -746,6 +747,7 @@ function makeSession(type, date, st, opts) {
     const tec = type === 'golpeoTec';
     let L = Math.min(st.kick.level, KCAP[ph] || 0);
     if (tec || opts.capLight) L = Math.min(L, 3);
+    if (opts.capK) L = Math.min(L, opts.capK);
     L = Math.max(1, L);
     s.level = L; s.title = (tec ? 'Técnica · ' : 'Golpeo · ') + KICK[L].n; s.short = (tec ? 'Técnica ' : 'Golpeo ') + KICK[L].n;
     s.field = { kind: 'golpeo', level: L, target: KICK_TARGET[L], tec };
@@ -759,6 +761,7 @@ function makeSession(type, date, st, opts) {
   if (type === 'sprint') {
     let L = Math.max(1, Math.min(st.sprint.level, SCAP[ph] || 1));
     if (opts.capLight) L = Math.min(L, 2);
+    if (opts.capS) L = Math.min(L, opts.capS);
     if (ph >= 5 && st.sprint.top) L = 6;
     s.level = L; s.title = 'Sprint · ' + SPRINT[L].n; s.short = 'Sprint ' + SPRINT[L].n; s.intense = L >= 3;
     s.field = { kind: 'sprint', level: L, reps: SPRINT_REPS[L], rest: 90 };
@@ -963,7 +966,7 @@ function stepLadder(lad, req, max, cap) {
   if (lad.streak >= req[lad.level]) { if (lad.level < max) { lad.level++; lad.streak = 0; } else lad.top = true; }
 }
 function buildDaySessions(d, st, sim, today, opts) {
-  opts = opts || {};
+  opts = Object.assign({}, d.molOpts || {}, opts || {});
   const future = d.date > today;
   return d.types.map(t => {
     const stx = Object.assign({}, st, { kick: Object.assign({}, sim.kick), sprint: Object.assign({}, sim.sprint), rt: Object.assign({}, sim.rt) });
@@ -1000,7 +1003,8 @@ function accelerateTypes(types, st, sim) {
 /* Reglas del día según el check-in y el dolor del día siguiente */
 function painToday(st, date) {
   const ci = (st.checkins || []).find(c => c.date === date);
-  const rest = ci ? num(ci.rfPain) || 0 : 0;
+  let rest = ci ? num(ci.rfPain) || 0 : 0;
+  for (const m of activeMolestias(st, date)) if (m.zona === 'recto_femoral' && m.lado === (st.side || 'd') && m.tipo === 'dolor' && !(m.noAdjust || []).includes(date)) rest = Math.max(rest, m.nivelAct);
   const prev = st.sessions.filter(s => s.date === addDays(date, -1) && s.done !== false).map(s => s.kick || s.spr).filter(Boolean).map(k => num(k.pn) || 0);
   const next = prev.length ? Math.max.apply(null, prev) : 0;
   return { rest, next, ci };
@@ -1042,6 +1046,115 @@ function adjustSessionsForState(sessions, st, date) {
   return notes;
 }
 function plural(n, a, b) { return n + ' ' + (n === 1 ? a : b); }
+
+/* ---------- Molestias (mapa del cuerpo) ---------- */
+/* Vigentes desde que se reportan hasta el día siguiente del último «¿Sigue?», salvo «Ya no» */
+function activeMolestias(st, date) {
+  const out = [];
+  for (const m of (st.molestias || [])) {
+    if (!m || !m.zona || m.fecha > date) continue;
+    if (m.resuelta && (!m.resueltaEn || m.resueltaEn <= date)) continue;
+    const ups = (m.updates || []).filter(u => u.fecha <= date).sort((a, b) => (a.fecha < b.fecha ? -1 : 1));
+    const last = ups.length ? ups[ups.length - 1] : null;
+    const touch = last ? last.fecha : m.fecha;
+    if (diffDays(date, touch) > 1) continue;
+    out.push(Object.assign({}, m, { nivelAct: last && num(last.nivel) !== null ? num(last.nivel) : num(m.nivel) || 1, last }));
+  }
+  return out;
+}
+/* Gravedad: ninguna (carga 1-3) · moderada (carga 4-6, dolor 1-2) · alta (carga 7-10) · dolor (dolor ≥ 3) */
+function molSeverity(m) {
+  const n = m.nivelAct !== undefined ? m.nivelAct : num(m.nivel) || 1;
+  if (m.tipo === 'dolor') return n >= 3 ? 'dolor' : 'moderada';
+  return n >= 7 ? 'alta' : n >= 4 ? 'moderada' : 'ninguna';
+}
+const MOL_SPRINT_ZONES = ['isquio', 'pantorrilla', 'soleo', 'cuadriceps', 'recto_femoral', 'gluteo', 'rodilla', 'flexor_cadera'];
+const MOL_KICK_ZONES = ['recto_femoral', 'aductor', 'flexor_cadera'];
+const MOL_LEG_ZONES = MOL_SPRINT_ZONES.concat(['aductor', 'tibial']);
+function molLabel(m) { return zoneName(m.zona, m.lado) + ' (' + m.tipo + ' ' + (m.nivelAct || m.nivel) + '/10)'; }
+/* Reglas del día por molestia: qué tipos se quitan o se limitan y si lo intenso se mueve */
+function molestiaDayRules(st, date) {
+  const R = { remove: [], capK: null, capS: null, avoidIntense: false, avoid: [], list: [], notes: [] };
+  for (const m of activeMolestias(st, date)) {
+    if ((m.noAdjust || []).includes(date)) continue;
+    const sev = molSeverity(m); if (sev === 'ninguna') continue;
+    const groups = (BODY_ZONES[m.zona] || { g: [] }).g, lab = molLabel(m), what = [];
+    R.list.push({ m, sev, groups });
+    if (MOL_SPRINT_ZONES.includes(m.zona)) {
+      if (sev === 'moderada') { R.capS = Math.min(R.capS || 6, 2); what.push('sprint hasta S2'); }
+      else { R.remove.push('sprint'); what.push('sin sprint'); }
+    }
+    if (MOL_KICK_ZONES.includes(m.zona)) {
+      if (sev === 'moderada') { R.capK = Math.min(R.capK || 8, 3); what.push('golpeo hasta K3'); }
+      else { R.remove.push('golpeo', 'juego'); what.push('sin golpeo'); }
+    }
+    if (sev === 'alta' || sev === 'dolor') {
+      R.avoid.push(...groups);
+      if (MOL_LEG_ZONES.includes(m.zona)) { R.avoidIntense = true; R.remove.push('rt', 'juego'); what.push('sin RT'); }
+      if (MOL_KICK_ZONES.includes(m.zona)) { R.remove.push('balon'); what.push('sin balón'); }
+      if (sev === 'alta') what.push('nada que cargue la zona hoy');
+      else what.push('nada intenso en la zona');
+    } else what.push('una serie menos e isométricos en la zona');
+    let txt = 'Molestia en ' + lab + ': ' + what.join(', ') + '.';
+    if (sev === 'dolor' && m.zona === 'isquio') txt += ' Si apareció de golpe al esprintar o rematar, para y consulta.';
+    if (sev === 'dolor' && m.zona === 'recto_femoral') txt += ' Rige la regla del recto femoral.';
+    R.notes.push({ id: m.id, text: txt, sev, tipo: m.tipo });
+  }
+  return R;
+}
+/* Ajuste de ejercicios por molestia: −1 serie, excéntricos y saltos → isométricos, o fuera */
+function molestiaAdjustItems(sessions, st, date, R) {
+  for (const { m, sev, groups } of R.list) {
+    let n = 0;
+    for (const s of sessions) {
+      if (!s.items || !s.items.length) continue;
+      const ctx = { bank: st.bank, phase: st.phase, injuryActive: st.injuryActive, place: s.place, profile: st.profile, avoid: R.avoid };
+      s.items = s.items.map(it => {
+        const ex = BANK_INDEX[it.id] || Object.assign({ id: it.id }, it.tags || {});
+        const mg = exMg(ex), w = Math.max.apply(null, [0].concat(groups.map(g => mg[g] || 0)));
+        if (!w) return it;
+        n++;
+        if (sev === 'alta' || (sev === 'dolor' && w >= 1)) return null;
+        const spec = Object.assign({}, it.spec || {});
+        if (spec.s > 1) spec.s -= 1;
+        if (['exc', 'pliom'].includes(ex.c)) {
+          const alt = st.bank.find(e => e.c === 'iso' && e.id !== it.id && groups.some(g => (e.mg || {})[g] >= 1) && exEligible(e, Object.assign({}, ctx, { avoid: null })));
+          if (alt) { const ni = makeItem(alt, it.slot && (alt.s || []).includes(it.slot) ? it.slot : null, { s: spec.s || 2, t: [20, 30], note: 'isométrica por molestia' }); ni.mol = m.id; return ni; }
+          if (ex.c === 'pliom') return null;
+        }
+        return Object.assign({}, it, { spec, mol: m.id });
+      }).filter(Boolean);
+      s.avoid = R.avoid.length ? R.avoid.slice() : null;
+      s.estRaw = estimateSession(s); s.est = s.estRaw;
+    }
+    if (n) { const nt = R.notes.find(x => x.id === m.id); if (nt) nt.text += ' ' + plural(n, 'ejercicio ajustado', 'ejercicios ajustados') + '.'; }
+  }
+}
+/* Patrón: misma zona y lado ≥ 3 veces en 14 días → sugerencia, con los ejercicios de las 48 h previas */
+function molestiaInsights(st, today) {
+  const from = addDays(today, -13), by = {};
+  for (const m of (st.molestias || [])) { if (!m || !m.zona || m.fecha < from || m.fecha > today) continue; const k = m.zona + ':' + m.lado; (by[k] = by[k] || []).push(m); }
+  const sana = st.side === 'i' ? 'derecha' : 'zurda';
+  const tip = (z, lado) => ({
+    aductor: 'Más Copenhagen y menos remates con la ' + (lado === (st.side === 'i' ? 'd' : 'i') ? sana : (st.side === 'i' ? 'izquierda' : 'derecha')) + ' esta semana.',
+    isquio: 'Más Nordic y menos volumen de sprint hasta que salga limpio.', pantorrilla: 'Más gemelo pesado e isometría; revisa el calzado y el terreno.', soleo: 'Más gemelo sentado (sóleo) e isometría; revisa el calzado.',
+    recto_femoral: 'Vuelve un nivel de golpeo y prioriza la isometría en zancada.', flexor_cadera: 'Menos golpeo de potencia y más flexión de cadera con polea.',
+    lumbar: 'Más core antiextensión y zona lumbar ligera; revisa la técnica de bisagra.', rodilla: 'Menos saltos y frenadas; más isometría de cuádriceps.',
+  }[z] || 'Revisa la carga y la técnica de los ejercicios de las 48 h previas.');
+  const out = [];
+  for (const k of Object.keys(by)) {
+    const list = by[k]; if (list.length < 3) continue;
+    const [z, lado] = k.split(':'), groups = (BODY_ZONES[z] || { g: [] }).g, cause = {};
+    for (const m of list) for (const s of st.sessions) {
+      if (s.done === false || s.date > m.fecha || s.date < addDays(m.fecha, -2)) continue;
+      for (const e of (s.exercises || [])) { if (!e || e.warmup) continue; const mg = itemMg(e); if (groups.some(g => (mg[g] || 0) >= 0.5)) cause[e.n || e.id] = (cause[e.n || e.id] || 0) + 1; }
+      if ((s.kick || s.ball) && MOL_KICK_ZONES.includes(z)) cause['Golpeo y remates'] = (cause['Golpeo y remates'] || 0) + 1;
+      if (s.spr && MOL_SPRINT_ZONES.includes(z)) cause['Sprint'] = (cause['Sprint'] || 0) + 1;
+    }
+    out.push({ zona: z, lado, n: list.length, tip: tip(z, lado), causes: Object.entries(cause).sort((a, b) => b[1] - a[1]).slice(0, 3).map(x => x[0]) });
+  }
+  return out;
+}
 
 function buildWeek(st, weekStart, today) {
   st._weeks = st._weeks || {};
@@ -1116,12 +1229,21 @@ function buildWeekCore(st, weekStart, today, carry) {
         if (d.date === today) { const r = readinessTypes(d.types, st, d.date); d.types = r.types; d.notes.push(...r.notes); rLocked = r.locked; }
         if (!rLocked) { const a = accelerateTypes(d.types, sD, sim); d.types = a.types; d.notes.push(...a.notes); }
       }
+      const molR = (d.date === today || d.date === addDays(today, 1)) ? molestiaDayRules(st, d.date) : null;
+      if (molR && molR.list.length) {
+        const kept = d.types.filter(t => !molR.remove.includes(t));
+        d.types = kept.length ? kept : ['movilidad'];
+        d.molOpts = { capK: molR.capK, capS: molR.capS, avoid: molR.avoid.length ? molR.avoid : null };
+        d.molAdj = molR.notes;
+        d.notes.push(...molR.notes.map(x => x.text));
+      }
       const snap = cloneSim(sim);
       sessions = buildDaySessions(d, sD, sim, today);
       intense = sessions.some(s => s.intense);
       const locked = rLocked || d.override || d.types.some(t => FIXED_TYPES.includes(t)) || (d.date === today && doneOn(today));
-      if (intense && (prevIntense || count >= 3) && !locked) {
-        const why = prevIntense ? 'el día anterior fue intenso' : 'ya hay 3 días intensos esta semana';
+      const molMove = !!(molR && molR.avoidIntense) && sessions.some(s => s.intense);
+      if (intense && (prevIntense || count >= 3 || molMove) && !locked) {
+        const why = molMove ? 'molestia en ' + molR.list.filter(x => x.sev === 'alta' || x.sev === 'dolor').map(x => zoneName(x.m.zona, x.m.lado)).join(', ') : prevIntense ? 'el día anterior fue intenso' : 'ya hay 3 días intensos esta semana';
         const nx = days[i + 1];
         let fixed = false;
         if (nx && !nx.override && !nx.types.includes('descanso') && !nx.types.some(t => FIXED_TYPES.includes(t)) && !typesIntenseApprox(nx.types, sD)) {
@@ -1141,11 +1263,12 @@ function buildWeekCore(st, weekStart, today, carry) {
       }
       if (d.date === today && realIntense(today)) intense = true;
       if (d.date === today) d.notes.push(...adjustSessionsForState(sessions, st, today));
+      if (molR && molR.list.length) molestiaAdjustItems(sessions, st, d.date, molR);
     }
     d.notes.push(...trimFieldForBudget(sessions));
     if (intense) count++;
     prevIntense = intense;
-    out.push({ date: d.date, md: d.md, sessions, intense, notes: d.notes, override: d.override, past, trial: d.trial, types: d.types.slice(), phase: d.phase, projectedPhase: !past && d.phase !== st.phase });
+    out.push({ date: d.date, md: d.md, sessions, intense, notes: d.notes, override: d.override, past, trial: d.trial, types: d.types.slice(), phase: d.phase, projectedPhase: !past && d.phase !== st.phase, molAdj: d.molAdj || null });
   }
   if (addDays(weekStart, 6) >= today) fillGaps(out, st, today);
   out.carry = { sim: cloneSim(sim), lastIntense: prevIntense, lastTest };
@@ -1501,11 +1624,12 @@ function deriveState(data, today) {
     || (data.checkins || []).some(c => c.date >= addDays(today, -13) && (num(c.rfPain) || 0) >= 3);
   const phaseSince = injury && injury.phaseLog && injury.phaseLog.length ? injury.phaseLog[injury.phaseLog.length - 1].date : null;
   const checkins = (data.checkins || []).slice().sort(byDate);
+  const molestias = (data.molestias || []).filter(m => m && !m.deleted).slice().sort(byDate);
   const places = placesOf(profile);
   const placeOv = {};
   for (const a of (data.agenda || [])) { const it = (a && a.items) || {}; for (const k of Object.keys(it)) if (it[k] && it[k].place) { placeOv[a.id || a.date] = placeOv[a.id || a.date] || {}; placeOv[a.id || a.date][k] = it[k].place; } }
   const st = {
-    today, injury, phase, injuryActive, sessions, kick, sprint, rt, tests, test: T, latestTestDoc: lt, side, profile, settings, weight, weights, checkins,
+    today, injury, phase, injuryActive, sessions, kick, sprint, rt, tests, test: T, latestTestDoc: lt, side, profile, settings, weight, weights, checkins, molestias,
     bank, custom, choices: settings.choices || {}, equipmentOff: places.gimnasio.off, places, placeOv, lastTestDate: lt ? lt.date : null, recentPain, phaseSince,
     durFactor: durationFactor(sessions, today),
   };

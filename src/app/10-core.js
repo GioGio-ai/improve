@@ -4,7 +4,7 @@
 const VERSION = '3.1.0';
 const COLS = {
   profile: 'single', settings: 'single', weights: 'list', injuries: 'list', tests: 'list', checkins: 'list', sessions: 'list',
-  custom: 'list', traducciones: 'list', templates: 'list', agenda: 'list', meals: 'list', nutri: 'list', foods: 'list',
+  custom: 'list', traducciones: 'list', templates: 'list', agenda: 'list', meals: 'list', nutri: 'list', foods: 'list', molestias: 'list',
 };
 const S = { mode: 'loading', user: null, data: {}, loaded: {}, canWrite: true, live: [], liveLoaded: false };
 Object.keys(COLS).forEach(c => { S.data[c] = COLS[c] === 'single' ? null : []; });
@@ -60,7 +60,7 @@ function remove(col, id) {
 }
 function customNorm(c) { return Object.assign({ z: [], s: [], eq: [], f: 1, k: 2, lat: 'B', c: 'mixta', fv: 'FM', pat: 'movilidad', custom: true }, c); }
 function engineData() {
-  return { profile: S.data.profile, settings: S.data.settings, weights: S.data.weights, injuries: S.data.injuries, tests: S.data.tests, checkins: S.data.checkins, sessions: S.data.sessions, agenda: S.data.agenda, customExercises: (S.data.custom || []).map(customNorm) };
+  return { profile: S.data.profile, settings: S.data.settings, weights: S.data.weights, injuries: S.data.injuries, tests: S.data.tests, checkins: S.data.checkins, sessions: S.data.sessions, agenda: S.data.agenda, molestias: S.data.molestias, customExercises: (S.data.custom || []).map(customNorm) };
 }
 
 /* ---------- Estado de interfaz ---------- */

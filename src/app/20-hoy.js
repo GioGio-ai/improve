@@ -17,11 +17,12 @@ function viewHoy(st, today) {
   h += statusChips(st, today);
   h += trainingBanner();
   h += pendingPainPrompts(st, today);
+  if (isToday) h += molHoyHtml(day, today);
   if (isToday) h += pastBlockPrompts(ag, today);
   h += readinessCard(ci, adv);
   h += weekStrip(today, date);
   h += isToday ? nextHero(day, ag, today) : dayHero(day, date, today);
-  const notes = (day.notes || []).filter(Boolean);
+  const notes = (day.notes || []).filter(n => n && !(isToday && /^Molestia en /.test(n)));
   if (notes.length) h += '<div class="stack-sm">' + notes.map(n => note(/Dolor|Estado/.test(n) ? 'warn' : /Previsto/.test(n) ? 'blue' : 'info', esc(n))).join('') + '</div>';
   h += agendaCard(ag, day, date, today);
   h += nutritionStrip(date, ag);
@@ -38,6 +39,7 @@ function statusChips(st, today) {
   if (goal) { const left = diffDays(goal, today); if (left >= 0) chips.push('<a class="chip ' + (left <= 7 ? 'lime' : '') + '" href="#progreso">' + ic('target') + (left === 0 ? 'Objetivo hoy' : 'Listo en ' + plural(left, 'día', 'días')) + '</a>'); }
   const kind = agendaFor(today).kind;
   chips.push('<span class="chip ' + (kind === 'alto' || kind === 'prueba' ? 'load' : kind === 'descanso' ? 'sleep' : '') + '">' + ic(kind === 'descanso' ? 'moon' : 'flame') + esc(KIND_N[kind] || '') + '</span>');
+  chips.push(molChips(today));
   return '<div class="scroll-x">' + chips.join('') + '</div>';
 }
 function trainingBanner() {

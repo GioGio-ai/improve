@@ -193,6 +193,8 @@ function dayHtml(date) {
   if (!blocks.length && !extra.length) h += '<div class="empty"><b>Descanso</b><span class="small">Paseo, movilidad libre y sueño.</span></div>';
   h += '<div class="stack-sm">' + blocks.map(b => b.sessions.map(s => { const log = findLog(date, s.type); return '<button class="blk' + (log && log.done !== false ? ' done' : '') + '" data-act="session" data-date="' + date + '" data-type="' + s.type + '"><span class="c' + (s.intense ? ' load' : log && log.done !== false ? ' lime' : '') + '">' + ic(s.icon || 'dumb') + '</span><div class="grow"><div class="t">' + esc(log && log.title ? log.title : s.title) + '</div><div class="s">' + esc(log ? logLine(log) : (date < today ? 'Sin registrar' : blockSub(s))) + '</div></div>' + statusMark(log) + '</button>'; }).join('')).join('') +
     extra.map(l => '<button class="blk done" data-act="edit-log" data-id="' + esc(l.id) + '"><span class="c lime">' + ic(sessIcon(l.type)) + '</span><div class="grow"><div class="t">' + esc(l.title || STYPES[l.type].n) + '</div><div class="s">' + esc(logLine(l)) + '</div></div>' + statusMark(l) + '</button>').join('') + '</div>';
+  const mols = (S.data.molestias || []).filter(m => m && !m.deleted && m.fecha === date);
+  if (mols.length) h += '<div class="sec"><span class="t">Molestias</span></div><div class="stack-sm">' + mols.map(m => molRowHtml(Object.assign({}, m, { nivelAct: m.nivel, last: null }))).join('') + '</div>';
   h += '<div class="sec"><span class="t">Comidas</span><a href="#comida" data-act="close-go" data-href="#comida">Ver</a></div>';
   if (!ms.length) h += '<div class="sub">Sin comidas registradas.</div>';
   else h += '<div class="stack-sm">' + ms.map(m => mealRowHtml(m)).join('') + '</div>';
@@ -214,6 +216,7 @@ function checkinHtml() {
     '<div class="field"><span class="lab">Horas de sueño</span>' + stepperHtml('ck-sleep', v.sleepH, 'ck-step', 'data-name="sleepH"', 'h') + '</div>' +
     five('sleepQ', 'Calidad del sueño', 'Mala', 'Excelente', 'sleep') + five('fatigue', 'Energía', 'Agotado', 'Fresco') + five('soreness', 'Dolor muscular general', 'Mucho', 'Nada') + five('stress', 'Estrés', 'Muy alto', 'Bajo') +
     '<div class="field"><span class="lab">Dolor en el recto femoral en reposo</span>' + scaleHtml('rfPain', v.rfPain, { pain: true, act: 'ck-scale', l: '0 nada', r: '10 máximo' }) + '<span class="hint">Dolor, no cansancio ni carga muscular.</span></div>' +
+    '<button class="btn block ghost" data-act="mol-new" data-from="checkin">' + ic('plus') + '¿Alguna otra molestia? Marcar en el mapa</button>' +
     '<div class="sheet-foot"><button class="btn primary lg" data-act="ck-save">Guardar</button></div></div>';
 }
 function saveCheckin() {

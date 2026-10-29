@@ -185,3 +185,18 @@ body.locked #view, body.locked #nav { display: none; }
 .mg-row .tg { position: absolute; top: -3px; bottom: -3px; width: 2px; border-radius: 1px; background: rgba(255, 255, 255, 0.55); }
 .mg-row .val { text-align: right; font-weight: 650; }
 .mg-row .val small { color: var(--fg-4); font-weight: 500; }
+
+/* ---------- Molestias ---------- */
+.bmap-one { position: relative; width: min(100%, 300px); margin: 0 auto; }
+.bmap-one.sm { width: min(60%, 180px); }
+.bmap-one .bm-side { position: absolute; top: 6px; font-size: 11px; letter-spacing: 0.06em; text-transform: uppercase; color: var(--fg-4); }
+.bmap-one .bm-side.l { left: 0; }
+.bmap-one .bm-side.r { right: 0; }
+.bmap.m-select polygon.z.f { stroke: rgba(255, 255, 255, 0.5); }
+.seg.tri > button { min-height: 56px; display: grid; place-content: center; gap: 2px; white-space: normal; line-height: 1.1; }
+.seg.tri > button small { font-size: 11px; font-weight: 500; color: var(--fg-4); }
+.seg.tri > button.on.amber { background: linear-gradient(180deg, rgba(255, 176, 32, 0.38), rgba(255, 109, 31, 0.14)); color: #ffd394; }
+.seg.tri > button.on.red { background: linear-gradient(180deg, rgba(255, 77, 106, 0.42), rgba(232, 50, 79, 0.16)); color: var(--red-ink); }
+.grid4 { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; }
+.grid4.follow .btn { min-height: 44px; padding: 0 6px; }
+.mol-link { justify-self: center; color: var(--fg-3); margin-top: 6px; min-height: 44px; }
