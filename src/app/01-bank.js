@@ -391,6 +391,16 @@ const BANK = [
     'Tres saltos al 70 % con aterrizaje suave y estable.', null),
   X('ext_banda', 'Extensión de rodilla con banda (sentado)', 'rodilla', 'conc', 'S', 'U', 'FM', 1, 'cuad rf rodilla', 'ext_uni iso_cuad', 2, 'banda', 'Cuádriceps',
     'Banda atada a la pata del banco y al tobillo. Extiende y baja en 3 s. Alternativa a la extensora.', null),
+
+  // ---------- CASA Y SIN MÁQUINAS (v3.2) ----------
+  X('trote_sitio', 'Trote en el sitio y saltos suaves', 'resistencia', 'conc', 'S', 'B', 'RE', 1, 'pantorrilla', 'cardio_suave', 1, 'peso corporal', 'Aeróbico',
+    'Trote suave en el lugar, alterna con jumping jacks. Sube la temperatura sin espacio ni máquinas.', null),
+  X('caminata', 'Caminata suave', 'resistencia', 'conc', 'S', 'B', 'RE', 1, 'pantorrilla', 'cardio_suave', 1, 'peso corporal', 'Aeróbico',
+    'Ritmo cómodo, respiración nasal. Recupera sin sumar carga.', null),
+  X('estir_isquio_banda', 'Estiramiento de isquios con banda (boca arriba)', 'movilidad', '—', 'S', 'U', 'MOV', 1, 'isquio', 'foam mov_cadera', 1, 'banda', 'Isquiotibiales',
+    'Boca arriba, banda en la planta del pie, pierna extendida hacia arriba. 30-45 s por lado, sin rebotes.', null),
+  X('mov_gluteo_supino', 'Movilidad de glúteo y piriforme (boca arriba)', 'movilidad', '—', 'T', 'U', 'MOV', 1, 'gluteo cadera', 'foam mov_cadera', 1, 'peso corporal', 'Glúteo, rotadores',
+    'Boca arriba, tobillo sobre la rodilla contraria; lleva las piernas al pecho. Respira 45 s por lado. Reemplaza al rodillo en casa.', null),
 ];
 
 /* -------- Progresión de golpeo (K) -------- */
@@ -461,65 +471,76 @@ const PLACES = ['cancha', 'gimnasio', 'casa'];
 const PLACE_NAMES = { cancha: 'Cancha', gimnasio: 'Gimnasio', casa: 'Casa' };
 const PLACES_DEFAULT = {
   cancha: { eq: ['conos', 'balón', 'banda', 'pared', 'arco'], space: true },
-  gimnasio: { eq: EQUIPMENT.slice(), space: false },
-  casa: { eq: ['banda'], space: false },
+  gimnasio: { eq: EQUIPMENT.filter(e => e !== 'balón').concat(['pared']), space: false },
+  casa: { eq: ['banda', 'pared'], space: false },
 };
+/* Ejercicios que necesitan espacio para correr o patear (solo en la cancha) */
+const SPACE_IDS = ['trote_suave', 'bounds', 'triple_salto', 'pases_prog', 'rt_circuito', 'salto_cabeceo', 'acel_prog', 'skips', 'a_skip', 'fifa11'];
+function needsSpace(ex) {
+  if (!ex) return false;
+  if (SPACE_IDS.includes(ex.id)) return true;
+  const eq = ex.eq || [];
+  return ['sprint', 'cod', 'golpeo'].includes(ex.pat) && !eq.includes('trineo') && !eq.includes('polea');
+}
 /* Bloque del día → lugar por defecto */
 const PLACE_BY_BLOCK = { gym: 'gimnasio', campo: 'cancha', club: 'cancha', recup: 'casa' };
 
 /* -------- Balón: estaciones de trabajo técnico de campo --------
-   foot: ambos | izq | der-suave (pie menos hábil, gateado por nivel K)
-   metric: count (número contra una meta) | hits (aciertos/intentos)
-   minPhase: fase mínima para que la estación aparezca
-   kMin/sMin: nivel mínimo de golpeo/sprint (tope por fase) para habilitarla
-   base: meta de referencia en F6, escalada por fase con BALL_DOSE_MULT
-   headerStrong: cabeceo de fuerza alta, con tope semanal */
+   foot: ambos | izq | der-suave (derecha solo interior y control) | der (derecha con potencia).
+         Pensado para la lesión en la derecha: con la izquierda lesionada se invierte.
+   perFoot: se registra por separado con cada pie.
+   kRight: nivel K mínimo para usar la derecha con potencia (empeine: solo por la escalera K).
+   sMin: nivel S mínimo (para estaciones a velocidad o con salto).
+   metric: record (mejor marca) | cant (cantidad en un tiempo) | tiempo (cronómetro, menos es mejor) | aciertos (aciertos/intentos).
+   n: intentos o tandas en F4+ (se escala por fase). min: minutos de la estación.
+   header: tec (cabeceo técnico) | alta (cabeceo con salto, fuerza alta: tope semanal). tags: foco del día. */
 const BALL_DRILLS = [
-  { id: 'dominio_libre', n: 'Dominio libre', foot: 'ambos', metric: 'count', unit: 'toques', minPhase: 1, base: 60,
-    d: 'Mantén el balón en el aire con ambos pies, sin que toque el piso. Cuenta los toques seguidos.' },
-  { id: 'dominio_sec', n: 'Dominio por secuencias', foot: 'ambos', metric: 'count', unit: 'secuencias', minPhase: 1, base: 6,
-    d: 'Secuencia fija pie-pie-muslo-cabeza sin que el balón caiga. Cuenta cuántas secuencias completas seguidas logras.' },
-  { id: 'dominio_mov', n: 'Dominio en movimiento', foot: 'ambos', metric: 'count', unit: 's sin que caiga', minPhase: 2, base: 20,
-    d: 'Camina o trota despacio mientras haces dominio. Cronometra cuánto aguantas sin que el balón toque el piso.' },
-  { id: 'pase_pared', n: 'Pase y control a la pared', foot: 'ambos', metric: 'hits', unit: 'aciertos', minPhase: 1, base: 20,
-    d: 'Interior a la pared a 5-10 m: un toque de control y otro de pase. Alterna de pie cada 5 pases.' },
-  { id: 'control_or', n: 'Control orientado', foot: 'ambos', metric: 'hits', unit: 'aciertos', minPhase: 2, base: 15,
-    d: 'Recibe de costado o de espaldas y orienta el primer control hacia el espacio libre, lejos del rival imaginario.' },
-  { id: 'control_aereo', n: 'Control aéreo', foot: 'ambos', metric: 'hits', unit: 'aciertos', minPhase: 2, base: 12,
-    d: 'Balón que llega por el aire (lanzado o pateado): amortigua con pie, muslo o pecho y deja el balón jugable.' },
-  { id: 'conduccion_slalom', n: 'Conducción en slalom cronometrada', foot: 'ambos', metric: 'count', unit: 's (mejor marca)', lowerBetter: true, minPhase: 2, base: 1, sMin: 2,
-    d: 'Conduce entre 5 conos en zigzag lo más rápido posible sin perder el control. Anota tu mejor tiempo.' },
-  { id: 'cabeceo_tec', n: 'Cabeceo técnico', foot: 'ambos', metric: 'hits', unit: 'aciertos', minPhase: 2, base: 10,
-    d: 'Cabeceo sin salto, de pie o con un paso de impulso. Busca dirección, no fuerza.' },
-  { id: 'cabeceo_salto', n: 'Cabeceo con salto', foot: 'ambos', metric: 'hits', unit: 'aciertos', minPhase: 4, base: 8, kMin: 4, sMin: 3, headerStrong: true,
-    d: 'Cabeceo con salto e impulso de brazos, buscando potencia. Fuerza alta: cuenta para el tope semanal.' },
-  { id: 'juego_espaldas', n: 'Juego de espaldas', foot: 'ambos', metric: 'hits', unit: 'aciertos', minPhase: 3, base: 10, kMin: 3,
-    d: 'Recibe de espaldas al arco, protege el balón y gírate hacia el espacio libre o hacia una descarga.' },
-  { id: 'definicion_parado', n: 'Definición con el pie menos hábil (parado)', foot: 'der-suave', metric: 'hits', unit: 'goles', minPhase: 4, base: 10, kMin: 4,
-    d: 'Remate con el pie menos hábil, balón parado, desde 10-14 m.' },
-  { id: 'definicion_control', n: 'Definición con el pie menos hábil (tras control)', foot: 'der-suave', metric: 'hits', unit: 'goles', minPhase: 4, base: 10, kMin: 5,
-    d: 'Recibe, un control y remata con el pie menos hábil.' },
-  { id: 'definicion_rebote', n: 'Definición con el pie menos hábil (tras rebote)', foot: 'der-suave', metric: 'hits', unit: 'goles', minPhase: 4, base: 8, kMin: 6,
-    d: 'Rebote de la pared o de un pase largo: remate directo con el pie menos hábil.' },
-  { id: 'definicion_volea', n: 'Volea con el pie menos hábil', foot: 'der-suave', metric: 'hits', unit: 'goles', minPhase: 5, base: 8, kMin: 6,
-    d: 'Balón que llega por el aire: remate de volea con el pie menos hábil.' },
+  { id: 'dominio_libre', n: 'Dominio libre', foot: 'ambos', metric: 'record', unit: 'toques seguidos', n0: 5, min: 6, minPhase: 1, tags: ['dominio'],
+    d: 'Mantén el balón en el aire con ambos pies. Haz intentos y anota el mejor: toques seguidos sin que caiga.' },
+  { id: 'dominio_sec', n: 'Dominio por secuencias', foot: 'ambos', metric: 'record', unit: 'secuencias', n0: 5, min: 6, minPhase: 1, tags: ['dominio'],
+    d: 'Secuencia fija pie derecho, pie izquierdo, muslo, cabeza. Anota cuántas secuencias completas encadenas.' },
+  { id: 'dominio_mov', n: 'Dominio en movimiento', foot: 'ambos', metric: 'record', unit: 's sin que caiga', n0: 4, min: 6, minPhase: 2, tags: ['dominio'],
+    d: 'Camina o trota suave mientras haces dominio. Cronometra cuánto aguantas sin que el balón toque el piso.' },
+  { id: 'pase_pared', n: 'Pase y control a la pared', foot: 'ambos', perFoot: true, metric: 'cant', unit: 'pases', secs: 30, n0: 4, min: 6, minPhase: 1, tags: ['pase'],
+    d: 'Interior contra la pared a 5-10 m: control y pase. Tandas de 30 s con cada pie; cuenta los pases buenos.' },
+  { id: 'control_or', n: 'Control orientado', foot: 'ambos', perFoot: true, metric: 'aciertos', unit: 'controles', n0: 16, min: 7, minPhase: 1, tags: ['control', 'pase'],
+    d: 'Recibe de la pared o de un pase y orienta el primer control hacia el espacio libre, lejos del rival imaginario.' },
+  { id: 'control_aereo', n: 'Control aéreo', foot: 'ambos', metric: 'aciertos', unit: 'controles', n0: 12, min: 6, minPhase: 2, tags: ['control'],
+    d: 'Balón que llega por el aire (lanzado o rebotado alto): amortigua con pie, muslo o pecho y déjalo jugable.' },
+  { id: 'conduccion_tec', n: 'Conducción técnica entre conos', foot: 'ambos', metric: 'aciertos', unit: 'pasadas limpias', n0: 8, min: 6, minPhase: 1, tags: ['conduccion'],
+    d: 'Conduce entre conos con interior y exterior de ambos pies, cambios de ritmo suaves. Limpia = sin tocar conos.' },
+  { id: 'conduccion_slalom', n: 'Conducción en slalom cronometrada', foot: 'ambos', metric: 'tiempo', unit: 's', lowerBetter: true, n0: 6, min: 7, minPhase: 2, sMin: 2, tags: ['conduccion'],
+    d: 'Zigzag entre 5 conos a 1,5 m y vuelta, lo más rápido posible sin perder el balón. Anota cada pasada.' },
+  { id: 'cabeceo_tec', n: 'Cabeceo técnico', foot: 'ambos', metric: 'aciertos', unit: 'a la zona', n0: 12, min: 6, minPhase: 2, header: 'tec', tags: ['cabeceo'],
+    d: 'Sin salto, de pie o con un paso. Frente, ojos abiertos, cuello firme: busca dirección, no fuerza.' },
+  { id: 'cabeceo_salto', n: 'Cabeceo con salto', foot: 'ambos', metric: 'aciertos', unit: 'a la zona', n0: 6, min: 6, minPhase: 3, sMin: 2, header: 'alta', tags: ['cabeceo'],
+    d: 'Carrera corta, impulso y ataque al balón en el punto más alto. Fuerza alta: cuenta para el tope de 10 por semana.' },
+  { id: 'zurda_parado', n: 'Definición con zurda · balón parado', foot: 'izq', metric: 'aciertos', unit: 'goles', n0: 10, min: 7, minPhase: 1, tags: ['zurda'],
+    d: 'Remate con la zurda desde 11-14 m con el balón quieto. Elige palo antes de patear.' },
+  { id: 'zurda_control', n: 'Definición con zurda · tras control', foot: 'izq', metric: 'aciertos', unit: 'goles', n0: 10, min: 7, minPhase: 2, tags: ['zurda'],
+    d: 'Pase a la pared, control orientado al pie izquierdo y remate. Dos toques como máximo.' },
+  { id: 'zurda_rebote', n: 'Definición con zurda · tras rebote', foot: 'izq', metric: 'aciertos', unit: 'goles', n0: 8, min: 7, minPhase: 3, tags: ['zurda'],
+    d: 'Rebote de la pared o del arco: remate directo de zurda, sin control.' },
+  { id: 'espaldas', n: 'Juego de espaldas', foot: 'ambos', metric: 'aciertos', unit: 'giros buenos', n0: 10, min: 6, minPhase: 2, tags: ['control', 'espaldas'],
+    d: 'Recibe de espaldas al arco, protege con el cuerpo y gira hacia el espacio libre o descarga de primera.' },
+  { id: 'volea_centro_der', n: 'Voleas y centros con la derecha', foot: 'der', kRight: 7, metric: 'aciertos', unit: 'buenos', n0: 10, min: 7, minPhase: 4, tags: ['zurda', 'derecha'],
+    d: 'Voleas a la pared y centros largos con la derecha. Solo desde K7: el empeine fuerte sigue la escalera de golpeo.' },
 ];
 const BALL_DRILL_INDEX = {};
 BALL_DRILLS.forEach(d => { BALL_DRILL_INDEX[d.id] = d; });
 /* Escala la dosis según la fase: menos volumen al principio */
-const BALL_DOSE_MULT = [0, 0.4, 0.6, 0.8, 1, 1, 1];
-/* Foco del día (domingo=0..sábado=6, ISO con lunes=0 en weekday()): 3 estaciones candidatas por día */
+const BALL_DOSE_MULT = [0, 0.5, 0.7, 0.85, 1, 1, 1];
+/* Foco del día (lunes = 0): etiquetas en orden de prioridad y minutos */
 const BALL_FOCUS = [
-  ['dominio_libre', 'pase_pared', 'conduccion_slalom'],
-  ['control_or', 'pase_pared', 'cabeceo_tec'],
-  ['control_aereo', 'dominio_sec', 'juego_espaldas'],
-  ['dominio_mov', 'pase_pared', 'definicion_parado'],
-  ['cabeceo_salto', 'control_or', 'definicion_control'],
-  ['dominio_libre', 'conduccion_slalom', 'definicion_rebote'],
-  ['pase_pared', 'cabeceo_tec', 'definicion_volea'],
+  { tags: ['pase', 'conduccion'], min: 30, t: 'pase y conducción' },
+  { tags: ['zurda', 'cabeceo'], min: 20, t: 'zurda y cabeceo' },
+  { tags: ['dominio', 'pase', 'zurda', 'control', 'conduccion', 'cabeceo', 'espaldas'], min: 45, t: 'sesión larga' },
+  { tags: ['dominio', 'zurda'], min: 20, t: 'dominio y zurda' },
+  { tags: ['control', 'espaldas'], min: 30, t: 'control orientado' },
+  { tags: ['cabeceo', 'dominio'], min: 20, t: 'cabeceo' },
+  { tags: ['dominio', 'pase'], min: 20, t: 'dominio y pase' },
 ];
-const BALL_HEADER_CAP = 2; // máximo de sesiones con cabeceo con salto (fuerza alta) por semana
-
+const BALL_HEADER_CAP = 10; // cabezazos de fuerza alta por semana (plan + registros)
 const BANK_INDEX = {};
 BANK.forEach(b => { BANK_INDEX[b.id] = b; });
 const KICK_TARGET = [0, 60, 35, 25, 22, 18, 10, 40, 18];

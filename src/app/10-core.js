@@ -60,7 +60,7 @@ function remove(col, id) {
 }
 function customNorm(c) { return Object.assign({ z: [], s: [], eq: [], f: 1, k: 2, lat: 'B', c: 'mixta', fv: 'FM', pat: 'movilidad', custom: true }, c); }
 function engineData() {
-  return { profile: S.data.profile, settings: S.data.settings, weights: S.data.weights, injuries: S.data.injuries, tests: S.data.tests, checkins: S.data.checkins, sessions: S.data.sessions, customExercises: (S.data.custom || []).map(customNorm) };
+  return { profile: S.data.profile, settings: S.data.settings, weights: S.data.weights, injuries: S.data.injuries, tests: S.data.tests, checkins: S.data.checkins, sessions: S.data.sessions, agenda: S.data.agenda, customExercises: (S.data.custom || []).map(customNorm) };
 }
 
 /* ---------- Estado de interfaz ---------- */

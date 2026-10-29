@@ -76,7 +76,11 @@ function fieldSteps(s) {
   else if (f.kind === 'test') {
     const doc = (S.data.tests || []).find(t => t.id === 't-' + s.date) || {};
     f.steps.forEach(t => out.push({ kind: 'test', sess: s.type, key: t.key, tkind: t.kind, unit: t.unit || '', n: t.n, d: t.d, img: t.img || null, val: clone(doc[t.key] !== undefined ? doc[t.key] : (t.kind === 'pair' ? {} : null)), rnPain: t.key === 'rn' ? (doc.rnPain ?? null) : undefined, saved: doc[t.key] !== undefined }));
-  } else if (f.kind === 'balon') f.drills.forEach((d, i) => out.push({ kind: 'balon', sess: s.type, idx: i, id: d.id, n: d.n, d: d.d, foot: d.foot, metric: d.metric, unit: d.unit, lowerBetter: !!d.lowerBetter, headerStrong: !!d.headerStrong, target: d.target, count: 0, hits: 0, attempts: 0 }));
+  } else if (f.kind === 'balon') f.drills.forEach((d, i) => {
+    const pies = d.perFoot ? ['der', 'izq'] : ['x'];
+    const v = {}; pies.forEach(p => { v[p] = { best: null, tries: [], count: 0, hits: 0, attempts: 0 }; });
+    out.push({ kind: 'balon', sess: s.type, idx: i, id: d.id, n: d.n, d: d.d, foot: d.foot, perFoot: !!d.perFoot, metric: d.metric, unit: d.unit, secs: d.secs || null, lowerBetter: !!d.lowerBetter, header: d.header || null, target: d.target, min: d.min || 6, note: d.note || '', pie: pies[0], v, done: false });
+  });
   else if (f.kind === 'list') out.push({ kind: 'list', sess: s.type, items: f.steps.map(x => ({ n: x.n, d: x.d, min: x.min, done: false })) });
   else if (f.kind === 'club') out.push({ kind: 'list', sess: s.type, items: [{ n: s.title, d: 'Registra minutos y esfuerzo al terminar.', done: false }] });
   return out;
@@ -148,18 +152,19 @@ const mmss = (s) => { s = Math.max(0, Math.round(s)); return Math.floor(s / 60) 
 function updateTimers() {
   if (!TR.open) return;
   const now = Date.now();
-  const clk = $('#tr-clock'); if (clk) clk.textContent = mmss((now - TR.startedAt) / 1000);
+  setDigits($('#tr-clock'), mmss((now - TR.startedAt) / 1000));
+  updateBallTimer(now);
   const t = TR.hold || TR.rest;
   if (!t) return;
   const rem = (t.until - now) / 1000, sec = Math.ceil(rem);
-  $$('[data-timer-v]').forEach(el => { el.textContent = mmss(sec); });
+  $$('[data-timer-v]').forEach(el => setDigits(el, mmss(sec)));
   const ring = $('#tr-ring'); if (ring) { const c = Number(ring.getAttribute('data-c')); ring.setAttribute('stroke-dasharray', (c * clamp(rem / t.total, 0, 1)).toFixed(1) + ' ' + c.toFixed(1)); }
   const ov = $('#tr-rest'); if (ov && TR.rest) ov.classList.toggle('last', sec <= 10);
   if (sec <= 3 && sec > 0 && lastBeepSec !== sec) { lastBeepSec = sec; beep(1, TR.hold ? 660 : 740, false); }
   if (rem <= 0) {
     lastBeepSec = null;
     if (TR.hold) { const h = TR.hold; TR.hold = null; beep(2, 990); completeSet(h.step, h.k); }
-    else { TR.rest = null; beep(3, 880); renderTrain(); saveDraft(); }
+    else { TR.rest = null; beep(3, 880); patchRest(); patchProg(); saveDraft(); }
   }
 }
 
@@ -171,7 +176,7 @@ function stepComplete(s) {
   if (s.kind === 'golpeo') return s.count >= Math.ceil(s.target * 0.6) && (s.tec || num(s.pd) !== null);
   if (s.kind === 'sprint' || s.kind === 'rt') return s.done.every(Boolean);
   if (s.kind === 'test') return !!s.saved;
-  if (s.kind === 'balon') return (s.metric === 'hits' ? s.attempts : s.count) >= Math.ceil(s.target * 0.6);
+  if (s.kind === 'balon') return !!s.done;
   return false;
 }
 function stepLabel(s) {
@@ -184,70 +189,91 @@ function stepLabel(s) {
   if (s.kind === 'balon') return s.n;
   return '';
 }
-function renderTrain(reset) {
-  const root = $('#train-root');
-  if (!TR.open) { root.innerHTML = ''; return; }
-  const old = root.querySelector('.train');
-  const y = old && !reset && TR._lastCur === TR.cur ? old.scrollTop : 0;
-  TR._lastCur = TR.cur;
-  const step = TR.steps[TR.cur];
-  const warmIdx = TR.steps.map((s, i) => s.warmup ? i : -1).filter(i => i >= 0);
+/* Cifras en celdas de ancho fijo: el reloj no baila al cambiar 1 → 0 */
+function digitsHtml(txt) { return String(txt).split('').map(c => (/[0-9]/.test(c) ? '<i class="dd">' + c + '</i>' : '<i class="dc">' + esc(c) + '</i>')).join(''); }
+function setDigits(el, txt) { if (el && el.getAttribute('data-v') !== txt) { el.setAttribute('data-v', txt); el.innerHTML = digitsHtml(txt); } }
+function trStage(step) {
   const group = step.warmup ? TR.steps.filter(s => s.warmup) : TR.steps.filter(s => !s.warmup && s.sess === step.sess && s.kind === step.kind);
   const pos = group.indexOf(step) + 1;
   const sessT = step.sess ? (STYPES[step.sess] || {}).short || step.sess : '';
-  const stage = step.warmup ? 'Calentamiento · ' + pos + ' de ' + group.length : step.kind === 'test' ? 'Test · ' + pos + ' de ' + group.length : step.kind === 'ex' ? sessT + ' · ejercicio ' + pos + ' de ' + group.length : sessT;
-  let body = '';
-  if (step.kind === 'ex') body = trExHtml(step);
-  else if (step.kind === 'golpeo') body = trGolpeoHtml(step);
-  else if (step.kind === 'sprint') body = trRepsHtml(step, 'sprint');
-  else if (step.kind === 'rt') body = trRepsHtml(step, 'rt');
-  else if (step.kind === 'test') body = trTestHtml(step);
-  else if (step.kind === 'list') body = trListHtml(step);
-  else if (step.kind === 'balon') body = trBalonHtml(step);
+  return step.warmup ? 'Calentamiento · ' + pos + ' de ' + group.length : step.kind === 'test' ? 'Test · ' + pos + ' de ' + group.length : step.kind === 'ex' ? sessT + ' · ejercicio ' + pos + ' de ' + group.length : step.kind === 'balon' ? 'Balón · estación ' + pos + ' de ' + group.length : sessT;
+}
+function trStageHtml(step) {
+  const warm = step.warmup && TR.steps.some(s => s.warmup);
+  return '<div class="tstage"><span>' + esc(trStage(step)) + '</span>' + (warm ? '<button class="chip warn" data-act="tr-skipwarm">Ya calenté · saltar</button>' : '<span class="num">' + (TR.cur + 1) + '/' + TR.steps.length + '</span>') + '</div>';
+}
+function trBody(step) {
+  if (step.kind === 'ex') return trExHtml(step);
+  if (step.kind === 'golpeo') return trGolpeoHtml(step);
+  if (step.kind === 'sprint') return trRepsHtml(step, 'sprint');
+  if (step.kind === 'rt') return trRepsHtml(step, 'rt');
+  if (step.kind === 'test') return trTestHtml(step);
+  if (step.kind === 'list') return trListHtml(step);
+  if (step.kind === 'balon') return trBalonHtml(step);
+  return '';
+}
+function trProgHtml() { return TR.steps.map((s, i) => '<i class="' + (s.warmup ? 'w ' : '') + (i === TR.cur ? 'c' : stepComplete(s) ? 'd' : '') + '"></i>').join(''); }
+/* Se monta una sola vez; después cada toque solo parchea lo que cambió (sin animación de entrada) */
+function renderTrain(reset) {
+  const root = $('#train-root');
+  if (!TR.open) { root.innerHTML = ''; return; }
+  if (root.querySelector('.train')) { patchTrain(reset); return; }
+  mountTrain();
+}
+function mountTrain() {
+  const root = $('#train-root'), step = curStep();
+  TR._lastCur = TR.cur;
   root.innerHTML = '<div class="train enter' + (step.warmup ? ' warm' : '') + '" role="dialog" aria-label="Modo entrenamiento"><div class="train-in">' +
-    '<div class="tbar"><button class="iconbtn" data-act="tr-min" aria-label="Pausar y salir">' + ic('chevL') + '</button><div class="mid"><div class="t">' + esc(TR.title) + '</div><div class="clk" id="tr-clock">0:00</div>' + saveStatusHtml() + '</div><button class="btn sm primary" data-act="tr-finish">Terminar</button></div>' +
-    '<div class="tprog" aria-hidden="true">' + TR.steps.map((s, i) => '<i class="' + (s.warmup ? 'w ' : '') + (i === TR.cur ? 'c' : stepComplete(s) ? 'd' : '') + '"></i>').join('') + '</div>' +
-    '<div class="tstage"><span>' + esc(stage) + '</span>' + (step.warmup && warmIdx.length ? '<button class="chip warn" data-act="tr-skipwarm">Ya calenté · saltar</button>' : '<span class="num">' + (TR.cur + 1) + '/' + TR.steps.length + '</span>') + '</div>' +
-    '<div class="excard">' + body + '</div></div></div>' + trFooter(step) + restOverlay();
-  const tr = root.querySelector('.train'); if (tr) tr.scrollTop = y;
+    '<div class="tbar"><button class="iconbtn" data-act="tr-min" aria-label="Pausar y salir">' + ic('chevL') + '</button><div class="mid"><div class="t">' + esc(TR.title) + '</div><div class="clk num" id="tr-clock" data-timer-clock></div>' + saveStatusHtml() + '</div><button class="btn sm primary" data-act="tr-finish">Terminar</button></div>' +
+    '<div class="tprog" aria-hidden="true">' + trProgHtml() + '</div>' + trStageHtml(step) +
+    '<div class="excard">' + trBody(step) + '</div></div></div>' + trFooter(step) + restOverlay(true);
   hydrateThumbs(root);
   updateTimers();
 }
-/* ---------- Parches (sin remontar #train-root, sin repetir la animación de entrada) ---------- */
+function patchTrain(reset) {
+  const root = $('#train-root'), tr = root.querySelector('.train'), step = curStep();
+  const changed = !!reset || TR._lastCur !== TR.cur;
+  const y = changed ? 0 : tr.scrollTop;
+  TR._lastCur = TR.cur;
+  tr.classList.toggle('warm', !!step.warmup);
+  const t = tr.querySelector('.tbar .t'); if (t && t.textContent !== TR.title) t.textContent = TR.title;
+  patchProg();
+  const stg = tr.querySelector('.tstage'); if (stg) stg.outerHTML = trStageHtml(step);
+  const card = tr.querySelector('.excard');
+  if (card) {
+    card.innerHTML = trBody(step);
+    if (changed) { card.classList.remove('swap'); void card.offsetWidth; card.classList.add('swap'); }
+    hydrateThumbs(card);
+  }
+  patchFooter();
+  patchRest(true);
+  tr.scrollTop = y;
+  updateTimers();
+}
+/* ---------- Parches puntuales ---------- */
 function patchExcard() {
   if (!TR.open) return;
   const s = curStep(); if (!s) return;
   const card = $('.excard'); if (!card) { renderTrain(); return; }
-  let body = '';
-  if (s.kind === 'ex') body = trExHtml(s);
-  else if (s.kind === 'golpeo') body = trGolpeoHtml(s);
-  else if (s.kind === 'sprint') body = trRepsHtml(s, 'sprint');
-  else if (s.kind === 'rt') body = trRepsHtml(s, 'rt');
-  else if (s.kind === 'test') body = trTestHtml(s);
-  else if (s.kind === 'list') body = trListHtml(s);
-  else if (s.kind === 'balon') body = trBalonHtml(s);
-  card.innerHTML = body;
+  card.innerHTML = trBody(s);
   hydrateThumbs(card);
 }
-function patchProg() {
-  const prog = $('.tprog'); if (!prog) return;
-  prog.innerHTML = TR.steps.map((s, i) => '<i class="' + (s.warmup ? 'w ' : '') + (i === TR.cur ? 'c' : stepComplete(s) ? 'd' : '') + '"></i>').join('');
-}
+function patchProg() { const prog = $('.tprog'); if (prog) prog.innerHTML = trProgHtml(); }
 /* Un toque que no cambia de paso (sensación, dolor, kg/reps, series): solo repinta la tarjeta y los puntitos */
 function patchStep() {
   if (!TR.open) return;
+  const tr = $('.train'), y = tr ? tr.scrollTop : 0;
   patchExcard(); patchProg();
+  if (tr) tr.scrollTop = y;
 }
-/* Contador de golpeo (+1/+5/−1): solo el número, con rebote */
+/* Contador (golpeo, balón): solo el número, con rebote */
 function patchCounter() {
   if (!TR.open) return;
   const big = $('.counter .big');
-  if (!big) { patchExcard(); patchProg(); return; }
-  const s = curStep();
-  if (s.kind === 'balon' && s.metric === 'hits') big.innerHTML = s.hits + '<small>/' + s.attempts + '</small>';
-  else if (s.kind === 'balon') big.innerHTML = s.count + '<small> ' + esc(s.unit) + '</small>';
-  else big.innerHTML = s.count + '<small>/' + s.target + '</small>';
+  if (!big) { patchStep(); return; }
+  big.innerHTML = counterInner(curStep());
   big.classList.remove('bump'); void big.offsetWidth; big.classList.add('bump');
+  const rec = $('.counter .rec'); if (rec) rec.outerHTML = ballRecordBadge(curStep());
   patchProg();
 }
 function patchFooter() {
@@ -256,21 +282,19 @@ function patchFooter() {
   foot.outerHTML = trFooter(step);
 }
 /* Descanso/aguante: monta, actualiza o desmonta el overlay sin reconstruir el resto de .train */
-function patchRest() {
+function patchRest(noFooter) {
   if (!TR.open) return;
   const root = $('#train-root'); if (!root) return;
   const existing = root.querySelector('#tr-rest');
   const show = !!(TR.hold || TR.rest) && !TR.restMin;
-  if (!show) { if (existing) existing.remove(); patchFooter(); return; }
-  if (existing) {
+  if (!show) { if (existing) existing.remove(); }
+  else if (existing) {
     const tmp = document.createElement('div'); tmp.innerHTML = restOverlay(false);
     const fresh = tmp.firstElementChild;
     existing.className = fresh.className;
     existing.innerHTML = fresh.innerHTML;
-  } else {
-    root.insertAdjacentHTML('beforeend', restOverlay(true));
-  }
-  patchFooter();
+  } else root.insertAdjacentHTML('beforeend', restOverlay(true));
+  if (!noFooter) patchFooter();
   updateTimers();
 }
 function quickRow(s) {
@@ -340,11 +364,19 @@ function trExHtml(s) {
 function trGolpeoHtml(s) {
   const K = KICK[s.level];
   let h = '<div class="exhead"><div class="badgek k">' + K.n + '</div><div class="stack-xs"><div class="kicker">' + (s.tec ? 'Técnica con balón' : 'Golpeo · nivel ' + s.level + ' de 8') + '</div><button class="exname" data-act="tr-copy">' + esc(K.t) + '</button></div></div><div class="excue">' + esc(K.d) + '</div>';
-  h += '<div class="counter"><div class="big num" aria-live="polite">' + s.count + '<small>/' + s.target + '</small></div><div class="ctl"><button data-act="tr-count" data-d="-1" aria-label="Restar un golpe">−1</button><button class="plus" data-act="tr-count" data-d="1" aria-label="Sumar un golpe">+1</button><button data-act="tr-count" data-d="5" aria-label="Sumar cinco">+5</button></div><div class="sub">golpes</div></div>';
+  h += '<div class="counter"><div class="big num" aria-live="polite">' + counterInner(s) + '</div>' + countBtns('golpe') + '<div class="sub">golpes</div></div>';
   h += '<div class="field"><span class="lab">Dolor en el recto femoral durante el golpeo</span>' + scaleHtml('pd', s.pd, { pain: true, act: 'tr-pd', l: '0 nada', r: '≥ 3 para' }) + '</div>';
   if (num(s.pd) !== null && s.pd >= 3) h += note('pain', 'Dolor ' + s.pd + '/10: para el golpeo. Mañana el plan baja un nivel.');
   h += s.tec ? note('info', 'Técnica: no cuenta para subir de nivel.') : note('blue', 'Para subir: dolor ≤ 2 hoy y 0 mañana. Golpes de calidad, no cantidad.');
   return h;
+}
+/* Contador grande: −1 · +1 · +5 · +10 */
+function countBtns(what) {
+  return '<div class="ctl four"><button data-act="tr-count" data-d="-1" aria-label="Restar uno">−1</button><button class="plus" data-act="tr-count" data-d="1" aria-label="Sumar un ' + what + '">+1</button><button data-act="tr-count" data-d="5" aria-label="Sumar cinco">+5</button><button data-act="tr-count" data-d="10" aria-label="Sumar diez">+10</button></div>';
+}
+function counterInner(s) {
+  if (s.kind === 'balon') return ballCounterInner(s);
+  return digitsHtml(String(s.count)) + '<small>/' + s.target + '</small>';
 }
 function trRepsHtml(s, kind) {
   const isS = kind === 'sprint';
@@ -362,19 +394,114 @@ function trRepsHtml(s, kind) {
 function trListHtml(s) {
   return '<div class="stack-sm">' + s.items.map((x, k) => '<button class="blk' + (x.done ? ' done' : '') + '" data-act="tr-ck" data-k="' + k + '"><div class="grow"><div class="t">' + esc(x.n) + '</div>' + (x.d || x.min ? '<div class="s">' + esc([x.min ? x.min + ' min' : '', x.d || ''].filter(Boolean).join(' · ')) + '</div>' : '') + '</div><span class="st0' + (x.done ? ' done' : '') + '">' + (x.done ? ic('check') : '') + '</span></button>').join('') + '</div>';
 }
-function trBalonHtml(s) {
-  const footTxt = s.foot === 'izq' ? 'Pie izquierdo' : s.foot === 'der-suave' ? 'Pie menos hábil' : 'Ambos pies';
-  let h = '<div class="exhead"><div class="badgek b">' + ic('ball') + '</div><div class="stack-xs"><div class="kicker">Balón · ' + esc(footTxt) + (s.headerStrong ? ' · fuerza alta' : '') + '</div><button class="exname" data-act="tr-copy">' + esc(s.n) + '</button></div></div><div class="excue">' + esc(s.d) + '</div>';
-  if (s.metric === 'hits') {
-    h += '<div class="counter"><div class="big num" aria-live="polite">' + s.hits + '<small>/' + s.attempts + '</small></div>' +
-      '<div class="ctl"><button class="plus" data-act="tr-ball" data-k="hit" aria-label="Acierto">' + ic('check') + ' Acierto</button><button data-act="tr-ball" data-k="miss" aria-label="Fallo">Fallo</button></div>' +
-      '<div class="sub">' + esc(s.unit) + ' · meta ' + s.target + '</div></div>';
-  } else {
-    h += '<div class="counter"><div class="big num" aria-live="polite">' + s.count + '<small> ' + esc(s.unit) + '</small></div>' +
-      '<div class="ctl"><button data-act="tr-count" data-d="-1" aria-label="Restar">−1</button><button class="plus" data-act="tr-count" data-d="1" aria-label="Sumar">+1</button><button data-act="tr-count" data-d="5" aria-label="Sumar cinco">+5</button></div>' +
-      '<div class="sub">meta ' + s.target + ' ' + esc(s.unit) + (s.lowerBetter ? ' · menos es mejor' : '') + '</div></div>';
+/* ---------- Balón: tarjeta de estación ---------- */
+function ballCur(s) { return (s.v && s.v[s.pie]) || { best: null, tries: [], count: 0, hits: 0, attempts: 0 }; }
+function ballStepHasWork(s) { return Object.values(s.v || {}).some(x => x.tries.length || x.attempts > 0 || x.count > 0); }
+/* Valor de hoy de un pie: mejor intento (o aciertos) */
+function ballTodayVal(s, x) {
+  if (s.metric === 'aciertos') return x.attempts ? x.hits : null;
+  const tries = x.tries.slice();
+  if (s.metric === 'cant' && x.count > 0) tries.push(x.count);
+  if (!tries.length) return null;
+  return s.lowerBetter ? Math.min.apply(null, tries) : Math.max.apply(null, tries);
+}
+function ballStepEntries(s) {
+  const out = [];
+  for (const pie of Object.keys(s.v || {})) {
+    const x = s.v[pie], val = ballTodayVal(s, x);
+    if (val === null) continue;
+    const e = { id: s.id, n: s.n, metric: s.metric, unidad: s.unit, valor: val, pie: pie === 'x' ? null : pie };
+    if (s.metric === 'aciertos') e.intentos = x.attempts;
+    if (x.tries.length) e.tries = x.tries.slice(0, 20);
+    if (s.header) e.header = s.header;
+    out.push(e);
   }
+  return out;
+}
+function ballIsRecord(s) {
+  const x = ballCur(s), v = ballTodayVal(s, x);
+  if (v === null || v <= 0 || s.metric === 'aciertos') return false;
+  const b = ballBest(ST.sessions, s.id, s.pie === 'x' ? null : s.pie, TR.date);
+  return !b || (s.lowerBetter ? v < b.val : v > b.val);
+}
+function ballRecordBadge(s) {
+  if (!s || s.kind !== 'balon' || s.metric === 'aciertos') return '<span class="rec" hidden></span>';
+  const b = ballBest(ST.sessions, s.id, s.pie === 'x' ? null : s.pie, TR.date);
+  if (ballIsRecord(s)) return '<span class="rec on">' + ic('star') + '¡Récord!</span>';
+  return '<span class="rec">' + (b ? 'Récord ' + fmtNum(b.val) + ' ' + esc(s.unit) : 'Primera marca') + '</span>';
+}
+function ballCounterInner(s) {
+  const x = ballCur(s);
+  if (s.metric === 'aciertos') return digitsHtml(String(x.hits)) + '<small>/' + x.attempts + '</small>';
+  if (s.metric === 'cant') return digitsHtml(String(x.count)) + '<small> ' + esc(s.unit) + '</small>';
+  const v = ballTodayVal(s, x);
+  return (v === null ? '—' : digitsHtml(fmtNum(v))) + '<small> ' + esc(s.unit) + '</small>';
+}
+function trBalonHtml(s) {
+  const x = ballCur(s), bt = TR.bt && TR.bt.step === TR.cur ? TR.bt : null;
+  let h = '<div class="exhead"><div class="badgek b">' + ic('ball') + '</div><div class="stack-xs"><div class="kicker">' + esc(ballFootLabel(s.foot)) + (s.header === 'alta' ? ' · fuerza alta' : '') + ' · ' + s.min + ' min</div><button class="exname" data-act="tr-copy">' + esc(s.n) + '</button></div></div><div class="excue">' + esc(s.d) + '</div>';
+  if (s.note) h += note('blue', esc(s.note));
+  if (s.perFoot) h += '<div class="seg pies" role="tablist" aria-label="Pie">' + ['der', 'izq'].map(p => '<button type="button" role="tab" aria-selected="' + (s.pie === p) + '" class="' + (s.pie === p ? 'on' : '') + '" data-act="tr-ball-pie" data-v="' + p + '">' + (p === 'der' ? 'Derecha' : 'Izquierda') + (ballTodayVal(s, s.v[p]) !== null ? ' · ' + fmtNum(ballTodayVal(s, s.v[p])) : '') + '</button>').join('') + '</div>';
+  h += '<div class="counter"><div class="big num" aria-live="polite">' + ballCounterInner(s) + '</div>' + ballRecordBadge(s);
+  if (s.metric === 'aciertos') {
+    h += '<div class="ctl two"><button class="plus" data-act="tr-ball" data-k="hit" aria-label="Acierto">' + ic('check') + 'Acierto</button><button data-act="tr-ball" data-k="miss" aria-label="Fallo">' + ic('x') + 'Fallo</button></div>' +
+      '<div class="sub">' + esc(s.unit) + ' · meta ' + s.target + ' intentos' + (x.attempts ? ' · ' + Math.round(x.hits / x.attempts * 100) + ' %' : '') + '</div>' +
+      (x.attempts ? '<button class="linkbtn" data-act="tr-ball-undo">' + ic('undo') + 'Deshacer el último</button>' : '');
+  } else if (s.metric === 'cant') {
+    h += (bt ? '<div class="btimer" data-ball-timer></div>' : '') + countBtns('pase') +
+      '<div class="row center">' + (bt ? '<button class="btn sm" data-act="tr-ball-stop">' + ic('check') + 'Terminar tanda</button>' : '<button class="btn sm primary" data-act="tr-ball-go">' + ic('play') + 'Tanda de ' + (s.secs || 30) + ' s</button>' + (x.count ? '<button class="btn sm" data-act="tr-ball-stop">Anotar ' + x.count + '</button>' : '')) + '</div>' +
+      '<div class="sub">Tandas: ' + (x.tries.length ? x.tries.join(' · ') : 'ninguna') + ' · meta ' + s.target + ' tandas</div>';
+  } else if (s.metric === 'tiempo') {
+    h += (bt ? '<div class="btimer up" data-ball-timer></div><button class="btn lime lg block" data-act="tr-ball-stop">' + ic('check') + 'Llegué</button>' : '<button class="btn primary lg block" data-act="tr-ball-go">' + ic('play') + 'Salir</button>') +
+      '<div class="row nowrap"><input class="input num" id="tr-ball-in" inputmode="decimal" enterkeyhint="done" autocomplete="off" placeholder="Tiempo a mano (s)" aria-label="Tiempo en segundos"><button class="btn" data-act="tr-ball-rec">Anotar</button></div>' +
+      '<div class="sub">Pasadas: ' + (x.tries.length ? x.tries.map(fmtNum).join(' · ') : 'ninguna') + ' · meta ' + s.target + '</div>';
+  } else {
+    h += '<div class="row nowrap"><input class="input num" id="tr-ball-in" inputmode="numeric" enterkeyhint="done" autocomplete="off" placeholder="Intento: ' + esc(s.unit) + '" aria-label="Resultado del intento"><button class="btn primary" data-act="tr-ball-rec">Anotar</button></div>' +
+      '<div class="sub">Intentos: ' + (x.tries.length ? x.tries.join(' · ') : 'ninguno') + ' · meta ' + s.target + '</div>';
+  }
+  h += '</div><button class="btn block' + (s.done ? ' lime' : '') + '" data-act="tr-ball-done">' + ic('check') + (s.done ? 'Estación lista' : 'Terminar estación') + '</button>';
   return h;
+}
+/* Tanda con tiempo (cuenta atrás) o cronómetro (cuenta hacia arriba) */
+function updateBallTimer(now) {
+  const bt = TR.bt; if (!bt) return;
+  const el = $('[data-ball-timer]');
+  if (bt.kind === 'sw') { setDigits(el, (Math.floor((now - bt.start) / 100) / 10).toFixed(1).replace('.', ',')); return; }
+  const rem = Math.ceil((bt.until - now) / 1000);
+  setDigits(el, mmss(rem));
+  if (rem <= 3 && rem > 0 && bt.beep !== rem) { bt.beep = rem; beep(1, 740, false); }
+  if (rem <= 0) { beep(2, 990); ballStop(); }
+}
+function ballGo() {
+  const s = curStep(); if (!s || s.kind !== 'balon') return;
+  ensureAudio();
+  if (s.metric === 'cant') { ballCur(s).count = 0; TR.bt = { step: TR.cur, kind: 'cd', until: Date.now() + (s.secs || 30) * 1000 }; }
+  else TR.bt = { step: TR.cur, kind: 'sw', start: Date.now() };
+  haptic(14); patchStep(); updateTimers(); saveDraft();
+}
+function ballStop() {
+  const bt = TR.bt, s = bt ? TR.steps[bt.step] : curStep(); TR.bt = null;
+  if (!s || s.kind !== 'balon') return;
+  const x = ballCur(s);
+  if (s.metric === 'cant') { if (x.count > 0) x.tries.push(x.count); x.count = 0; }
+  else if (s.metric === 'tiempo' && bt && bt.kind === 'sw') x.tries.push(Math.round((Date.now() - bt.start) / 100) / 10);
+  haptic(18); patchStep(); saveDraft();
+  if (ballIsRecord(s)) toast('¡Récord en ' + s.n + '!');
+}
+function ballRecord(raw) {
+  const s = curStep(); if (!s || s.kind !== 'balon') return;
+  const v = parseNum(raw); if (v === null || v < 0) { toast('Escribe el resultado del intento.', 'warn'); return; }
+  ballCur(s).tries.push(v);
+  haptic(12); patchStep(); saveDraft();
+  if (ballIsRecord(s)) toast('¡Récord en ' + s.n + '!');
+}
+function ballDone() {
+  const s = curStep(); if (!s || s.kind !== 'balon') return;
+  if (TR.bt && TR.bt.step === TR.cur) ballStop();
+  s.done = !s.done;
+  if (s.done && TR.cur < TR.steps.length - 1) { TR.cur++; startRest(45); renderTrain(true); }
+  else patchStep();
+  saveDraft();
 }
 function trTestHtml(s) {
   const inj = ST.side || 'd', hea = inj === 'd' ? 'i' : 'd';
@@ -412,6 +539,7 @@ function setDesc(s, x, k) {
   const v = s.mode === 'time' ? fmtNum(x.secs) + ' s' : s.mode === 'min' ? Math.round((num(x.secs) || 0) / 60) + ' min' : s.mode === 'dist' ? fmtNum(x.m) + ' m' : s.mode === 'contacts' ? fmtNum(x.c) + ' contactos' : (num(x.reps) !== null ? fmtNum(x.reps) + ' rep' : '');
   return 'Serie ' + (Math.floor(k / sides) + 1) + (x.side ? ' · ' + sideLong(x.side).toLowerCase() : '') + ' · ' + v + (num(x.kg) ? ' · ' + fmtKg(x.kg) : '');
 }
+function timerSpan(cls, t) { const v = mmss(Math.ceil((t.until - Date.now()) / 1000)); return '<span class="' + cls + '" data-timer-v data-v="' + v + '">' + digitsHtml(v) + '</span>'; }
 function restOverlay(enter) {
   enter = enter === undefined ? true : enter;
   const t = TR.hold || TR.rest;
@@ -421,7 +549,7 @@ function restOverlay(enter) {
   const hs = TR.hold ? TR.steps[TR.hold.step] : null;
   return '<div class="rest' + (TR.hold ? ' hold' : '') + (enter ? ' enter' : '') + '" id="tr-rest" role="timer" aria-live="off">' +
     '<div class="top"><span class="lbl">' + (TR.hold ? 'Aguanta' : 'Descanso') + '</span><button class="btn sm glass" data-act="tr-rest-min">' + ic('min') + 'Ver ejercicio</button></div>' +
-    '<div class="dial"><svg viewBox="0 0 ' + size + ' ' + size + '"><circle cx="' + size / 2 + '" cy="' + size / 2 + '" r="' + r + '" fill="none" stroke="rgba(255,255,255,.1)" stroke-width="' + sw + '"/><circle id="tr-ring" data-c="' + c.toFixed(1) + '" cx="' + size / 2 + '" cy="' + size / 2 + '" r="' + r + '" fill="none" stroke="url(#' + (TR.hold ? 'lg-lime' : 'lg-white') + ')" stroke-width="' + sw + '" stroke-linecap="round" stroke-dasharray="' + c.toFixed(1) + ' ' + c.toFixed(1) + '"/></svg><span class="digits" data-timer-v>' + mmss(Math.ceil((t.until - Date.now()) / 1000)) + '</span></div>' +
+    '<div class="dial"><svg viewBox="0 0 ' + size + ' ' + size + '"><circle cx="' + size / 2 + '" cy="' + size / 2 + '" r="' + r + '" fill="none" stroke="rgba(255,255,255,.1)" stroke-width="' + sw + '"/><circle id="tr-ring" data-c="' + c.toFixed(1) + '" cx="' + size / 2 + '" cy="' + size / 2 + '" r="' + r + '" fill="none" stroke="url(#' + (TR.hold ? 'lg-lime' : 'lg-white') + ')" stroke-width="' + sw + '" stroke-linecap="round" stroke-dasharray="' + c.toFixed(1) + ' ' + c.toFixed(1) + '"/></svg>' + timerSpan('digits', t) + '</div>' +
     (nx ? '<div class="next"><span class="k">Siguiente</span><span class="n">' + esc(nx.n) + '</span>' + (nx.d ? '<span class="d">' + esc(nx.d) + '</span>' : '') + '</div>' : hs ? '<div class="next"><span class="k">En curso</span><span class="n">' + esc(hs.n) + '</span><span class="d">' + esc(setDesc(hs, hs.sets[TR.hold.k], TR.hold.k)) + '</span></div>' : '<span></span>') +
     '<div class="ctl">' + (TR.hold ? '<button class="w" data-act="tr-hold-cancel">Cancelar</button><button data-act="tr-hold-add" data-d="' + (TR.hold.total > 90 ? 30 : 5) + '" aria-label="Sumar tiempo">+' + (TR.hold.total > 90 ? 30 : 5) + '</button><button class="skip w" data-act="tr-hold-stop">Terminé</button>'
       : '<button data-act="tr-rest" data-d="-15" aria-label="15 segundos menos">−15</button><button data-act="tr-rest" data-d="15" aria-label="15 segundos más">+15</button><button class="skip w" data-act="tr-rest-skip">Saltar</button>') + '</div></div>';
@@ -430,7 +558,7 @@ function trFooter(step) {
   const last = TR.cur === TR.steps.length - 1;
   const t = TR.hold || TR.rest;
   let bar = '';
-  if (t && TR.restMin) bar = '<button class="restbar' + (TR.hold ? ' hold' : '') + '" data-act="tr-rest-max"><span class="v num" data-timer-v>' + mmss(Math.ceil((t.until - Date.now()) / 1000)) + '</span><div class="grow"><div class="h3">' + (TR.hold ? 'Aguanta' : 'Descanso') + '</div><div class="sub" style="color:var(--fg-2)">Toca para ver en grande</div></div>' + (TR.rest ? '<span class="btn xs white" data-act="tr-rest-skip">Saltar</span>' : '') + '</button>';
+  if (t && TR.restMin) bar = '<button class="restbar' + (TR.hold ? ' hold' : '') + '" data-act="tr-rest-max">' + timerSpan('v num', t) + '<div class="grow"><div class="h3">' + (TR.hold ? 'Aguanta' : 'Descanso') + '</div><div class="sub" style="color:var(--fg-2)">Toca para ver en grande</div></div>' + (TR.rest ? '<span class="btn xs white" data-act="tr-rest-skip">Saltar</span>' : '') + '</button>';
   const acts = '<div class="acts"><button class="iconbtn" data-act="tr-prev" aria-label="Paso anterior"' + (TR.cur === 0 ? ' disabled' : '') + '>' + ic('chevL') + '</button>' +
     '<button class="btn" data-act="tr-add">' + ic('plus') + 'Añadir</button>' +
     (last ? '<button class="btn lime" data-act="tr-finish">' + ic('check') + 'Terminar</button>' : '<button class="btn primary" data-act="tr-next">Siguiente' + ic('chev') + '</button>') + '</div>';
@@ -535,19 +663,10 @@ async function trCopy() {
     (s.kind === 'ex' && s.id ? '<button class="btn block ghost" data-act="ex" data-id="' + esc(s.id) + '">' + ic('book') + 'Ficha del ejercicio</button>' : '') + '</div></div>' });
 }
 /* Máquina ocupada o sin equipo: 1-3 alternativas */
-function busyAlternatives(s) {
-  const ctx = { phase: ST.phase, injuryActive: ST.injuryActive, equipmentOff: ST.equipmentOff, bank: ST.bank, place: TR.place, profile: ST.profile };
-  const ex = exInfo(s.id) || {}, busyEq = (ex.eq || []).filter(e => BUSY_EQ.includes(e));
-  const ok = (e) => e && e.id !== s.id && exEligible(e, ctx) && !(e.eq || []).some(q => busyEq.includes(q));
-  const out = [];
-  (ALT[s.id] || []).forEach(id => { const e = BANK_INDEX[id]; if (ok(e) && !out.includes(e)) out.push(e); });
-  if (out.length < 3 && s.slot) slotAlternatives(s.slot, ctx).forEach(e => { if (out.length < 3 && ok(e) && !out.includes(e)) out.push(e); });
-  if (out.length < 2 && ex.pat) ST.bank.forEach(e => { if (out.length < 2 && ok(e) && e.pat === ex.pat && (e.z || []).some(z => (ex.z || []).includes(z)) && !out.includes(e)) out.push(e); });
-  return { list: out.slice(0, 3), busyEq };
-}
+function trAlternatives(s) { return busyAlternatives(s.id, s.slot, ST, TR.place); }
 function trBusy() {
   const s = curStep(); if (!s || s.kind !== 'ex') return;
-  const r = busyAlternatives(s);
+  const r = trAlternatives(s);
   openSheet({ id: 'tr-busy', render: () => sheetHead('Alternativas', esc(s.n) + (r.busyEq.length ? ' · usa ' + esc(r.busyEq.join(', ')) : '')) + '<div class="sheet-body">' +
     (r.list.length ? '<div class="stack-sm">' + r.list.map(e => '<div class="card flat tight"><div class="stack-sm"><div class="row nowrap">' + thumbHtml(e) + '<div class="grow"><div class="h3">' + esc(e.n) + '</div><div class="sub">' + esc((e.eq || []).join(', ') || 'Sin equipo') + '</div></div></div>' +
       (e.cue ? '<div class="small fg2">' + esc(e.cue.length > 140 ? e.cue.slice(0, 137) + '…' : e.cue) + '</div>' : '') +
@@ -649,7 +768,7 @@ function stepHasWork(s) {
   if (s.kind === 'sprint' || s.kind === 'rt') return s.done.some(Boolean);
   if (s.kind === 'test') return !!s.saved;
   if (s.kind === 'list') return s.items.some(x => x.done);
-  if (s.kind === 'balon') return s.metric === 'hits' ? s.attempts > 0 : s.count > 0;
+  if (s.kind === 'balon') return ballStepHasWork(s);
   return false;
 }
 function trToLogs(tr, f, auto) {
@@ -677,8 +796,9 @@ function trToLogs(tr, f, auto) {
       } else if (s.kind === 'rt') log.rt = { level: s.level, series: s.done.filter(Boolean).length };
       else if (s.kind === 'test') { log.tests = log.tests || []; if (s.saved) log.tests.push(s.key); }
       else if (s.kind === 'balon') {
-        log.ball = log.ball || { drills: [] };
-        log.ball.drills.push({ id: s.id, n: s.n, metric: s.metric, unit: s.unit, count: s.count, hits: s.hits, attempts: s.attempts, target: s.target, headerStrong: s.headerStrong, lowerBetter: s.lowerBetter });
+        log.ball = log.ball || { drills: [], headersAlta: 0 };
+        ballStepEntries(s).forEach(e => log.ball.drills.push(e));
+        if (s.header === 'alta') log.ball.headersAlta += Object.values(s.v || {}).reduce((a, x) => a + (num(x.attempts) || 0), 0);
       }
     }
     const planIds = ((ss.plan && ss.plan.items) || []).map(i => i.id).join(',');

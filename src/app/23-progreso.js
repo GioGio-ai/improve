@@ -48,27 +48,33 @@ function levelsCard(st) {
       ['Sesión limpia', 'Dolor ≤ 2 durante y 0 al día siguiente.'], ['K5, K7, S4 y S6', 'Piden 2 limpias seguidas: son los umbrales donde te lesionaste.'], ['Dolor 3 o más', 'Bajas un nivel.'], ['Una variable a la vez', 'Distancia, intensidad, tipo de golpe, volumen o carrera.'],
     ].map(([a, b]) => '<li><span class="mk">' + ic('info') + '</span><div class="small"><b>' + a + '</b><div class="fg3">' + b + '</div></div><span></span></li>').join('') + '</ul></div></details></div></section>';
 }
-/* ---------- Balón: récords por estación ---------- */
-function ballRecords(sessions) {
-  const best = {};
-  for (const s of sessions) {
-    if (s.done === false || !s.ball) continue;
-    for (const d of s.ball.drills || []) {
-      const val = d.metric === 'hits' ? d.hits : d.count;
-      if (!val && val !== 0) continue;
-      const cur = best[d.id];
-      const better = !cur ? true : d.lowerBetter ? (val > 0 && val < cur.val) : val > cur.val;
-      if (better) best[d.id] = { id: d.id, n: d.n, val, date: s.date, metric: d.metric, unit: d.unit, attempts: d.attempts, lowerBetter: !!d.lowerBetter };
-    }
-  }
-  return best;
+/* ---------- Balón: récords, tendencias y minutos ---------- */
+function ballSeries(sessions, id, pie) {
+  return sessions.filter(s => s.done !== false && s.ball).sort(byDate).map(s => {
+    const xs = (s.ball.drills || []).filter(x => x.id === id && (!pie || !x.pie || x.pie === pie)).map(ballEntryVal).filter(v => v !== null);
+    if (!xs.length) return null;
+    return { x: s.date, y: (BALL_DRILL_INDEX[id] || {}).lowerBetter ? Math.min.apply(null, xs) : Math.max.apply(null, xs) };
+  }).filter(Boolean);
+}
+function sparkline(pts, lowerBetter) {
+  if (pts.length < 2) return '';
+  const W = 84, H = 26, ys = pts.map(p => p.y), lo = Math.min.apply(null, ys), hi = Math.max.apply(null, ys);
+  const X = (i) => 2 + i * (W - 4) / (pts.length - 1), Y = (v) => H - 3 - (hi === lo ? 0.5 : (v - lo) / (hi - lo)) * (H - 6);
+  const up = lowerBetter ? ys[ys.length - 1] <= ys[0] : ys[ys.length - 1] >= ys[0];
+  return '<svg class="spark' + (up ? ' up' : '') + '" viewBox="0 0 ' + W + ' ' + H + '" aria-hidden="true"><polyline points="' + pts.map((p, i) => X(i).toFixed(1) + ',' + Y(p.y).toFixed(1)).join(' ') + '"/></svg>';
 }
 function ballCard(st, today) {
-  const best = ballRecords(st.sessions), ids = Object.keys(best);
   const headers = ballHeaderCount(st.sessions, weekStartOf(today));
-  let h = '<section class="card"><div class="stack-sm"><div class="row between"><span class="h3">Balón · récords</span>' + chip('cabeceo fuerza alta ' + headers + '/' + BALL_HEADER_CAP, headers >= BALL_HEADER_CAP ? 'warn' : '') + '</div>';
-  if (!ids.length) h += '<p class="sub">Todavía no registraste trabajo con balón.</p>';
-  else h += ids.map(id => { const r = best[id]; return '<div class="lrow"><span class="fg2">' + esc(r.n) + ' <span class="fg4">· ' + fmtDate(r.date) + '</span></span><b class="num">' + (r.metric === 'hits' ? r.val + '/' + r.attempts : r.val + ' ' + esc(r.unit)) + '</b></div>'; }).join('');
+  const mins = ballMinutesByWeek(st.sessions, today, 6);
+  const rows = [];
+  for (const d of BALL_DRILLS) for (const p of (d.perFoot ? ['der', 'izq'] : [null])) {
+    const b = ballBest(st.sessions, d.id, p); if (!b) continue;
+    rows.push({ d, p, b, pts: ballSeries(st.sessions, d.id, p).slice(-8) });
+  }
+  let h = '<section class="card"><div class="stack-sm"><div class="row between"><span class="h3">' + ic('ball') + ' Balón</span>' + chip('cabeceo fuerza alta ' + headers + '/' + BALL_HEADER_CAP, headers >= BALL_HEADER_CAP ? 'warn' : headers >= 7 ? 'load' : '') + '</div>';
+  if (mins.some(m => m.min)) h += barChart(mins.map(m => ({ label: fmtDate(m.start), value: m.min })), { cur: mins.length - 1, tone: 'lime', label: 'Minutos con balón por semana' }) + '<div class="sub">Minutos con balón por semana</div>';
+  if (!rows.length) h += '<p class="sub">Todavía no registraste estaciones con balón. Los récords aparecen acá.</p>';
+  else h += '<div class="stack-xs">' + rows.map(r => '<div class="lrow ball-row"><span class="fg2">' + esc(r.d.n) + (r.p ? ' <span class="fg4">· ' + (r.p === 'der' ? 'derecha' : 'izquierda') + '</span>' : '') + '<br><span class="fg4 small">' + fmtDate(r.b.date) + '</span></span>' + sparkline(r.pts, r.d.lowerBetter) + '<b class="num c-lime">' + fmtNum(r.b.val) + (r.d.metric === 'aciertos' ? '' : ' <small class="fg3">' + esc(r.d.unit) + '</small>') + '</b></div>').join('') + '</div>';
   return h + '</div></section>';
 }
 function testsCard(st) {

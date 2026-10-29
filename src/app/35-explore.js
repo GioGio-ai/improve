@@ -124,9 +124,22 @@ function guideHtml(g) {
       rows.map(([t, items]) => '<div class="stack-sm"><div class="h3">' + t + '</div><ul class="crit">' + items.map(x => '<li><span class="mk ok">' + ic('check') + '</span><div class="small fg2">' + esc(x) + '</div><span></span></li>').join('') + '</ul></div>').join('') +
       '<p class="sub">Agrega las fechas de tus pruebas en Perfil: el plan ajusta los días anteriores y el posterior.</p></div>';
   }
-  if (g === 'balon') return sheetHead('Guía de balón', 'Las estaciones de trabajo técnico') + '<div class="sheet-body"><div class="stack-sm">' +
-    BALL_DRILLS.map(d => '<div class="lrow"><span class="fg2"><b>' + esc(d.n) + '</b>' + (d.headerStrong ? ' ' + chip('fuerza alta', 'load') : '') + (d.foot === 'der-suave' ? ' ' + chip('pie menos hábil', '') : '') + '<br><span class="fg3">' + esc(d.d) + '</span></span></div>').join('') +
-    '</div></div>';
+  if (g === 'balon') {
+    const L = effLevels(ST), les = ST.side === 'i' ? 'izquierda' : 'derecha', sana = ST.side === 'i' ? 'derecha' : 'zurda';
+    return sheetHead('Guía de balón', 'Estaciones técnicas en la cancha') + '<div class="sheet-body">' +
+      '<div class="stack-sm"><div class="h3">Cómo funciona</div><ul class="crit">' + [
+        ['Estaciones', 'Cada día tiene un foco: lunes pase y conducción, martes ' + sana + ' y cabeceo, miércoles sesión larga de 45 min, jueves dominio y ' + sana + ', viernes control orientado y sábado cabeceo.'],
+        ['Registro', 'Récord (mejor intento), cantidad en un tiempo (tandas de 30 s), cronómetro (menos es mejor) o aciertos sobre intentos. Las marcas nuevas salen en lima.'],
+        ['No suma intensidad', 'El balón no cuenta como día intenso para el recto femoral. Si la cancha pasa de 90 min, se recorta primero el RT y después el balón; golpeo y sprint no se tocan.'],
+      ].map(([a, b]) => '<li><span class="mk ok">' + ic('check') + '</span><div class="small"><b>' + a + '</b><div class="fg3">' + b + '</div></div><span></span></li>').join('') + '</ul></div>' +
+      '<div class="stack-sm"><div class="h3">Reglas de la ' + les + '</div><ul class="crit">' + [
+        ['Desde ya', 'Dominio, control y pase con interior.'],
+        ['Empeine', 'Solo dentro del golpeo, según la escalera K (hoy K' + L.k + ').'],
+        ['Voleas y centros', 'Desde K7' + (L.k >= 7 ? ': habilitado.' : '.')],
+      ].map(([a, b]) => '<li><span class="mk">' + ic('info') + '</span><div class="small"><b>' + a + '</b><div class="fg3">' + b + '</div></div><span></span></li>').join('') + '</ul></div>' +
+      note('warn', '<b>Cabeceo de fuerza alta:</b> máximo ' + BALL_HEADER_CAP + ' cabezazos por semana entre lo planificado y lo registrado. El cabeceo técnico, sin salto, no cuenta.') +
+      '<div class="stack-sm"><div class="h3">Estaciones</div>' + BALL_DRILLS.map(d => '<div class="lrow"><span class="fg2"><b>' + esc(d.n) + '</b> ' + chip(ballFootLabel(ballSideFoot(d.foot, ST.side)), '') + (d.header === 'alta' ? ' ' + chip('fuerza alta', 'load') : '') + '<br><span class="fg3">' + esc(d.d) + '</span></span></div>').join('') + '</div></div>';
+  }
   if (g === 'porque') return sheetHead('Por qué este plan') + '<div class="sheet-body"><div class="h2">El músculo se rompe largo. Se entrena largo.</div>' +
     '<p class="body">El recto femoral cruza la cadera y la rodilla. Al armar el golpe la cadera se extiende y la rodilla se flexiona: el músculo está en su máxima longitud justo antes de contraerse a máxima velocidad. ' + (ST.injury && (ST.injury.recurrences || 0) > 1 ? 'Ahí te lesionaste ' + (ST.injury.recurrences === 3 ? 'las tres veces' : 'las ' + ST.injury.recurrences + ' veces') + '.' : 'Ahí se produce la lesión al patear.') + '</p>' +
     '<p class="body">En la extensora sentado, la cadera está flexionada y el músculo trabaja corto. Da fuerza de cuádriceps, pero no prepara esa posición. Por eso el plan prioriza Reverse Nordic, isometrías en zancada con la cadera extendida y flexión de cadera con polea desde atrás.</p>' +

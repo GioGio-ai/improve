@@ -35,7 +35,7 @@ function blockSheetHtml(date, key) {
   const b = it.block, today = todayStr(), past = date < today, dn = blockDone(b, date);
   let h = sheetHead(it.title + ' · ' + b.short, capFirst(fmtDateLong(date)) + ' · ' + fmtHM(it.start) + '–' + fmtHM(it.end) + (b.intense ? ' · <span class="c-load">intenso</span>' : '')) + '<div class="sheet-body">';
   ag.warnings.filter(w => w.key === key).forEach(w => { h += note('warn', esc(w.text)); });
-  h += '<div class="stack-sm">' + b.sessions.map(s => { const log = findLog(date, s.type); return '<button class="blk' + (log && log.done !== false ? ' done' : '') + '" data-act="session" data-date="' + date + '" data-type="' + s.type + '"><span class="c' + (s.intense ? ' load' : '') + '">' + ic(s.icon || 'dumb') + '</span><div class="grow"><div class="t">' + esc(log && log.modified && log.title ? log.title : s.title) + '</div><div class="s">' + esc(log ? logLine(log) : blockSub(s)) + '</div></div>' + statusMark(log) + '</button>'; }).join('') + '</div>';
+  h += '<div class="stack-sm">' + b.sessions.map(s => { const log = findLog(date, s.type); return '<button class="blk' + (log && log.done !== false ? ' done' : '') + '" data-act="session" data-date="' + date + '" data-type="' + s.type + '"><span class="c' + (s.intense ? ' load' : '') + '">' + ic(s.icon || 'dumb') + '</span><div class="grow"><div class="t">' + esc(log && log.modified && log.title ? log.title : s.title) + '</div><div class="s">' + esc(log ? logLine(log) : blockSub(s)) + '</div>' + (!log && s.field && s.field.kind === 'balon' ? '<div class="s fg3">' + esc(s.field.drills.map(d => d.n).join(' · ')) + '</div>' : '') + '</div>' + statusMark(log) + '</button>'; }).join('') + '</div>';
   if (b.warmup) h += '<details><summary>' + ic('flame') + 'Calentamiento · ' + b.warmup.min + ' min</summary><div class="in">' + b.warmup.items.map(w => '<div class="lrow"><span class="fg2">' + esc(w.n) + '</span><span class="sub num">' + esc(w.d || '') + '</span></div>').join('') + '</div></details>';
   if (!past || date === today) h += '<div class="field"><span class="lab">¿Dónde?</span><div class="pills">' + PLACES.map(pl => '<button type="button" class="pill' + (b.place === pl ? ' on' : '') + '" data-act="blk-place" data-date="' + date + '" data-key="' + key + '" data-v="' + pl + '" aria-pressed="' + (b.place === pl) + '">' + PLACE_NAMES[pl] + '</button>').join('') + '</div></div>';
   if (it.why && !ag.warnings.some(w => w.key === key)) h += note('blue', esc(it.why));
@@ -52,7 +52,7 @@ function logLine(log) {
   if (num(log.rpe) !== null) parts.push('RPE ' + log.rpe);
   const k = log.kick || log.spr;
   if (k) parts.push('dolor ' + (k.pd ?? '—') + '/' + (k.pn ?? '—'));
-  if (log.ball) parts.push(plural((log.ball.drills || []).length, 'estación', 'estaciones'));
+  if (log.ball) { const b = ballLogLine(log); if (b) parts.push(b); }
   return parts.join(' · ');
 }
 
@@ -71,7 +71,10 @@ function fieldSummary(s) {
   if (f.kind === 'test') return '<div class="stack-sm">' + f.steps.map(x => '<div class="lrow"><span class="fg2">' + esc(x.n) + '</span><span class="sub">' + (x.min ? x.min + ' min' : '') + '</span></div>').join('') + '</div>';
   if (f.kind === 'list') return '<div class="stack-sm">' + f.steps.map(x => '<div class="lrow"><span class="fg2">' + esc(x.n) + '<br><span class="sub">' + esc(x.d || '') + '</span></span><span class="sub">' + (x.min ? x.min + ' min' : '') + '</span></div>').join('') + '</div>';
   if (f.kind === 'club') return note('info', 'Sesión con el club. Registra minutos y esfuerzo al terminar.');
-  if (f.kind === 'balon') return '<div class="stack-sm">' + f.drills.map(d => '<div class="lrow"><span class="fg2">' + esc(d.n) + (d.headerStrong ? ' ' + chip('fuerza alta', 'load') : '') + '<br><span class="sub">' + esc(d.d || '') + '</span></span><span class="sub">meta ' + d.target + ' ' + esc(d.unit) + '</span></div>').join('') + '</div><button class="btn sm ghost" data-act="guide" data-g="balon">' + ic('info') + 'Guía de balón</button>';
+  if (f.kind === 'balon') return '<div class="stack-sm">' + (f.focus ? '<div class="row nowrap"><span class="chip lime">' + ic('ball') + (f.min || '') + ' min</span><span class="h3">' + esc(capFirst(f.focus)) + '</span></div>' : '') + f.drills.map(d => {
+    const b = ST ? ballBest(ST.sessions, d.id, null) : null;
+    return '<div class="lrow"><span class="fg2"><b>' + esc(d.n) + '</b> ' + chip(ballFootLabel(d.foot), d.foot === 'izq' ? 'blue' : '') + (d.header === 'alta' ? ' ' + chip('fuerza alta', 'load') : '') + '<br><span class="sub">' + esc(d.d || '') + (d.note ? ' ' + esc(d.note) : '') + '</span></span><span class="sub num">' + d.min + ' min<br>meta ' + d.target + (b ? '<br>récord ' + fmtNum(b.val) : '') + '</span></div>';
+  }).join('') + '</div><button class="btn sm ghost" data-act="guide" data-g="balon">' + ic('info') + 'Guía de balón</button>';
   return '';
 }
 function sessionSheetHtml(date, type) {
@@ -141,6 +144,7 @@ function sessionReviewHtml(log, planned) {
       (log.kick && log.kick.count ? '<div class="sub">' + log.kick.count + ' golpes' + (log.kick.partial ? ' · sesión parcial' : '') + '</div>' : '') + (log.spr && log.spr.reps ? '<div class="sub">' + log.spr.reps + ' repeticiones</div>' : '') + '</div></div>';
   }
   if (log.tec) h += '<div class="sub">Técnica ' + KICK[log.tec.level].n + ' · ' + (log.tec.count || 0) + ' golpes</div>';
+  if (log.ball && (log.ball.drills || []).length) h += '<div class="card flat tight"><div class="stack-sm"><div class="row between"><span class="h3">' + ic('ball') + ' Balón</span>' + (num(log.ball.headersAlta) ? chip(log.ball.headersAlta + ' cabezazos fuerza alta', 'load') : '') + '</div>' + log.ball.drills.map(d => { const b = ballBest((S.data.sessions || []).filter(x => x.id !== log.id), d.id, d.pie || null, log.date); const v = ballEntryVal(d); const rec = d.metric !== 'aciertos' && d.metric !== 'hits' && v !== null && (!b || ((BALL_DRILL_INDEX[d.id] || {}).lowerBetter ? v < b.val : v > b.val)); return '<div class="lrow"><span class="fg2">' + esc(d.n || (BALL_DRILL_INDEX[d.id] || {}).n || d.id) + (d.pie ? ' <span class="fg4">· ' + (d.pie === 'der' ? 'derecha' : 'izquierda') + '</span>' : '') + '</span><b class="num' + (rec ? ' c-lime' : '') + '">' + esc(ballValTxt(d)) + (rec ? ' ★' : '') + '</b></div>'; }).join('') + '</div></div>';
   if (log.rt) h += '<div class="sub">Circuito RT ' + String(log.rt.level).replace('x', ' × ') + (log.rt.series ? ' · ' + log.rt.series + ' series hechas' : '') + '</div>';
   if (exs.length) {
     h += '<div class="stack-sm">' + exs.map(e => {
@@ -264,6 +268,7 @@ function saveQuickDone() {
     if (s.field && s.field.kind === 'golpeo' && s.field.tec) log.tec = { level: s.field.level, count: s.field.target };
     if (s.field && s.field.kind === 'sprint') log.spr = { level: s.field.level, pd: num(q.pd), pn: null };
     if (s.field && s.field.kind === 'rt') log.rt = { level: s.field.level };
+    if (s.field && s.field.kind === 'balon') log.ball = { drills: [], headersAlta: s.headersPlan || 0, asPlanned: true };
     if (isIntenseLog(log)) intense = true;
     put('sessions', 's-' + q.date + '-' + s.type, log);
   }

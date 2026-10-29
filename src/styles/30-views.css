@@ -160,3 +160,9 @@ body.locked #view, body.locked #nav { display: none; }
 .ph-slot .ed svg { width: 13px; height: 13px; }
 .ai-item .ai-recalc { margin-top: 6px; color: var(--blue-ink); }
 .exrow.ai-add { border-color: rgba(74, 133, 255, 0.35); background: linear-gradient(135deg, rgba(74, 133, 255, 0.16), rgba(74, 133, 255, 0.04)); }
+
+/* ---------- Balón ---------- */
+.lrow.ball-row { grid-template-columns: minmax(0, 1fr) auto auto; align-items: center; gap: 12px; }
+.spark { width: 84px; height: 26px; }
+.spark polyline { fill: none; stroke: var(--fg-3); stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.spark.up polyline { stroke: var(--lime); }

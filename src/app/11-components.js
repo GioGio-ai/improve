@@ -119,9 +119,22 @@ function blockSub(s) {
   else if (s.field && s.field.kind === 'sprint') parts.push(SPRINT[s.field.level].t.toLowerCase());
   else if (s.field && s.field.kind === 'rt') parts.push(s.field.reps + ' rep × ' + s.field.series + ' series');
   else if (s.field && s.field.kind === 'test') parts.push('decide el paso de fase');
-  else if (s.field && s.field.kind === 'balon') parts.push(plural(s.field.drills.length, 'estación', 'estaciones'));
+  else if (s.field && s.field.kind === 'balon') parts.push(plural(s.field.drills.length, 'estación', 'estaciones') + (s.field.focus ? ' · ' + s.field.focus : ''));
   else if (s.items.length) parts.push(plural(s.items.length, 'ejercicio', 'ejercicios'));
   return parts.join(' · ');
+}
+/* Línea de un registro de balón: estaciones y mejores marcas */
+function ballLogLine(log) {
+  const ds = (log.ball && log.ball.drills) || [];
+  if (!ds.length) return '';
+  const ids = Array.from(new Set(ds.map(d => d.id)));
+  return plural(ids.length, 'estación', 'estaciones') + (num(log.ball.headersAlta) ? ' · ' + log.ball.headersAlta + ' cabezazos' : '');
+}
+function ballValTxt(d) {
+  const v = ballEntryVal(d); if (v === null) return '—';
+  const m = d.metric === 'hits' ? 'aciertos' : d.metric;
+  if (m === 'aciertos') return v + '/' + (d.intentos ?? d.attempts ?? '—');
+  return fmtNum(v) + ' ' + (d.unidad || d.unit || '');
 }
 function sessIcon(type) { return (STYPES[type] || STYPES.libre).icon || 'dumb'; }
 function readinessTone(sc) { return sc === null || sc === undefined ? '' : sc >= 70 ? 'lime' : sc >= 50 ? 'blue' : 'load'; }

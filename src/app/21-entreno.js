@@ -73,15 +73,16 @@ function historyPanel(st, today) {
     const painMax = Math.max(0, ...logs.map(l => { const k = l.kick || l.spr; return k ? Math.max(num(k.pd) || 0, num(k.pn) || 0) : 0; }), ci ? num(ci.rfPain) || 0 : 0);
     h += '<section class="card tight"><div class="stack-sm"><button class="row between nowrap" data-act="day" data-date="' + date + '" style="width:100%;min-height:36px"><span class="h3">' + esc(capFirst(fmtDateLong(date))) + '</span><span class="row nowrap" style="gap:6px">' +
       (ci && num(ci.sleepH) !== null ? chip(fmtNum(ci.sleepH) + ' h', sleepTone(ci.sleepH) === 'load' ? 'warn' : 'sleep', 'moon') : '') + (load ? chip(String(load), intense ? 'load' : '', 'flame') : '') + (painMax >= 3 ? chip('dolor ' + painMax, 'pain') : '') + ic('chev') + '</span></button>' +
-      (logs.length ? logs.map(l => '<button class="blk' + (l.done !== false ? ' done' : '') + '" data-act="session" data-date="' + l.date + '" data-type="' + l.type + '" style="min-height:56px"><span class="c' + (l.done === false ? ' pain' : isIntenseLog(l) ? ' load' : ' lime') + '">' + ic(sessIcon(l.type)) + '</span><div class="grow"><div class="t">' + esc(l.title || (STYPES[l.type] || STYPES.libre).n) + '</div><div class="s">' + esc(logLine(l)) + '</div></div>' + statusMark(l) + '</button>').join('') : '<div class="sub">Sin entrenamiento registrado.</div>') +
+      (logs.length ? logs.map(l => '<button class="blk' + (l.done !== false ? ' done' : '') + '" data-act="session" data-date="' + l.date + '" data-type="' + l.type + '" style="min-height:56px"><span class="c' + (l.done === false ? ' pain' : isIntenseLog(l) ? ' load' : ' lime') + '">' + ic(sessIcon(l.type)) + '</span><div class="grow"><div class="t">' + esc(l.title || (STYPES[l.type] || STYPES.libre).n) + '</div><div class="s">' + esc(logLine(l)) + '</div>' + (l.ball && (l.ball.drills || []).length ? '<div class="s fg3 num">' + esc(l.ball.drills.slice(0, 4).map(d => (BALL_DRILL_INDEX[d.id] || d).n.split(' · ')[0].replace('Definición con zurda', 'Zurda') + ' ' + ballValTxt(d)).join(' · ')) + '</div>' : '') + '</div>' + statusMark(l) + '</button>').join('') : '<div class="sub">Sin entrenamiento registrado.</div>') +
       '</div></section>';
   }
   if (dates.length > UI.histLimit) h += '<button class="btn block ghost" data-act="hist-more">Ver más días</button>';
   return h;
 }
 function exercisesPanel(st) {
-  let h = '<div class="seg" role="tablist">' + [['banco', 'Banco'], ['biblioteca', 'Biblioteca'], ['plantillas', 'Plantillas'], ['guias', 'Guías']].map(([k, l]) => '<button type="button" role="tab" aria-selected="' + (UI.exTab === k) + '" class="' + (UI.exTab === k ? 'on' : '') + '" data-act="ex-tab" data-v="' + k + '">' + l + '</button>').join('') + '</div>';
+  let h = '<div class="seg" role="tablist">' + [['banco', 'Banco'], ['balon', 'Balón'], ['biblioteca', 'Biblioteca'], ['plantillas', 'Plantillas'], ['guias', 'Guías']].map(([k, l]) => '<button type="button" role="tab" aria-selected="' + (UI.exTab === k) + '" class="' + (UI.exTab === k ? 'on' : '') + '" data-act="ex-tab" data-v="' + k + '">' + l + '</button>').join('') + '</div>';
   if (UI.exTab === 'biblioteca') return h + libraryPanel();
+  if (UI.exTab === 'balon') return h + ballPanel(st);
   if (UI.exTab === 'plantillas') return h + templatesPanel();
   if (UI.exTab === 'guias') return h + guidesPanel(st);
   return h + bankPanel(st);
@@ -97,6 +98,20 @@ function bankPanel(st) {
   h += '<div class="sub">' + plural(list.length, 'ejercicio', 'ejercicios') + '</div>';
   h += '<div class="exlist">' + list.slice(0, B.limit).map(e => '<button class="exrow" data-act="ex" data-id="' + esc(e.id) + '">' + thumbHtml(e) + '<div style="min-width:0"><div class="t">' + esc(e.n) + '</div><div class="s">' + esc([LABELS.pat[e.pat], (e.z || []).slice(0, 2).map(z => LABELS.z[z]).filter(Boolean).join(', ')].filter(Boolean).join(' · ')) + '</div></div><span class="f">F' + (e.f || 1) + '+</span></button>').join('') + '</div>';
   if (list.length > B.limit) h += '<button class="btn block ghost" data-act="bank-more">Ver más</button>';
+  return h;
+}
+/* Estaciones de balón: qué está habilitado hoy y tus récords */
+function ballPanel(st) {
+  const L = effLevels(st);
+  const why = (d) => (d.minPhase || 1) > st.phase ? 'Se abre en ' + PHASES[d.minPhase].n : d.kRight && L.k < d.kRight ? 'Desde K' + d.kRight + ' (derecha)' : d.sMin && L.s < d.sMin ? 'Desde S' + d.sMin : '';
+  let h = note('blue', 'Derecha: dominio, control y pase con interior desde ya. El empeine fuerte va solo en el golpeo (escalera K). Voleas y centros con la derecha desde K7. Cabeceo de fuerza alta: máximo ' + BALL_HEADER_CAP + ' por semana.');
+  h += '<div class="stack-sm">' + BALL_DRILLS.map(d => {
+    const w = why(d), pies = d.perFoot ? ['der', 'izq'] : [null];
+    const recs = pies.map(p => { const b = ballBest(st.sessions, d.id, p); return b ? (p ? (p === 'der' ? 'Der ' : 'Izq ') : '') + fmtNum(b.val) : null; }).filter(Boolean);
+    return '<div class="card flat tight"><div class="stack-xs"><div class="row between nowrap"><span class="h3">' + esc(d.n) + '</span>' + (w ? chip(w, '') : chip('Habilitada', 'lime', 'check')) + '</div>' +
+      '<div class="row">' + chip(ballFootLabel(ballSideFoot(d.foot, st.side)), d.foot === 'izq' ? 'blue' : '') + chip(d.unit, '') + (d.header === 'alta' ? chip('fuerza alta', 'load') : '') + (recs.length ? chip('Récord ' + recs.join(' · '), 'lime', 'star') : '') + '</div>' +
+      '<div class="small fg2">' + esc(d.d) + '</div></div></div>';
+  }).join('') + '</div>';
   return h;
 }
 function libraryPanel() {

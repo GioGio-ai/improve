@@ -172,8 +172,14 @@ document.addEventListener('click', (e) => {
     case 'tr-ck': { const s = curStep(), x = s.items[Number(g('k'))]; x.done = !x.done; renderTrain(); saveDraft(); return; }
     case 'tr-skip': { const s = curStep(); s.skipped = true; if (s.kind === 'ex') TR.modified = true; closeAllSheets(); if (TR.cur < TR.steps.length - 1) trNav(1); else renderTrain(); return; }
     case 'tr-skipwarm': trSkipWarm(); return;
-    case 'tr-count': { const s = curStep(); s.count = Math.max(0, s.count + Number(g('d'))); haptic(8); patchCounter(); saveDraft(); return; }
-    case 'tr-ball': { const s = curStep(); if (g('k') === 'hit') s.hits++; s.attempts++; haptic(8); patchCounter(); saveDraft(); return; }
+    case 'tr-count': { const s = curStep(); const o = s.kind === 'balon' ? ballCur(s) : s; o.count = Math.max(0, (o.count || 0) + Number(g('d'))); haptic(8); patchCounter(); saveDraft(); return; }
+    case 'tr-ball': { const s = curStep(), x = ballCur(s), hit = g('k') === 'hit'; if (hit) x.hits++; x.attempts++; (x.seq = x.seq || []).push(hit ? 1 : 0); haptic(8); patchStep(); saveDraft(); return; }
+    case 'tr-ball-undo': { const s = curStep(), x = ballCur(s); if (!x.attempts) return; const last = (x.seq || []).pop(); x.attempts--; if (last === 1 || (last === undefined && x.hits > x.attempts)) x.hits = Math.max(0, x.hits - 1); patchStep(); saveDraft(); return; }
+    case 'tr-ball-pie': { const s = curStep(); if (TR.bt && TR.bt.step === TR.cur) ballStop(); s.pie = g('v'); haptic(8); patchStep(); saveDraft(); return; }
+    case 'tr-ball-go': ballGo(); return;
+    case 'tr-ball-stop': ballStop(); return;
+    case 'tr-ball-rec': { const inp = $('#tr-ball-in'); ballRecord(inp ? inp.value : ''); return; }
+    case 'tr-ball-done': ballDone(); return;
     case 'tr-pd': curStep().pd = Number(g('v')); if (Number(g('v')) >= 3) beep(1, 440); patchStep(); saveDraft(); return;
     case 'tr-rep': { const s = curStep(), k = Number(g('k')); s.done[k] = !s.done[k]; if (s.done[k] && s.done.some(d => !d)) startRest(s.rest); else TR.rest = null; haptic(14); renderTrain(); saveDraft(); return; }
     case 'tr-step': trStep(Number(g('k')), g('f'), Number(g('d'))); return;
@@ -195,7 +201,7 @@ document.addEventListener('click', (e) => {
     case 'tr-ai': { const s = curStep(); if (s && s.kind === 'ex') openExerciseAI(s.id, s.n); return; }
     case 'tr-busy': trBusy(); return;
     case 'tr-alt': trAlt(g('id'), g('mode')); return;
-    case 'tr-noeq': { const eqs = String(g('eq') || '').split('|').filter(Boolean); const pl = TR.place || 'gimnasio'; updateProfile(p => { p.places = p.places || {}; p.places[pl] = p.places[pl] || { off: [] }; const off = (p.places[pl].off || []).slice(); eqs.forEach(q => { if (!off.includes(q)) off.push(q); }); p.places[pl].off = off; if (pl === 'gimnasio') delete p.equipmentOff; }).then(() => toast('Marcado como no disponible: el plan elige alternativas.')); const r = busyAlternatives(curStep()); if (r.list[0]) trAlt(r.list[0].id, 'hoy'); else closeAllSheets(); return; }
+    case 'tr-noeq': { const eqs = String(g('eq') || '').split('|').filter(Boolean); const pl = TR.place || 'gimnasio'; updateProfile(p => { p.places = p.places || {}; p.places[pl] = p.places[pl] || { off: [] }; const off = (p.places[pl].off || []).slice(); eqs.forEach(q => { if (!off.includes(q)) off.push(q); }); p.places[pl].off = off; if (pl === 'gimnasio') delete p.equipmentOff; }).then(() => toast('Marcado como no disponible: el plan elige alternativas.')); const r = trAlternatives(curStep()); if (r.list[0]) trAlt(r.list[0].id, 'hoy'); else closeAllSheets(); return; }
     case 'tr-swap': { const s = curStep(); openSwap(s.slot, s.id, 'tr'); return; }
     case 'tr-swap-pick': { const ex = exInfo(g('id')); const s = curStep(); if (!ex || !s) return; trReplaceCurrent(makeItem(ex, g('slot'), s.spec), { from: s.id, reason: 'variante' }); return; }
     case 'tr-pickswap': openPicker('tr-swapany'); return;
@@ -294,7 +300,11 @@ document.addEventListener('input', (e) => {
 });
 document.addEventListener('change', (e) => { const el = e.target; if (el.getAttribute && el.hasAttribute('data-bind')) handleBind(el, true); });
 document.addEventListener('focusin', (e) => { const el = e.target; if (el && el.tagName === 'INPUT' && el.closest && (el.closest('.stepper') || el.classList.contains('num'))) { try { el.select(); } catch (err) { /* nada */ } } });
-document.addEventListener('keydown', (e) => { if (e.key === 'Enter' && e.target && e.target.tagName === 'INPUT' && e.target.closest && e.target.closest('.stepper')) e.target.blur(); });
+document.addEventListener('keydown', (e) => {
+  if (e.key !== 'Enter' || !e.target || e.target.tagName !== 'INPUT') return;
+  if (e.target.id === 'tr-ball-in') { e.preventDefault(); ballRecord(e.target.value); return; }
+  if (e.target.closest && e.target.closest('.stepper')) e.target.blur();
+});
 /* Sin zoom por gesto ni doble toque */
 document.addEventListener('gesturestart', (e) => e.preventDefault());
 document.addEventListener('dblclick', (e) => { if (!(e.target.closest && e.target.closest('input,textarea'))) e.preventDefault(); }, { passive: false });
@@ -305,7 +315,7 @@ function bootApp(fb) {
   UI.view = currentView(); markNav();
   initStore(fb);
   window.IMPROVE = {
-    version: VERSION, importObject, exportData,
+    version: VERSION, importObject, exportData, tr: () => TR,
     putMedia(id, data) { return setMedia(id, data); },
     counts() { const o = {}; Object.keys(COLS).forEach(c => { o[c] = COLS[c] === 'single' ? (S.data[c] ? 1 : 0) : (S.data[c] || []).length; }); return o; },
   };

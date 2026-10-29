@@ -73,10 +73,9 @@ await step('historial', async () => {
 });
 await step('test-en-vivo', async () => {
   await click('[data-act="en-tab"][data-v="semana"]');
-  await click('[data-act="week"][data-d="1"]');
-  await page.waitForTimeout(300);
-  await shot('semana-siguiente');
-  await click('[data-act="session"][data-date="2026-11-03"][data-type="test"]');
+  if (!(await page.locator('[data-act="session"][data-type="test"]').count())) { await click('[data-act="week"][data-d="1"]'); await page.waitForTimeout(300); }
+  await shot('semana-con-test');
+  await click('[data-act="session"][data-type="test"]');
   await click('.sheet [data-act="start"]');
   await page.waitForSelector('.train');
   await click('[data-act="tr-skipwarm"]');

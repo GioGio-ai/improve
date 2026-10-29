@@ -151,7 +151,7 @@ function fiveLabel(key, v) {
 function coachContext(st, today) {
   const prof = st.profile;
   const exLine = (e) => (e.n || (exInfo(e.id, e) || {}).n || e.id) + (e.sets && e.sets.length ? ' ' + fmtSetsShort(e.sets.filter(x => x && x.done !== false)) : '') + (e.fb ? ' [' + e.fb + ']' : '');
-  const ballLine = (d) => d.n + ' ' + (d.metric === 'hits' ? d.hits + '/' + d.attempts : d.count + ' ' + (d.unit || '')) + (d.headerStrong ? ' [fuerza alta]' : '');
+  const ballLine = (d) => (d.n || (BALL_DRILL_INDEX[d.id] || {}).n || d.id) + (d.pie ? ' (' + d.pie + ')' : '') + ' ' + ballValTxt(d);
   const last14 = st.sessions.filter(s => s.date >= addDays(today, -13)).sort(byDate).map(s => ({ fecha: s.date, sesion: s.title || s.type, hecha: s.done !== false, min: s.minutes, rpe: s.rpe, intensa: isIntenseLog(s), ejercicios: (s.exercises || []).filter(e => !e.warmup).slice(0, 12).map(exLine), dolorDurante: (s.kick || s.spr || {}).pd, dolorDiaSiguiente: (s.kick || s.spr || {}).pn, balon: s.ball ? (s.ball.drills || []).map(ballLine) : null }));
   const ci = (S.data.checkins || []).filter(c => c.date >= addDays(today, -6)).sort(byDate).map(c => ({ fecha: c.date, sueno: c.sleepH, calidad: fiveLabel('sleepQ', c.sleepQ), energia: fiveLabel('fatigue', c.fatigue), dolorMuscular: fiveLabel('soreness', c.soreness), estres: fiveLabel('stress', c.stress), dolorRF: c.rfPain }));
   const week = weekPlan(weekStartOf(today)).map(d => ({ fecha: d.date, intenso: d.intense, sesiones: d.sessions.map(s => s.title), ajustes: d.notes }));
@@ -171,6 +171,7 @@ function coachContext(st, today) {
     nutricionHoy: { tipoDia: T.kindN, objetivos: { proteina: T.p, carbohidratos: T.c, grasa: T.f, kcal: T.kcal, aguaL: T.water }, consumido: tot, comidas: ms.map(m => (m.time || '') + ' ' + (m.items || []).map(i => i.n + ' ' + i.g + 'g').join(', ')) },
     dieta: 'Sin harinas, procesados ni azúcar (sí miel). Comida casera: leche de cabra (hervida), huevos caseros, carne, pescado, mandioca, arroz, frutas. Mate con cúrcuma por la mañana, café después del almuerzo.',
     patronesSinEstimulo28dias: coverageGaps(cov, st).map(p => LABELS.pat[p]),
+    balon: { recordsPorEstacion: BALL_DRILLS.map(d => { const b = ballBest(st.sessions, d.id, null); return b ? d.n + ': ' + fmtNum(b.val) + ' ' + d.unit + ' (' + b.date + ')' : null; }).filter(Boolean), minutosPorSemana: ballMinutesByWeek(st.sessions, today, 4).map(w => w.start + ': ' + w.min + ' min'), cabezazosFuerzaAltaSemana: ballHeaderCount(st.sessions, weekStartOf(today)) + '/' + BALL_HEADER_CAP, reglaDerecha: 'Derecha solo interior y control; empeine por la escalera K; voleas y centros con la derecha desde K7' },
     proyeccion: proj ? { F4: proj.phases[4] || null, K8: proj.k8, S6: proj.s6, listoParaPruebas: proj.phases[5] || null } : null,
   };
 }

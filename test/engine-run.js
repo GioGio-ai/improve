@@ -5,7 +5,7 @@ function loadEngine(files) {
   const ctx = { console, Math, Date, JSON };
   vm.createContext(ctx);
   const code = files.map(f => fs.readFileSync(path.join(ROOT, f), 'utf8')).join('\n');
-  vm.runInContext(code + '\n;this.__E = { deriveState, buildWeek, weekStartOf, project, makeSession, fmtSpec, estimateSession, dayBlocks, addDays, BANK, BANK_INDEX, ALT, CHAINS, postSuggestions, suggestSets, dayKind, typeof_agenda: typeof buildAgenda !== "undefined" ? buildAgenda : null, typeof_nut: typeof nutritionTargets !== "undefined" ? nutritionTargets : null };', ctx, { filename: 'engine.js' });
+  vm.runInContext(code + '\n;this.__E = { deriveState, buildWeek, weekStartOf, project, makeSession, fmtSpec, estimateSession, dayBlocks, addDays, BANK, BANK_INDEX, ALT, CHAINS, postSuggestions, suggestSets, dayKind, typeof_agenda: typeof buildAgenda !== "undefined" ? buildAgenda : null, typeof_nut: typeof nutritionTargets !== "undefined" ? nutritionTargets : null, get: (n) => eval(n) };', ctx, { filename: 'engine.js' });
   return ctx.__E;
 }
 module.exports = { loadEngine };

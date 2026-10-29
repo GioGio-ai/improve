@@ -125,8 +125,12 @@ function nextHero(day, ag, today) {
   return '<section class="hero' + (b.key === 'campo' ? ' k-campo' : '') + '">' + photoImg(PHOTO_BY_TYPE[main.type] || 'f3') +
     '<span class="tag"><span class="d' + (b.intense ? ' load' : '') + '"></span>' + when + ' · ' + t + (b.intense ? ' · intenso' : '') + '</span>' +
     '<div class="t">' + esc(nx.title) + ' · ' + esc(b.short) + '</div>' +
-    '<div class="meta"><span>' + ic('clock') + '≈ ' + fmtDur(nx.dur) + '</span><span>' + ic('layers') + plural(steps, 'paso', 'pasos') + '</span>' + (dn.some ? '<span>' + ic('check') + 'En parte hecho</span>' : '') + '</div>' +
+    '<div class="meta"><span>' + ic('clock') + '≈ ' + fmtDur(nx.dur) + '</span><span>' + ic('layers') + plural(steps, 'paso', 'pasos') + '</span>' + (dn.some ? '<span>' + ic('check') + 'En parte hecho</span>' : '') + ballHeroLine(b) + '</div>' +
     '<div class="cta"><button class="btn white lg" data-act="start-block" data-date="' + today + '" data-key="' + b.key + '">' + ic('play') + (dn.some ? 'Seguir' : 'Empezar') + '</button><button class="btn glass lg" data-act="ag-open" data-date="' + today + '" data-key="' + nx.key + '" aria-label="Ver detalle">' + ic('list') + '</button></div></section>' + sideRow;
+}
+function ballHeroLine(b) {
+  const bs = b.sessions.find(s => s.field && s.field.kind === 'balon' && s.field.drills.length);
+  return bs ? '<span>' + ic('ball') + esc(bs.field.drills.map(d => d.n).slice(0, 3).join(' · ')) + '</span>' : '';
 }
 function dayHero(day, date, today) {
   const past = date < today, blocks = dayBlocks(day);

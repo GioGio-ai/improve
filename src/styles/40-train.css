@@ -36,6 +36,7 @@
 .exhead .badgek.s { background: linear-gradient(160deg, rgba(255, 176, 32, 0.36), rgba(255, 109, 31, 0.08)); color: var(--amber); border: 1px solid var(--load-line); }
 .exhead .badgek.r { background: linear-gradient(160deg, rgba(157, 125, 255, 0.36), rgba(110, 80, 230, 0.08)); color: var(--violet-ink); border: 1px solid var(--violet-line); font-size: 22px; }
 .exhead .badgek.t { background: linear-gradient(160deg, rgba(74, 133, 255, 0.4), rgba(36, 87, 245, 0.08)); color: var(--blue-ink); border: 1px solid var(--blue-line); }
+.exhead .badgek .ic { width: 40px; height: 40px; }
 .exhead .badgek.b { background: linear-gradient(160deg, rgba(47, 214, 181, 0.36), rgba(47, 214, 181, 0.08)); color: var(--teal-ink); border: 1px solid var(--teal-line); font-size: 30px; }
 .exhead .kicker { font-size: 12px; font-weight: 640; letter-spacing: 0.04em; color: var(--fg-3); text-transform: uppercase; }
 .exname { display: block; text-align: left; font-size: 21px; font-weight: 680; letter-spacing: -0.028em; line-height: 1.18; text-wrap: balance; padding: 2px 0; min-height: 44px; }
@@ -97,6 +98,23 @@
 @keyframes bump { 0% { transform: scale(1); } 35% { transform: scale(1.12); } 100% { transform: scale(1); } }
 .counter .big small { font-size: 26px; color: var(--fg-3); letter-spacing: -0.03em; margin-left: 4px; }
 .counter .ctl { display: grid; grid-template-columns: 72px 120px 72px; gap: 10px; align-items: center; }
+.counter .ctl.four { grid-template-columns: 60px minmax(96px, 1fr) 60px 60px; width: 100%; max-width: 380px; }
+.counter .ctl.two { grid-template-columns: 1fr 1fr; width: 100%; max-width: 380px; }
+.counter .ctl.two button { height: 76px; font: 700 18px/1 var(--font); gap: 6px; display: flex; justify-content: center; }
+.counter .ctl.two .plus { height: 76px; font-size: 18px; border-radius: 24px; }
+.counter .rec { font: 650 13px/1 var(--font); color: var(--fg-3); display: inline-flex; align-items: center; gap: 6px; min-height: 26px; padding: 0 12px; border-radius: 999px; border: 1px solid var(--line-2); }
+.counter .rec.on { color: #0d1600; background: linear-gradient(135deg, #e0ff7a, #98e02a); border-color: transparent; animation: bump 260ms var(--ease); }
+.counter .rec .ic { width: 14px; height: 14px; }
+.counter .row.center { justify-content: center; }
+.counter .input { max-width: 220px; text-align: center; font: 700 22px/1 var(--num-display); }
+.btimer { font: 760 56px/1 var(--num-display); letter-spacing: -0.01em; color: var(--lime-ink); text-shadow: 0 0 28px rgba(152, 224, 42, 0.45); }
+.btimer.up { color: #fff; text-shadow: 0 0 28px rgba(74, 133, 255, 0.5); }
+.seg.pies { margin-top: 2px; }
+/* Cifras en celdas de ancho fijo: los relojes no bailan */
+.dd { display: inline-block; width: 0.5em; text-align: center; font-style: normal; font-variant-numeric: tabular-nums; }
+.dc { display: inline-block; width: 0.26em; text-align: center; font-style: normal; }
+.excard.swap { animation: swapIn 220ms cubic-bezier(0.23, 1, 0.32, 1); }
+@keyframes swapIn { from { transform: translateX(14px); opacity: 0.4; } to { transform: none; opacity: 1; } }
 .counter .ctl button { height: 64px; border-radius: 20px; font: 700 18px/1 var(--mono); background: rgba(255, 255, 255, 0.07); border: 1px solid var(--line-2); transition: transform var(--t-fast) var(--ease); }
 .counter .ctl button:active { transform: scale(0.93); }
 .counter .ctl .plus { height: 96px; border-radius: 30px; font-size: 30px; color: #0d1600; background: linear-gradient(180deg, #e0ff7a, #98e02a); border-color: transparent; box-shadow: 0 16px 34px -16px rgba(160, 230, 40, 0.95); }
@@ -161,5 +179,5 @@
 .rest .ctl button.w { font: 700 18px/1.1 var(--font); letter-spacing: -0.01em; }
 
 @media (prefers-reduced-motion: reduce) {
-  .train.enter, .rest.enter, .counter .big.bump { animation: none; }
+  .train.enter, .rest.enter, .counter .big.bump, .excard.swap, .counter .rec.on { animation: none; }
 }
