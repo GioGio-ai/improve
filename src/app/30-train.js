@@ -198,13 +198,70 @@ function renderTrain(reset) {
   else if (step.kind === 'rt') body = trRepsHtml(step, 'rt');
   else if (step.kind === 'test') body = trTestHtml(step);
   else if (step.kind === 'list') body = trListHtml(step);
-  root.innerHTML = '<div class="train' + (step.warmup ? ' warm' : '') + '" role="dialog" aria-label="Modo entrenamiento"><div class="train-in">' +
+  root.innerHTML = '<div class="train enter' + (step.warmup ? ' warm' : '') + '" role="dialog" aria-label="Modo entrenamiento"><div class="train-in">' +
     '<div class="tbar"><button class="iconbtn" data-act="tr-min" aria-label="Pausar y salir">' + ic('chevL') + '</button><div class="mid"><div class="t">' + esc(TR.title) + '</div><div class="clk" id="tr-clock">0:00</div>' + saveStatusHtml() + '</div><button class="btn sm primary" data-act="tr-finish">Terminar</button></div>' +
     '<div class="tprog" aria-hidden="true">' + TR.steps.map((s, i) => '<i class="' + (s.warmup ? 'w ' : '') + (i === TR.cur ? 'c' : stepComplete(s) ? 'd' : '') + '"></i>').join('') + '</div>' +
     '<div class="tstage"><span>' + esc(stage) + '</span>' + (step.warmup && warmIdx.length ? '<button class="chip warn" data-act="tr-skipwarm">Ya calenté · saltar</button>' : '<span class="num">' + (TR.cur + 1) + '/' + TR.steps.length + '</span>') + '</div>' +
     '<div class="excard">' + body + '</div></div></div>' + trFooter(step) + restOverlay();
   const tr = root.querySelector('.train'); if (tr) tr.scrollTop = y;
   hydrateThumbs(root);
+  updateTimers();
+}
+/* ---------- Parches (sin remontar #train-root, sin repetir la animación de entrada) ---------- */
+function patchExcard() {
+  if (!TR.open) return;
+  const s = curStep(); if (!s) return;
+  const card = $('.excard'); if (!card) { renderTrain(); return; }
+  let body = '';
+  if (s.kind === 'ex') body = trExHtml(s);
+  else if (s.kind === 'golpeo') body = trGolpeoHtml(s);
+  else if (s.kind === 'sprint') body = trRepsHtml(s, 'sprint');
+  else if (s.kind === 'rt') body = trRepsHtml(s, 'rt');
+  else if (s.kind === 'test') body = trTestHtml(s);
+  else if (s.kind === 'list') body = trListHtml(s);
+  card.innerHTML = body;
+  hydrateThumbs(card);
+}
+function patchProg() {
+  const prog = $('.tprog'); if (!prog) return;
+  prog.innerHTML = TR.steps.map((s, i) => '<i class="' + (s.warmup ? 'w ' : '') + (i === TR.cur ? 'c' : stepComplete(s) ? 'd' : '') + '"></i>').join('');
+}
+/* Un toque que no cambia de paso (sensación, dolor, kg/reps, series): solo repinta la tarjeta y los puntitos */
+function patchStep() {
+  if (!TR.open) return;
+  patchExcard(); patchProg();
+}
+/* Contador de golpeo (+1/+5/−1): solo el número, con rebote */
+function patchCounter() {
+  if (!TR.open) return;
+  const big = $('.counter .big');
+  if (!big) { patchExcard(); patchProg(); return; }
+  const s = curStep();
+  big.innerHTML = s.count + '<small>/' + s.target + '</small>';
+  big.classList.remove('bump'); void big.offsetWidth; big.classList.add('bump');
+  patchProg();
+}
+function patchFooter() {
+  const step = curStep(); if (!step) return;
+  const foot = $('.tfoot'); if (!foot) return;
+  foot.outerHTML = trFooter(step);
+}
+/* Descanso/aguante: monta, actualiza o desmonta el overlay sin reconstruir el resto de .train */
+function patchRest() {
+  if (!TR.open) return;
+  const root = $('#train-root'); if (!root) return;
+  const existing = root.querySelector('#tr-rest');
+  const show = !!(TR.hold || TR.rest) && !TR.restMin;
+  if (!show) { if (existing) existing.remove(); patchFooter(); return; }
+  if (existing) {
+    const tmp = document.createElement('div'); tmp.innerHTML = restOverlay(false);
+    const fresh = tmp.firstElementChild;
+    existing.className = fresh.className;
+    existing.innerHTML = fresh.innerHTML;
+  } else {
+    root.insertAdjacentHTML('beforeend', restOverlay(true));
+  }
+  patchFooter();
   updateTimers();
 }
 function quickRow(s) {
@@ -332,13 +389,14 @@ function setDesc(s, x, k) {
   const v = s.mode === 'time' ? fmtNum(x.secs) + ' s' : s.mode === 'min' ? Math.round((num(x.secs) || 0) / 60) + ' min' : s.mode === 'dist' ? fmtNum(x.m) + ' m' : s.mode === 'contacts' ? fmtNum(x.c) + ' contactos' : (num(x.reps) !== null ? fmtNum(x.reps) + ' rep' : '');
   return 'Serie ' + (Math.floor(k / sides) + 1) + (x.side ? ' · ' + sideLong(x.side).toLowerCase() : '') + ' · ' + v + (num(x.kg) ? ' · ' + fmtKg(x.kg) : '');
 }
-function restOverlay() {
+function restOverlay(enter) {
+  enter = enter === undefined ? true : enter;
   const t = TR.hold || TR.rest;
   if (!t || TR.restMin) return '';
   const size = 420, sw = 14, r = (size - sw) / 2, c = 2 * Math.PI * r;
   const nx = TR.rest ? nextSetInfo() : null;
   const hs = TR.hold ? TR.steps[TR.hold.step] : null;
-  return '<div class="rest' + (TR.hold ? ' hold' : '') + '" id="tr-rest" role="timer" aria-live="off">' +
+  return '<div class="rest' + (TR.hold ? ' hold' : '') + (enter ? ' enter' : '') + '" id="tr-rest" role="timer" aria-live="off">' +
     '<div class="top"><span class="lbl">' + (TR.hold ? 'Aguanta' : 'Descanso') + '</span><button class="btn sm glass" data-act="tr-rest-min">' + ic('min') + 'Ver ejercicio</button></div>' +
     '<div class="dial"><svg viewBox="0 0 ' + size + ' ' + size + '"><circle cx="' + size / 2 + '" cy="' + size / 2 + '" r="' + r + '" fill="none" stroke="rgba(255,255,255,.1)" stroke-width="' + sw + '"/><circle id="tr-ring" data-c="' + c.toFixed(1) + '" cx="' + size / 2 + '" cy="' + size / 2 + '" r="' + r + '" fill="none" stroke="url(#' + (TR.hold ? 'lg-lime' : 'lg-white') + ')" stroke-width="' + sw + '" stroke-linecap="round" stroke-dasharray="' + c.toFixed(1) + ' ' + c.toFixed(1) + '"/></svg><span class="digits" data-timer-v>' + mmss(Math.ceil((t.until - Date.now()) / 1000)) + '</span></div>' +
     (nx ? '<div class="next"><span class="k">Siguiente</span><span class="n">' + esc(nx.n) + '</span>' + (nx.d ? '<span class="d">' + esc(nx.d) + '</span>' : '') + '</div>' : hs ? '<div class="next"><span class="k">En curso</span><span class="n">' + esc(hs.n) + '</span><span class="d">' + esc(setDesc(hs, hs.sets[TR.hold.k], TR.hold.k)) + '</span></div>' : '<span></span>') +
@@ -398,12 +456,12 @@ function trSetField(k, f, raw) {
 }
 function trStep(k, f, d) {
   const s = curStep(); if (!s || !s.sets[k]) return;
-  if (f === 'min') { const cur = (num(s.sets[k].secs) || 0) / 60; trSetField(k, 'min', Math.max(0, Math.round((cur + d) * 10) / 10)); renderTrain(); return; }
+  if (f === 'min') { const cur = (num(s.sets[k].secs) || 0) / 60; trSetField(k, 'min', Math.max(0, Math.round((cur + d) * 10) / 10)); patchStep(); return; }
   const inc = f === 'kg' ? (s.inc || 2.5) : f === 'secs' ? 5 : f === 'm' ? 5 : 1;
   const cur = num(s.sets[k][f]);
   const nv = Math.max(0, Math.round(((cur === null ? 0 : cur) + d * inc) * 100) / 100);
   trSetField(k, f, nv);
-  renderTrain();
+  patchStep();
 }
 function trNav(d) { TR.cur = clamp(TR.cur + d, 0, TR.steps.length - 1); TR.hold = null; TR.edit = null; renderTrain(true); saveDraft(); }
 function trSkipWarm() {

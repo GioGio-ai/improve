@@ -171,20 +171,20 @@ document.addEventListener('click', (e) => {
     case 'tr-ck': { const s = curStep(), x = s.items[Number(g('k'))]; x.done = !x.done; renderTrain(); saveDraft(); return; }
     case 'tr-skip': { const s = curStep(); s.skipped = true; if (s.kind === 'ex') TR.modified = true; closeAllSheets(); if (TR.cur < TR.steps.length - 1) trNav(1); else renderTrain(); return; }
     case 'tr-skipwarm': trSkipWarm(); return;
-    case 'tr-count': { const s = curStep(); s.count = Math.max(0, s.count + Number(g('d'))); haptic(8); renderTrain(); saveDraft(); return; }
-    case 'tr-pd': curStep().pd = Number(g('v')); if (Number(g('v')) >= 3) beep(1, 440); renderTrain(); saveDraft(); return;
+    case 'tr-count': { const s = curStep(); s.count = Math.max(0, s.count + Number(g('d'))); haptic(8); patchCounter(); saveDraft(); return; }
+    case 'tr-pd': curStep().pd = Number(g('v')); if (Number(g('v')) >= 3) beep(1, 440); patchStep(); saveDraft(); return;
     case 'tr-rep': { const s = curStep(), k = Number(g('k')); s.done[k] = !s.done[k]; if (s.done[k] && s.done.some(d => !d)) startRest(s.rest); else TR.rest = null; haptic(14); renderTrain(); saveDraft(); return; }
     case 'tr-step': trStep(Number(g('k')), g('f'), Number(g('d'))); return;
     case 'tr-edit': TR.edit = Number(g('k')); renderTrain(); return;
-    case 'tr-done': { const s = curStep(), k = Number(g('k')); if (!s.sets[k]) return; if (s.sets[k].done) { s.sets[k].done = false; renderTrain(); saveDraft(); } else completeSet(TR.cur, k); return; }
+    case 'tr-done': { const s = curStep(), k = Number(g('k')); if (!s.sets[k]) return; if (s.sets[k].done) { s.sets[k].done = false; patchStep(); saveDraft(); } else completeSet(TR.cur, k); return; }
     case 'tr-hold': { const s = curStep(), k = Number(g('k')), secs = num(s.sets[k].secs) || (s.spec && s.spec.t ? s.spec.t[0] : s.spec && s.spec.min ? s.spec.min * 60 : 30); ensureAudio(); TR.rest = null; TR.restMin = false; TR.hold = { step: TR.cur, k, until: Date.now() + secs * 1000, total: secs }; renderTrain(); saveDraft(); return; }
     case 'tr-hold-stop': { const h = TR.hold; if (!h) return; const s = TR.steps[h.step]; const done = Math.round((Date.now() - (h.until - h.total * 1000)) / 1000); if (s.sets[h.k]) s.sets[h.k].secs = Math.max(1, done); TR.hold = null; completeSet(h.step, h.k); return; }
-    case 'tr-hold-cancel': TR.hold = null; renderTrain(); saveDraft(); return;
-    case 'tr-hold-add': if (TR.hold) { TR.hold.until += Number(g('d')) * 1000; TR.hold.total += Number(g('d')); } renderTrain(); saveDraft(); return;
-    case 'tr-rest': if (TR.rest) { TR.rest.until += Number(g('d')) * 1000; TR.rest.total = Math.max(TR.rest.total, Math.round((TR.rest.until - Date.now()) / 1000)); if (TR.rest.until <= Date.now()) TR.rest = null; } haptic(8); renderTrain(); saveDraft(); return;
-    case 'tr-rest-skip': e.stopPropagation(); TR.rest = null; renderTrain(); saveDraft(); return;
-    case 'tr-rest-min': TR.restMin = true; renderTrain(); return;
-    case 'tr-rest-max': TR.restMin = false; renderTrain(); return;
+    case 'tr-hold-cancel': TR.hold = null; patchRest(); saveDraft(); return;
+    case 'tr-hold-add': if (TR.hold) { TR.hold.until += Number(g('d')) * 1000; TR.hold.total += Number(g('d')); } patchRest(); saveDraft(); return;
+    case 'tr-rest': if (TR.rest) { TR.rest.until += Number(g('d')) * 1000; TR.rest.total = Math.max(TR.rest.total, Math.round((TR.rest.until - Date.now()) / 1000)); if (TR.rest.until <= Date.now()) TR.rest = null; } haptic(8); patchRest(); saveDraft(); return;
+    case 'tr-rest-skip': e.stopPropagation(); TR.rest = null; patchRest(); saveDraft(); return;
+    case 'tr-rest-min': TR.restMin = true; patchRest(); return;
+    case 'tr-rest-max': TR.restMin = false; patchRest(); return;
     case 'tr-prev': trNav(-1); return;
     case 'tr-next': trNav(1); return;
     case 'tr-add': openPicker('tr-add'); return;
@@ -200,8 +200,8 @@ document.addEventListener('click', (e) => {
     case 'tr-superset': { const s = curStep(), nx = TR.steps[TR.cur + 1]; if (!nx || nx.kind !== 'ex') return; if (s.group && s.group === nx.group) { s.group = null; nx.group = null; } else { const gname = s.group || String.fromCharCode(65 + (new Set(TR.steps.map(x => x.group).filter(Boolean)).size % 26)); s.group = gname; nx.group = gname; } closeAllSheets(); renderTrain(); saveDraft(); return; }
     case 'tr-move': { const i = TR.cur, j = i + Number(g('d')); if (j < 0 || j >= TR.steps.length) return; const t = TR.steps[i]; TR.steps[i] = TR.steps[j]; TR.steps[j] = t; TR.cur = j; TR.modified = true; closeAllSheets(); renderTrain(true); saveDraft(); return; }
     case 'tr-remove': { TR.steps.splice(TR.cur, 1); TR.modified = true; if (!TR.steps.length) TR.steps.push({ kind: 'list', items: [{ n: 'Sesión vacía', d: 'Añade ejercicios', done: false }] }); TR.cur = Math.min(TR.cur, TR.steps.length - 1); closeAllSheets(); renderTrain(true); saveDraft(); return; }
-    case 'tr-pain': { const s = curStep(); s.pain = Number(g('v')); renderTrain(); saveDraft(); if (s.pain >= 3) beep(1, 440); return; }
-    case 'tr-fb': { const s = curStep(); s.fb = s.fb === g('v') ? null : g('v'); haptic(8); renderTrain(); saveDraft(); return; }
+    case 'tr-pain': { const s = curStep(); s.pain = Number(g('v')); patchStep(); saveDraft(); if (s.pain >= 3) beep(1, 440); return; }
+    case 'tr-fb': { const s = curStep(); s.fb = s.fb === g('v') ? null : g('v'); haptic(8); patchStep(); saveDraft(); return; }
     case 'tr-addset': { const s = curStep(); const last = s.sets[s.sets.length - 1] || {}; if (s.side) { const a = s.sets[s.sets.length - 2] || last; s.sets.push(Object.assign({}, a, { done: false }), Object.assign({}, last, { done: false })); } else s.sets.push(Object.assign({}, last, { done: false })); renderTrain(); saveDraft(); return; }
     case 'tr-delset': { const s = curStep(); const n = s.side ? 2 : 1; if (s.sets.length > n) s.sets.splice(s.sets.length - n, n); renderTrain(); saveDraft(); return; }
     case 'tr-test-rn': { const s = curStep(); s.val = g('v'); renderTrain(); trTestSave(s); return; }
