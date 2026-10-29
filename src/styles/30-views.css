@@ -166,3 +166,22 @@ body.locked #view, body.locked #nav { display: none; }
 .spark { width: 84px; height: 26px; }
 .spark polyline { fill: none; stroke: var(--fg-3); stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
 .spark.up polyline { stroke: var(--lime); }
+
+/* ---------- Mapa del cuerpo ---------- */
+.bmap { display: block; width: 100%; height: auto; overflow: visible; }
+.bmap polygon { fill: rgba(255, 255, 255, 0.07); stroke: rgba(255, 255, 255, 0.16); stroke-width: 0.35; stroke-linejoin: round; transition: fill var(--t-fast) var(--ease); }
+.bmap polygon.hd { fill: rgba(255, 255, 255, 0.04); }
+.bmap.m-select polygon.z { cursor: pointer; }
+.bmap.m-select polygon.z:hover { fill: rgba(74, 133, 255, 0.28); }
+.bmap.m-select polygon.z:focus-visible { outline: none; stroke: #fff; stroke-width: 0.9; }
+.bmap polygon.z.on { stroke: #fff; stroke-width: 0.9; }
+.bmap-duo { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; max-width: 360px; margin: 0 auto; width: 100%; }
+.bmap-legend { display: flex; flex-wrap: wrap; justify-content: center; gap: 6px 14px; font-size: 12px; color: var(--fg-3); }
+.bmap-legend i { display: inline-block; width: 10px; height: 10px; border-radius: 3px; margin-right: 6px; vertical-align: -1px; }
+.mg-row { display: grid; grid-template-columns: 112px minmax(0, 1fr) 74px; gap: 10px; align-items: center; font-size: 13px; min-height: 26px; }
+.mg-row .nm { color: var(--fg-2); }
+.mg-row .tr { position: relative; height: 8px; border-radius: 4px; background: rgba(255, 255, 255, 0.07); }
+.mg-row .fl { position: absolute; inset: 0 auto 0 0; border-radius: 4px; }
+.mg-row .tg { position: absolute; top: -3px; bottom: -3px; width: 2px; border-radius: 1px; background: rgba(255, 255, 255, 0.55); }
+.mg-row .val { text-align: right; font-weight: 650; }
+.mg-row .val small { color: var(--fg-4); font-weight: 500; }

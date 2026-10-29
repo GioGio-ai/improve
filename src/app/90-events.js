@@ -163,6 +163,7 @@ document.addEventListener('click', (e) => {
     case 'ed-done': { const it = seItem(); if (it && it.sets[Number(g('k'))]) { const x = it.sets[Number(g('k'))]; x.done = x.done === false; } refreshSheet(true); return; }
     case 'pick-tab': UI.pick.tab = g('v'); refreshSheet(true); if (g('v') === 'biblioteca') loadLib().then(updatePickList).catch(() => {}); return;
     case 'pick': onPick(g('id')); return;
+    case 'pick-mg': UI.pick.mg = g('v'); refreshSheet(true); return;
     /* ---- entrenamiento ---- */
     case 'tr-resume': resumeTraining(); return;
     case 'tr-force': { const p = UI.pendingStart, dr = loadDraft(); const n = dr ? finalizeDraft(dr) : 0; if (p) startTraining(p.spec, Object.assign({}, p.opts, { force: true })); else closeAllSheets(); if (n) toast('Lo hecho quedó guardado como sesión.'); return; }

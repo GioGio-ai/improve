@@ -150,7 +150,7 @@ const BANK = [
     'Rodillas suaves, cadera atrás, espalda neutra. Carga moderada.', 'Good_Morning'),
   X('kb_swing', 'Swing con kettlebell', 'bisagra', 'pliom', 'S', 'B', 'VF', 3, 'gluteo isquio', 'bisagra olimpico', 3, 'kettlebell', 'Glúteo, isquios',
     'Bisagra explosiva: la cadera lanza la pesa, los brazos solo guían.', 'One-Arm_Kettlebell_Swings'),
-  X('hiperext_45', 'Hiperextensión a 45°', 'bisagra', 'mixta', 'S', 'B', 'FM', 2, 'lumbar gluteo isquio', 'bisagra core_antiext', 1, 'banco 45°', 'Erectores, glúteo',
+  X('hiperext_45', 'Hiperextensión a 45°', 'bisagra', 'mixta', 'S', 'B', 'FM', 2, 'lumbar gluteo isquio', 'bisagra core_antiext lumbar', 1, 'banco 45°', 'Erectores, glúteo',
     'Flexiona desde la cadera, no desde la columna. Sube hasta línea recta.', 'Hyperextensions_Back_Extensions'),
   X('puente_uni_iso', 'Puente a una pierna isométrico', 'ext_cadera', 'iso', 'S', 'U', 'FM', 1, 'gluteo isquio', 'isquio empuje_cadera', 1, 'peso corporal', 'Glúteo, isquios',
     'Sostén 20-30 s con la pelvis nivelada.', 'Single_Leg_Glute_Bridge'),
@@ -185,7 +185,7 @@ const BANK = [
     'Rodilla extendida, rango completo desde el escalón, pausa 1 s arriba.', 'Standing_Dumbbell_Calf_Raise'),
   X('soleo', 'Elevación de talones sentado (sóleo)', 'tobillo', 'mixta', 'S', 'B', 'FM', 2, 'pantorrilla tobillo', 'gemelo', 1, 'máquina sóleo', 'Sóleo',
     'Rodilla a 90°, carga pesada, rango completo.', 'Seated_Calf_Raise'),
-  X('tibial', 'Elevación de tibial anterior', 'tobillo', 'conc', 'S', 'B', 'RE', 1, 'tobillo', 'tobillo', 1, 'peso corporal', 'Tibial anterior',
+  X('tibial', 'Elevación de tibial anterior', 'tobillo', 'conc', 'S', 'B', 'RE', 1, 'tobillo', 'tobillo tibial', 1, 'peso corporal', 'Tibial anterior',
     'Espalda contra la pared, talones adelante, sube las puntas.', null),
   X('iso_gemelo', 'Isometría pesada de gemelo', 'tobillo', 'iso', 'S', 'U', 'FM', 2, 'pantorrilla tobillo', 'gemelo', 1, 'mancuernas', 'Gemelos, sóleo',
     'De puntillas a media altura con carga, sostén 30-45 s.', null),
@@ -330,7 +330,7 @@ const BANK = [
     'Cuerpo en línea, cadera alta, 30-45 s por lado.', 'Side_Bridge'),
   X('lenador', 'Leñador en polea', 'rotacion', 'conc', 'T', 'B', 'FV', 2, 'core cadera', 'core_rot', 2, 'polea', 'Oblicuos, cadera',
     'Rota desde la cadera y el tronco juntos, diagonal alta a baja.', 'Standing_Cable_Wood_Chop'),
-  X('bird_dog', 'Bird dog', 'antiextension', 'iso', 'S', 'B', 'RE', 1, 'core lumbar gluteo', 'core_antiext', 1, 'peso corporal', 'Multífidos, glúteo',
+  X('bird_dog', 'Bird dog', 'antiextension', 'iso', 'S', 'B', 'RE', 1, 'core lumbar gluteo', 'core_antiext lumbar', 1, 'peso corporal', 'Multífidos, glúteo',
     'En cuadrupedia, extiende brazo y pierna contrarios sin rotar la pelvis.', null),
   X('stir_pot', 'Stir the pot (fitball)', 'antiextension', 'iso', 'ST', 'B', 'RE', 3, 'core hombro', 'core_antiext core_antirot', 2, 'fitball', 'Core completo',
     'Plancha con antebrazos en el fitball, dibuja círculos pequeños.', null),
@@ -392,6 +392,35 @@ const BANK = [
   X('ext_banda', 'Extensión de rodilla con banda (sentado)', 'rodilla', 'conc', 'S', 'U', 'FM', 1, 'cuad rf rodilla', 'ext_uni iso_cuad', 2, 'banda', 'Cuádriceps',
     'Banda atada a la pata del banco y al tobillo. Extiende y baja en 3 s. Alternativa a la extensora.', null),
 
+  // ---------- TREN SUPERIOR COMPLETO (v3.2) ----------
+  X('press_incl_mancuernas', 'Press inclinado con mancuernas', 'empuje_h', 'mixta', 'T', 'B', 'FM', 2, 'pecho hombro', 'empuje_incl empuje_h', 1, 'mancuernas,banco', 'Pectoral superior, deltoides anterior',
+    'Banco a 30°. Escápulas atrás y abajo, baja hasta la altura del pecho y empuja en arco.', 'Incline_Dumbbell_Bench_With_Palms_Facing_In'),
+  X('elev_lateral', 'Elevación lateral con mancuernas', 'aislamiento', 'conc', 'F', 'B', 'RE', 1, 'hombro', 'delt_lat', 1, 'mancuernas', 'Deltoides lateral',
+    'Codos apenas flexionados, sube hasta la altura del hombro sin encoger el trapecio. Bajada de 2 s.', 'Side_Lateral_Raise'),
+  X('pajaros', 'Pájaros (vuelos posteriores)', 'aislamiento', 'conc', 'T', 'B', 'RE', 1, 'hombro espalda', 'delt_post hombro', 1, 'mancuernas', 'Deltoides posterior, romboides',
+    'Tronco inclinado, brazos abiertos en cruz hasta la línea de los hombros. Sin impulso.', 'Seated_Bent-Over_Rear_Delt_Raise'),
+  X('remo_pecho_apoyado', 'Remo con pecho apoyado', 'traccion_h', 'mixta', 'T', 'B', 'FM', 2, 'espalda', 'traccion_h', 1, 'mancuernas,banco', 'Dorsal, romboides, trapecio medio',
+    'Pecho sobre el banco inclinado: la zona lumbar descansa. Codos hacia la cadera y pausa arriba.', 'Dumbbell_Incline_Row'),
+  X('curl_biceps', 'Curl de bíceps con mancuernas', 'aislamiento', 'conc', 'S', 'B', 'RE', 1, 'brazos', 'biceps', 1, 'mancuernas', 'Bíceps',
+    'Codos pegados al cuerpo, sube sin balancear y baja en 2-3 s.', 'Dumbbell_Bicep_Curl'),
+  X('curl_martillo', 'Curl martillo', 'aislamiento', 'conc', 'S', 'B', 'RE', 1, 'brazos', 'biceps antebrazo', 1, 'mancuernas', 'Braquial, bíceps, antebrazo',
+    'Agarre neutro (pulgar arriba). Codos quietos, bajada lenta.', 'Hammer_Curls'),
+  X('ext_triceps_polea', 'Extensión de tríceps en polea', 'aislamiento', 'conc', 'S', 'B', 'RE', 1, 'brazos', 'triceps', 1, 'polea', 'Tríceps',
+    'Codos fijos al costado, extiende hasta bloquear y abre la cuerda abajo.', 'Triceps_Pushdown_-_Rope_Attachment'),
+  X('press_frances', 'Press francés con mancuernas', 'aislamiento', 'mixta', 'S', 'B', 'RE', 2, 'brazos', 'triceps', 1, 'mancuernas,banco', 'Tríceps (cabeza larga)',
+    'Boca arriba, brazos verticales; flexiona solo los codos hacia la frente y extiende.', 'Lying_Triceps_Press'),
+  X('encogimientos', 'Encogimientos de hombros', 'aislamiento', 'conc', 'S', 'B', 'RE', 1, 'espalda cuello', 'trapecio', 1, 'mancuernas', 'Trapecio superior',
+    'Hombros hacia las orejas, pausa 1 s arriba, sin rotar.', 'Dumbbell_Shrug'),
+  X('antebrazo_curl', 'Curl de muñeca y agarre', 'aislamiento', 'conc', 'S', 'B', 'RE', 1, 'brazos', 'antebrazo', 1, 'mancuernas', 'Flexores y extensores del antebrazo',
+    'Antebrazo apoyado, solo la muñeca se mueve. Termina con 20 s apretando la mancuerna.', 'Palms-Up_Dumbbell_Wrist_Curl_Over_A_Bench'),
+  X('cuello_banda', 'Cuello con banda en 4 direcciones', 'cuello', 'mixta', 'SF', 'B', 'RE', 1, 'cuello', 'cuello', 1, 'banda', 'Musculatura cervical',
+    'Banda en la cabeza anclada a la altura de la frente: lleva la cabeza contra la banda en cada dirección, lento y corto.', 'Isometric_Neck_Exercise_-_Sides',
+    { why: 'Más fuerza de cuello: duelos aéreos más estables y menos riesgo de conmoción.' }),
+  X('gemelo_pie_pesado', 'Elevación de talones de pie pesada', 'tobillo', 'mixta', 'S', 'B', 'FM', 2, 'pantorrilla tobillo', 'gemelo', 1, 'barra,step', 'Gemelos',
+    'Barra en la espalda o máquina, puntas en el escalón. Rango completo, pausa 1 s arriba y abajo.', 'Standing_Calf_Raises'),
+  X('superman', 'Superman', 'bisagra', 'iso', 'S', 'B', 'RE', 1, 'lumbar gluteo', 'lumbar', 1, 'peso corporal', 'Erectores, glúteo',
+    'Boca abajo, eleva brazos y piernas a la vez sin forzar el cuello. 3 s arriba.', 'Superman'),
+
   // ---------- CASA Y SIN MÁQUINAS (v3.2) ----------
   X('trote_sitio', 'Trote en el sitio y saltos suaves', 'resistencia', 'conc', 'S', 'B', 'RE', 1, 'pantorrilla', 'cardio_suave', 1, 'peso corporal', 'Aeróbico',
     'Trote suave en el lugar, alterna con jumping jacks. Sube la temperatura sin espacio ni máquinas.', null),
@@ -442,7 +471,7 @@ const LABELS = {
     antiextension: 'Antiextensión', antiflexion_lat: 'Antiflexión lateral', rotacion: 'Rotación', salto_v: 'Salto vertical', salto_h: 'Salto horizontal',
     salto_lat: 'Salto lateral', aterrizaje: 'Aterrizaje', reactivo: 'Reactivo', olimpico: 'Potencia olímpica', lanzamiento: 'Lanzamiento', sprint: 'Sprint',
     cod: 'Cambio de dirección', acarreo: 'Acarreo', tobillo: 'Tobillo', cuello: 'Cuello', hombro: 'Hombro', movilidad: 'Movilidad', respiracion: 'Respiración',
-    golpeo: 'Golpeo', resistencia: 'Resistencia'
+    golpeo: 'Golpeo', resistencia: 'Resistencia', aislamiento: 'Aislamiento'
   },
   c: { exc: 'Excéntrica', iso: 'Isométrica', conc: 'Concéntrica', pliom: 'Pliométrica', mixta: 'Mixta', '—': 'Sin carga' },
   pl: { S: 'Sagital', F: 'Frontal', T: 'Transversal' },
@@ -543,6 +572,54 @@ const BALL_FOCUS = [
 const BALL_HEADER_CAP = 10; // cabezazos de fuerza alta por semana (plan + registros)
 const BANK_INDEX = {};
 BANK.forEach(b => { BANK_INDEX[b.id] = b; });
+
+/* -------- Grupos musculares: series semanales por grupo (primario 1, secundario 0,5) -------- */
+const MUSCLE_GROUPS = {
+  pecho: { n: 'Pecho', t: [8, 10] }, espalda: { n: 'Espalda', t: [12, 16] }, trapecio: { n: 'Trapecio' },
+  deltoides_ant: { n: 'Deltoides anterior' }, deltoides_lat: { n: 'Deltoides lateral', t: [6, 8] }, deltoides_post: { n: 'Deltoides posterior', t: [6, 8] },
+  biceps: { n: 'Bíceps', t: [6, 8] }, triceps: { n: 'Tríceps', t: [6, 8] }, antebrazo: { n: 'Antebrazo y agarre' }, cuello: { n: 'Cuello', t: [6, 9] },
+  core: { n: 'Core', t: [10, 12] }, lumbar: { n: 'Zona lumbar', t: [4, 6] }, gluteo: { n: 'Glúteo', t: [8, 12] }, gluteo_med: { n: 'Glúteo medio' },
+  cuadriceps: { n: 'Cuádriceps' }, recto_femoral: { n: 'Recto femoral' }, flexores_cadera: { n: 'Flexores de cadera' }, isquios: { n: 'Isquiotibiales', t: [8, 10] },
+  aductores: { n: 'Aductores', t: [6, 9] }, pantorrilla: { n: 'Pantorrilla', t: [8, 10] }, tibial: { n: 'Tibial', t: [4, 6] },
+};
+/* Objetivo por fase: en F1-F2 la prioridad es la rehabilitación */
+const MG_PHASE_MULT = [0, 0.6, 0.8, 1, 1, 1, 1];
+const MG = {
+  iso_ext_90: 'cuadriceps recto_femoral:.5', iso_ext_60: 'cuadriceps recto_femoral:.5', iso_ext_multi: 'cuadriceps recto_femoral:.5', wall_sit: 'cuadriceps gluteo:.5',
+  iso_rf_prono: 'recto_femoral cuadriceps:.5', iso_rf_zancada: 'recto_femoral cuadriceps:.5 flexores_cadera:.5', iso_rf_zancada_carga: 'recto_femoral cuadriceps:.5 flexores_cadera:.5',
+  iso_rf_zancada_pared: 'recto_femoral cuadriceps:.5 flexores_cadera:.5', iso_rf_arco_banda: 'recto_femoral cuadriceps:.5 flexores_cadera:.5', iso_rf_polea_armado: 'recto_femoral flexores_cadera',
+  rev_nordic_asist: 'recto_femoral cuadriceps', rev_nordic: 'recto_femoral cuadriceps', rev_nordic_lastre: 'recto_femoral cuadriceps', sissy_squat: 'cuadriceps recto_femoral:.5',
+  ext_uni_exc: 'cuadriceps recto_femoral:.5', ext_uni_reclinada: 'cuadriceps recto_femoral', ext_bi: 'cuadriceps', ext_banda: 'cuadriceps recto_femoral:.5',
+  spanish_iso: 'cuadriceps', spanish_din: 'cuadriceps', step_down: 'cuadriceps gluteo_med:.5', poliquin_step: 'cuadriceps',
+  flex_cadera_banda: 'flexores_cadera recto_femoral:.5', flex_cadera_polea_iso: 'flexores_cadera recto_femoral', flex_cadera_polea_exc: 'flexores_cadera recto_femoral', flex_cadera_polea_rap: 'flexores_cadera recto_femoral',
+  flex_cadera_kb_pie: 'flexores_cadera recto_femoral:.5', patada_polea: 'flexores_cadera recto_femoral:.5 aductores:.5', trineo_atras: 'cuadriceps', prensa_uni: 'cuadriceps gluteo:.5',
+  zancada_adelante: 'cuadriceps gluteo', zancada_atras: 'cuadriceps gluteo', zancada_caminando: 'cuadriceps gluteo recto_femoral:.5', zancada_lateral: 'aductores cuadriceps:.5 gluteo:.5',
+  bulgara: 'cuadriceps gluteo aductores:.5', bulgara_rf_atras: 'cuadriceps gluteo recto_femoral:.5', step_up: 'gluteo cuadriceps', pistol_caja: 'cuadriceps gluteo:.5',
+  sent_trasera: 'cuadriceps gluteo lumbar:.5', sent_frontal: 'cuadriceps core:.5', sent_goblet: 'cuadriceps gluteo:.5', trap_bar: 'gluteo cuadriceps isquios:.5 lumbar:.5',
+  sent_caja: 'cuadriceps gluteo', prensa: 'cuadriceps gluteo:.5', belt_squat: 'cuadriceps gluteo:.5', cosaca: 'aductores cuadriceps:.5',
+  rdl: 'isquios gluteo lumbar:.5', rdl_uni: 'isquios gluteo gluteo_med:.5', peso_muerto: 'isquios gluteo lumbar espalda:.5 trapecio:.5 antebrazo:.5',
+  hip_thrust: 'gluteo isquios:.5', hip_thrust_uni: 'gluteo gluteo_med:.5 isquios:.5', puente_gluteo: 'gluteo isquios:.5', puente_uni_iso: 'gluteo isquios:.5',
+  nordic_asist: 'isquios', nordic: 'isquios', curl_fem_uni: 'isquios', puente_isquio_iso: 'isquios gluteo:.5', slider_curl: 'isquios gluteo:.5',
+  good_morning: 'isquios lumbar', kb_swing: 'gluteo isquios', hiperext_45: 'lumbar gluteo:.5 isquios:.5', superman: 'lumbar gluteo:.5',
+  copenhagen_corto: 'aductores core:.5', copenhagen: 'aductores core:.5', copenhagen_din: 'aductores core:.5', squeeze: 'aductores', aductor_maquina: 'aductores', aductor_polea: 'aductores',
+  monster_walk: 'gluteo_med', plancha_lat_abd: 'gluteo_med core:.5', almeja: 'gluteo_med', avion_cadera: 'gluteo_med', abd_polea: 'gluteo_med', activ_gluteo: 'gluteo_med:.5 gluteo:.5',
+  gemelo_uni: 'pantorrilla', soleo: 'pantorrilla', iso_gemelo: 'pantorrilla', gemelo_pie_pesado: 'pantorrilla', tibial: 'tibial', cuerda: 'pantorrilla:.5', pogo: 'pantorrilla:.5',
+  trineo_empuje: 'cuadriceps gluteo:.5', push_press: 'deltoides_ant triceps:.5',
+  press_banca: 'pecho triceps:.5 deltoides_ant:.5', press_mancuernas: 'pecho triceps:.5 deltoides_ant:.5', press_incl_mancuernas: 'pecho deltoides_ant:.5 triceps:.5', flexiones: 'pecho triceps:.5 core:.5',
+  remo_barra: 'espalda biceps:.5 deltoides_post:.5 lumbar:.5', remo_mancuerna: 'espalda biceps:.5 deltoides_post:.5', remo_invertido: 'espalda biceps:.5 deltoides_post:.5',
+  remo_polea: 'espalda biceps:.5', remo_pecho_apoyado: 'espalda deltoides_post:.5 biceps:.5', dominadas: 'espalda biceps:.5 antebrazo:.5', jalon: 'espalda biceps:.5',
+  press_militar: 'deltoides_ant deltoides_lat:.5 triceps:.5', press_landmine: 'deltoides_ant core:.5 triceps:.5', fondos: 'triceps pecho deltoides_ant:.5',
+  face_pull: 'deltoides_post trapecio:.5', pull_apart: 'deltoides_post trapecio:.5', rot_ext_banda: 'deltoides_post:.5', elev_lateral: 'deltoides_lat', pajaros: 'deltoides_post espalda:.5',
+  curl_biceps: 'biceps antebrazo:.5', curl_martillo: 'biceps antebrazo', ext_triceps_polea: 'triceps', press_frances: 'triceps', encogimientos: 'trapecio', antebrazo_curl: 'antebrazo',
+  cuello_iso: 'cuello', cuello_banda: 'cuello', salto_cabeceo: 'cuello:.5', farmer: 'antebrazo trapecio core:.5', suitcase: 'core antebrazo:.5',
+  pallof: 'core', pallof_rodilla: 'core', plancha: 'core', rueda: 'core', dead_bug: 'core', hollow: 'core', plancha_lat: 'core', lenador: 'core', bird_dog: 'core lumbar:.5',
+  stir_pot: 'core', landmine_rot: 'core', elev_piernas: 'core flexores_cadera:.5', mcgill_curl: 'core', mb_rotacional: 'core:.5', slam: 'core:.5', mb_pecho: 'pecho:.5',
+};
+function parseMg(txt) { const o = {}; String(txt || '').split(/\s+/).filter(Boolean).forEach(t => { const [g, w] = t.split(':'); o[g] = w ? Number(w) : 1; }); return o; }
+BANK.forEach(b => { b.mg = parseMg(MG[b.id]); });
+/* Grupos de un ejercicio de la biblioteca (por sus músculos en inglés) */
+const LIB_MG = { chest: 'pecho', lats: 'espalda', 'middle back': 'espalda', traps: 'trapecio', shoulders: 'deltoides_ant', biceps: 'biceps', triceps: 'triceps', forearms: 'antebrazo', neck: 'cuello',
+  abdominals: 'core', 'lower back': 'lumbar', glutes: 'gluteo', abductors: 'gluteo_med', quadriceps: 'cuadriceps', hamstrings: 'isquios', adductors: 'aductores', calves: 'pantorrilla' };
 const KICK_TARGET = [0, 60, 35, 25, 22, 18, 10, 40, 18];
 const SPRINT_REPS = [0, 6, 6, 10, 10, 12, 12];
 

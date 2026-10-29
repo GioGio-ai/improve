@@ -112,12 +112,23 @@ function loadCard(st, today) {
     '<p class="sub">Minutos × esfuerzo (RPE). Subir más de 20 % de una semana a otra aumenta el riesgo de lesión.</p></div></section>';
 }
 function coverageCard(st, today) {
+  const ws = weekStartOf(today), led = muscleLedger(st, ws, today, weekPlan(ws));
+  const gaps = groupGaps(led, st.phase);
+  const vals = {};
+  for (const gp of gaps) { const c = heatColor(gp.lo ? gp.have / gp.lo : null); groupZones(gp.g).forEach(z => { vals[z] = c; }); }
+  const short = gaps.filter(g => g.have < g.lo);
   const cov = coverage(st.sessions, today, 28);
-  const gaps = coverageGaps(cov, st).map(p => LABELS.pat[p]);
+  const patGaps = coverageGaps(cov, st).map(p => LABELS.pat[p]);
   const patRows = KEY_PATTERNS.map(p => ({ n: LABELS.pat[p], v: cov.pat[p] || 0 })), zoneRows = PREV_ZONES.map(z => ({ n: LABELS.z[z], v: cov.z[z] || 0 }));
-  return '<section class="card"><div class="stack-sm"><span class="h3">Qué entrenas y qué no · 28 días</span>' +
-    (gaps.length ? note('warn', '<b>Sin estímulo y ya permitido en tu fase:</b> ' + esc(gaps.slice(0, 8).join(', ')) + (gaps.length > 8 ? ' y ' + (gaps.length - 8) + ' más' : '') + '.') : note('good', 'Todos los patrones permitidos en tu fase tuvieron estímulo.')) +
-    '<details><summary>' + ic('chart') + 'Ver detalle</summary><div class="in"><div class="h3">Patrones</div>' + hbars(patRows) + '<div class="h3">Zonas de prevención</div>' + hbars(zoneRows) + '</div></details></div></section>';
+  let h = '<section class="card"><div class="stack-sm"><div class="row between"><span class="h3">Series por grupo · esta semana</span>' + chip(short.length ? short.length + ' por debajo' : 'Todo cubierto', short.length ? 'warn' : 'lime') + '</div>' +
+    '<p class="sub">Hecho más lo que falta del plan, contra el objetivo semanal de ' + PHASES[st.phase].n + '. El plan suma accesorios solo cuando hay margen de tiempo.</p>' +
+    '<div class="bmap-duo">' + bodyMapSvg({ view: 'front', mode: 'heat', values: vals }) + bodyMapSvg({ view: 'back', mode: 'heat', values: vals }) + '</div>' +
+    '<div class="bmap-legend"><span><i style="background:' + heatColor(1) + '"></i>Objetivo cubierto</span><span><i style="background:' + heatColor(0.8) + '"></i>Cerca</span><span><i style="background:' + heatColor(0.2) + '"></i>Falta</span></div>' +
+    '<div class="stack-xs">' + gaps.map(g => { const r = g.lo ? g.have / g.lo : 0; return '<div class="mg-row"><span class="nm">' + esc(g.n) + '</span><span class="tr"><span class="fl" style="width:' + clamp(g.have / Math.max(g.hi, 1) * 100, 0, 100).toFixed(0) + '%;background:' + heatColor(r) + '"></span><span class="tg" style="left:' + (g.lo / Math.max(g.hi, 1) * 100).toFixed(0) + '%"></span></span><span class="val num">' + fmtNum(g.have) + '<small>/' + g.lo + '-' + g.hi + '</small></span></div>'; }).join('') + '</div>' +
+    '<details><summary>' + ic('chart') + 'Patrones y zonas · 28 días</summary><div class="in">' + (patGaps.length ? note('warn', '<b>Sin estímulo y ya permitido en tu fase:</b> ' + esc(patGaps.slice(0, 8).join(', ')) + (patGaps.length > 8 ? ' y ' + (patGaps.length - 8) + ' más' : '') + '.') : note('good', 'Todos los patrones permitidos en tu fase tuvieron estímulo.')) +
+    '<div class="h3">Patrones</div>' + hbars(patRows) + '<div class="h3">Zonas de prevención</div>' + hbars(zoneRows) + '</div></details>' +
+    '<p class="sub fg4">Siluetas: react-body-highlighter (MIT).</p></div></section>';
+  return h;
 }
 function weightCard(st) {
   const ws = st.weights;

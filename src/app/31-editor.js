@@ -205,7 +205,17 @@ function pickerHtml() {
   return sheetHead('Añadir ejercicio', 'Banco, biblioteca y tus ejercicios') + '<div class="sheet-body">' +
     '<div class="field"><label class="sr" for="pick-q">Buscar</label><input class="input" id="pick-q" type="search" inputmode="search" enterkeyhint="search" data-pick="q" placeholder="Buscar: búlgara, nordic, squat…" value="' + esc(P.q) + '" autocomplete="off"></div>' +
     '<div class="seg">' + [['recientes', 'Recientes'], ['banco', 'Banco'], ['biblioteca', 'Biblioteca'], ['mios', 'Míos']].map(([k, l]) => '<button type="button" data-act="pick-tab" data-v="' + k + '" class="' + (P.tab === k ? 'on' : '') + '">' + l + '</button>').join('') + '</div>' +
+    '<div class="scroll-x" role="group" aria-label="Grupo muscular">' + PICK_GROUPS.map(([g, l]) => '<button type="button" class="pill' + ((P.mg || '') === g ? ' on' : '') + '" data-act="pick-mg" data-v="' + g + '" aria-pressed="' + ((P.mg || '') === g) + '">' + l + '</button>').join('') + '</div>' +
     '<div class="exlist" id="pick-list">' + pickListHtml() + '</div></div>';
+}
+const PICK_GROUPS = [['', 'Todos'], ['pecho', 'Pecho'], ['espalda', 'Espalda'], ['deltoides_lat', 'Hombro'], ['biceps', 'Bíceps'], ['triceps', 'Tríceps'], ['cuello', 'Cuello'], ['core', 'Core'], ['lumbar', 'Lumbar'],
+  ['gluteo', 'Glúteo'], ['isquios', 'Isquios'], ['aductores', 'Aductores'], ['cuadriceps', 'Cuádriceps'], ['recto_femoral', 'Recto femoral'], ['pantorrilla', 'Pantorrilla'], ['tibial', 'Tibial']];
+/* ¿El ejercicio trabaja el grupo? Hombro incluye los tres deltoides */
+function exHasGroup(ex, g) {
+  if (!g) return true;
+  const mg = exMg(ex) || {};
+  if (g === 'deltoides_lat') return ['deltoides_ant', 'deltoides_lat', 'deltoides_post'].some(k => mg[k] >= 1);
+  return (mg[g] || 0) >= 1;
 }
 function recentIds() {
   const seen = new Set(), out = [];
@@ -222,8 +232,9 @@ function pickListHtml() {
   else if (P.tab === 'biblioteca') {
     if (!LIB.data) return '<div class="skel" style="height:68px"></div><div class="skel" style="height:68px"></div><div class="skel" style="height:68px"></div>';
     const tr = {}; (S.data.traducciones || []).forEach(t => { tr[t.id] = t.n; });
-    rows = LIB.data.filter(x => match(x.n + ' ' + (tr[x.id] || '') + ' ' + (x.pm || []).map(m => (LIB_ES.muscles[m] || '') + ' ' + m).join(' '))).slice(0, 60).map(x => exInfo(x.id));
+    rows = LIB.data.filter(x => match(x.n + ' ' + (tr[x.id] || '') + ' ' + (x.pm || []).map(m => (LIB_ES.muscles[m] || '') + ' ' + m).join(' ')) && (!P.mg || (x.pm || []).some(m => LIB_MG[m] === P.mg || (P.mg === 'deltoides_lat' && m === 'shoulders')))).slice(0, 60).map(x => exInfo(x.id));
   }
+  if (P.mg) rows = rows.filter(ex => ex && exHasGroup(ex, P.mg));
   if (!rows.length) return '<div class="empty small">' + (P.tab === 'recientes' ? 'Todavía no hay ejercicios recientes. Busca en Banco o Biblioteca.' : 'Sin resultados.') + '</div>';
   return rows.slice(0, 60).map(ex => '<button class="exrow" data-act="pick" data-id="' + esc(ex.id) + '">' + thumbHtml(ex) + '<div style="min-width:0"><div class="t">' + esc(ex.n) + '</div><div class="s">' + esc([LABELS.pat[ex.pat], (ex.z || []).slice(0, 2).map(z => LABELS.z[z]).filter(Boolean).join(', ')].filter(Boolean).join(' · ')) + '</div></div><span class="f">' + (ST.injuryActive && (ex.f || 1) > ST.phase ? 'F' + ex.f + '+' : '') + '</span></button>').join('');
 }

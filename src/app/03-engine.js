@@ -47,6 +47,8 @@ const STYPES = {
   fuerzaCorta: { n: 'Fuerza corta', short: 'Fuerza corta', cat: 'gym', icon: 'dumb' },
   potencia: { n: 'Potencia', short: 'Potencia', cat: 'gym', icon: 'bolt' },
   superior: { n: 'Tren superior + core', short: 'Superior', cat: 'gym', icon: 'dumb' },
+  superiorA: { n: 'Superior A · fuerza', short: 'Superior A', cat: 'gym', icon: 'dumb' },
+  superiorB: { n: 'Superior B · volumen', short: 'Superior B', cat: 'gym', icon: 'dumb' },
   prevencion: { n: 'Prevención', short: 'Prevención', cat: 'gym', icon: 'shield' },
   activacion: { n: 'Activación', short: 'Activación', cat: 'gym', icon: 'bolt' },
   movilidad: { n: 'Movilidad y recuperación', short: 'Movilidad', cat: 'recup', icon: 'leaf' },
@@ -54,8 +56,9 @@ const STYPES = {
   descanso: { n: 'Descanso', short: 'Descanso', cat: 'recup', icon: 'moon' },
   libre: { n: 'Sesión libre', short: 'Libre', cat: 'gym', icon: 'dumb' },
 };
-const GYM_TYPES = ['fuerzaA', 'potenciaB', 'superior', 'prevencion', 'movilidad', 'recuperacion', 'fuerzaMax', 'fuerzaCorta', 'potencia', 'activacion'];
+const GYM_TYPES = ['fuerzaA', 'potenciaB', 'superior', 'superiorA', 'superiorB', 'prevencion', 'movilidad', 'recuperacion', 'fuerzaMax', 'fuerzaCorta', 'potencia', 'activacion'];
 const STRENGTH_TYPES = ['fuerzaA', 'potenciaB', 'fuerzaMax', 'potencia'];
+const UPPER_TYPES = ['superior', 'superiorA', 'superiorB'];
 const FIXED_TYPES = ['partido', 'prueba', 'equipo'];
 
 const PHASES = [
@@ -73,11 +76,11 @@ const SCAP = [0, 0, 2, 4, 6, 6, 6];
 /* Semana tipo (desde el día después del descanso): gimnasio por la mañana | cancha por la tarde.
    F3-F4: 3 días intensos, nunca seguidos; el balón no suma intensidad. */
 const TEMPLATES = {
-  1: [['fuerzaA', 'superior'], ['movilidad'], ['fuerzaA', 'prevencion'], ['movilidad', 'superior'], ['fuerzaA', 'prevencion'], ['movilidad'], ['descanso']],
-  2: [['superior', 'balon', 'rt'], ['golpeo', 'fuerzaA'], ['sprint', 'rt', 'movilidad'], ['golpeo', 'fuerzaA'], ['sprint', 'rt', 'movilidad'], ['golpeo', 'prevencion', 'superior'], ['descanso']],
-  3: [['superior', 'balon', 'rt'], ['fuerzaA', 'sprint', 'golpeo', 'balon'], ['prevencion', 'balon', 'movilidad'], ['potenciaB', 'sprint', 'golpeo', 'balon'], ['superior', 'rt', 'balon'], ['fuerzaA', 'sprint', 'golpeo', 'balon'], ['descanso']],
-  4: [['superior', 'balon', 'rt'], ['fuerzaA', 'sprint', 'golpeo', 'balon'], ['prevencion', 'balon', 'movilidad'], ['potenciaB', 'sprint', 'golpeo', 'balon'], ['superior', 'rt', 'balon'], ['fuerzaA', 'sprint', 'golpeo', 'balon'], ['descanso']],
-  off: [['fuerzaMax'], ['sprint', 'golpeo', 'prevencion'], ['superior', 'movilidad'], ['potencia', 'rt'], ['juego', 'prevencion'], ['fuerzaMax', 'superior'], ['descanso']],
+  1: [['fuerzaA', 'superiorA'], ['movilidad'], ['fuerzaA', 'prevencion'], ['movilidad', 'superiorB'], ['fuerzaA', 'prevencion'], ['movilidad'], ['descanso']],
+  2: [['superiorA', 'balon', 'rt'], ['golpeo', 'fuerzaA'], ['sprint', 'rt', 'movilidad'], ['golpeo', 'fuerzaA'], ['sprint', 'rt', 'movilidad'], ['golpeo', 'prevencion', 'superiorB'], ['descanso']],
+  3: [['superiorA', 'balon', 'rt'], ['fuerzaA', 'sprint', 'golpeo', 'balon'], ['prevencion', 'balon', 'movilidad'], ['potenciaB', 'sprint', 'golpeo', 'balon'], ['superiorB', 'rt', 'balon'], ['fuerzaA', 'sprint', 'golpeo', 'balon'], ['descanso']],
+  4: [['superiorA', 'balon', 'rt'], ['fuerzaA', 'sprint', 'golpeo', 'balon'], ['prevencion', 'balon', 'movilidad'], ['potenciaB', 'sprint', 'golpeo', 'balon'], ['superiorB', 'rt', 'balon'], ['fuerzaA', 'sprint', 'golpeo', 'balon'], ['descanso']],
+  off: [['fuerzaMax'], ['sprint', 'golpeo', 'prevencion'], ['superiorA', 'movilidad'], ['potencia', 'rt'], ['juego', 'prevencion'], ['fuerzaMax', 'superiorB'], ['descanso']],
 };
 
 function sessionSlots(type, phase, injuryActive) {
@@ -88,8 +91,9 @@ function sessionSlots(type, phase, injuryActive) {
     case 'potenciaB':
       return phase >= 4 ? ['salto_v', 'salto_h', 'salto_lat', 'trineo', 'patada_rapida', 'olimpico', 'lanz_mb', 'core_rot']
         : ['salto_v', 'salto_h', 'trineo', 'patada_rapida', 'lanz_mb', 'reactivo', 'core_rot'];
-    case 'superior': return ['empuje_h', 'traccion_h', 'empuje_v', 'traccion_v', 'hombro', 'core_antiext', 'cuello'];
-    case 'prevencion': return (injuryActive && phase >= 2) ? ['rf_exc', 'aductor', 'isquio_exc', 'tobillo', 'gluteo_med', 'core_lat'] : ['aductor', 'isquio_exc', 'rf_exc', 'tobillo', 'gluteo_med', 'core_lat'];
+    case 'superior': case 'superiorA': return ['empuje_h', 'traccion_v', 'empuje_v', 'traccion_h', 'triceps', 'biceps', 'cuello', 'delt_lat'];
+    case 'superiorB': return ['empuje_incl', 'traccion_h', 'delt_lat', 'delt_post', 'biceps', 'triceps', 'cuello', 'trapecio', 'antebrazo'];
+    case 'prevencion': return (injuryActive && phase >= 2) ? ['rf_exc', 'aductor', 'isquio_exc', 'gemelo', 'tibial', 'lumbar', 'gluteo_med', 'core_lat', 'tobillo'] : ['aductor', 'isquio_exc', 'rf_exc', 'gemelo', 'tibial', 'lumbar', 'gluteo_med', 'core_lat', 'tobillo'];
     case 'movilidad': return ['mov_cadera', 'mov_tobillo', 'mov_toracica', 'foam', 'respiracion'];
     case 'recuperacion': return ['cardio_suave', 'mov_cadera', 'foam', 'respiracion'];
     case 'fuerzaMax': return ['sent_princ', 'bisagra', 'uni_sent', 'empuje_cadera', 'rf_exc', 'isquio_exc', 'aductor', 'empuje_h', 'traccion_v'];
@@ -109,6 +113,8 @@ const SLOT_NAMES = {
   traccion_h: 'Tracción horizontal', empuje_v: 'Empuje vertical', traccion_v: 'Tracción vertical', cuello: 'Cuello', acarreo: 'Acarreo', hombro: 'Hombro',
   mov_cadera: 'Movilidad de cadera', mov_tobillo: 'Movilidad de tobillo', mov_toracica: 'Movilidad torácica', foam: 'Rodillo', respiracion: 'Respiración',
   mov_din: 'Movilidad dinámica', activacion: 'Activación', cardio_suave: 'Aeróbico suave', acel: 'Aceleración', cod: 'Cambio de dirección',
+  empuje_incl: 'Empuje inclinado', delt_lat: 'Deltoides lateral', delt_post: 'Deltoides posterior', biceps: 'Bíceps', triceps: 'Tríceps', trapecio: 'Trapecio',
+  antebrazo: 'Antebrazo y agarre', tibial: 'Tibial', lumbar: 'Zona lumbar',
 };
 const DEFAULTS = {
   iso_cuad: [[1, 'iso_ext_90']],
@@ -154,6 +160,8 @@ const DEFAULTS = {
   activacion: [[1, 'activ_gluteo']],
   cardio_suave: [[1, 'bici_suave']],
   acel: [[3, 'acel_10']],
+  empuje_incl: [[1, 'press_incl_mancuernas']], delt_lat: [[1, 'elev_lateral']], delt_post: [[1, 'pajaros']], biceps: [[1, 'curl_biceps']], triceps: [[1, 'ext_triceps_polea']],
+  trapecio: [[1, 'encogimientos']], antebrazo: [[1, 'antebrazo_curl']], tibial: [[1, 'tibial']], lumbar: [[1, 'hiperext_45']],
 };
 
 /* ---------- Prescripción estructurada: s series, r reps, t segundos, m metros, c contactos, min minutos ---------- */
@@ -199,10 +207,13 @@ const PRESC = {
   foam: P({ min: 4, note: 'lejos de la lesión' }, undefined, undefined, { min: 4 }),
   respiracion: P({ min: 5, note: 'inhala 4 s, exhala 6-8 s' }), mov_din: P({ min: 8 }), activacion: P({ s: 2, r: [10, 10] }), cardio_suave: P({ min: 15 }),
   acel: P(null, null, { s: 4, m: 10, note: '85-90 %' }, { s: 4, m: 10, note: '95 %' }, { s: 4, m: 10 }),
+  empuje_incl: P({ s: 3, r: [10, 12], rpe: '7' }, { s: 3, r: [8, 12], rpe: '8' }), delt_lat: P({ s: 3, r: [12, 15] }), delt_post: P({ s: 3, r: [12, 15] }),
+  biceps: P({ s: 3, r: [10, 12] }, { s: 3, r: [8, 12], rpe: '8' }), triceps: P({ s: 3, r: [10, 12] }, { s: 3, r: [8, 12], rpe: '8' }), trapecio: P({ s: 2, r: [12, 12] }, { s: 3, r: [10, 12] }),
+  antebrazo: P({ s: 2, r: [15, 15], note: 'y 20 s de agarre' }), tibial: P({ s: 2, r: [15, 20] }), lumbar: P({ s: 2, r: [12, 12] }, { s: 3, r: [10, 12] }),
 };
 const PRIO = {
   rf_iso_largo: 1, rf_exc: 1, ext_uni: 1, flex_cadera: 1, patada_rapida: 1, sent_princ: 1, bisagra: 1, olimpico: 1, salto_v: 1, salto_h: 1, iso_cuad: 1,
-  uni_sent: 2, isquio_exc: 2, aductor: 2, trineo: 2, empuje_h: 2, traccion_v: 2, empuje_v: 2, traccion_h: 2, reactivo: 2, salto_lat: 2, empuje_cadera: 2, lanz_mb: 2,
+  uni_sent: 2, isquio_exc: 2, aductor: 2, trineo: 2, empuje_h: 2, traccion_v: 2, empuje_v: 2, traccion_h: 2, empuje_incl: 2, reactivo: 2, salto_lat: 2, empuje_cadera: 2, lanz_mb: 2,
 };
 function specFor(slot, phase) { const p = PRESC[slot]; if (!p) return { s: 3, r: [8, 10] }; const v = p[clamp(phase, 1, 6)]; return v ? Object.assign({}, v) : (p[6] ? Object.assign({}, p[6]) : { s: 3, r: [8, 10] }); }
 function specMode(sp) { return !sp ? 'reps' : sp.min ? 'min' : sp.t ? 'time' : sp.m ? 'dist' : sp.c ? 'contacts' : 'reps'; }
@@ -276,7 +287,7 @@ function warmupFor(type, st, lugar) {
     items = [W('bici_suave', { min: 4 }, 4, '4 min · ritmo suave'), W(ph >= 3 ? 'mov_dinamica' : 'mov_9090', ph >= 3 ? { min: 3 } : { s: 1, r: [5, 5] }, 3, ph >= 3 ? 'Balanceos frontales y laterales, rango progresivo' : '5 por lado')];
     if (inj) items.push(W(rfId, { s: 2, t: [20, 20] }, 2, '2 × 20 s por pierna', true));
     items.push(W('pogo', { s: 2, c: 10 }, 2, '2 × 10 contactos'), W('saltos_sub', { s: 1, r: [3, 3] }, 1, '3 saltos al 70 %'));
-  } else if (type === 'superior') {
+  } else if (UPPER_TYPES.includes(type)) {
     items = [W('mov_toracica', { s: 2, r: [8, 8] }, 2, '2 × 8 por lado'), W('pull_apart', { s: 2, r: [12, 12] }, 2, '2 × 12'), W('rot_ext_banda', { s: 1, r: [12, 12] }, 1, '', true)];
   } else if (type === 'golpeo' || type === 'golpeoTec') {
     items = [W('trote_suave', { min: 5 }, 5, '5 min'), W(ph >= 3 ? 'mov_dinamica' : 'mov_9090', ph >= 3 ? { min: 3 } : { s: 1, r: [5, 5] }, 3, ph >= 3 ? 'Balanceos frontales y laterales' : 'Controlada, rango sin dolor')];
@@ -677,6 +688,27 @@ function makeItem(ex, slot, spec) {
   return { slot: slot || null, slotName: slot ? (SLOT_NAMES[slot] || slot) : '', id: ex.id, n: ex.n, spec, side, rest: restFor(ex, spec, slot), prio: PRIO[slot] || 3, mode: specMode(spec) };
 }
 
+/* Superseries automáticas: pares de ejercicios opuestos, el descanso va tras el par */
+function autoSupersets(items) {
+  let g = 0;
+  for (let i = 0; i + 1 < items.length; i += 2) {
+    const L = String.fromCharCode(65 + g++);
+    items[i].group = L; items[i + 1].group = L;
+    items[i].rest = 20;
+  }
+}
+/* Tope de duración (usa el factor real/estimado): primero 1 serie menos en accesorios, después fuera lo menos prioritario */
+function capSession(s, st, cap) {
+  const f = st.durFactor || 1, est = () => estimateSession(s) * f;
+  for (const it of s.items.slice().reverse()) { if (est() <= cap) break; if (it.prio >= 3 && it.spec && it.spec.s > 2) it.spec = Object.assign({}, it.spec, { s: it.spec.s - 1 }); }
+  while (est() > cap && s.items.length > 4) {
+    let k = -1;
+    for (let i = s.items.length - 1; i >= 0; i--) if (k < 0 || s.items[i].prio > s.items[k].prio) k = i;
+    const it = s.items.splice(k, 1)[0];
+    const mate = s.items.find(x => x.group && x.group === it.group); if (mate) { mate.group = null; mate.rest = restFor(BANK_INDEX[mate.id], mate.spec, mate.slot); }
+  }
+}
+
 /* ---------- Construcción de una sesión ---------- */
 function makeSession(type, date, st, opts) {
   opts = opts || {};
@@ -686,23 +718,30 @@ function makeSession(type, date, st, opts) {
   const ctx = { bank: st.bank, phase: ph, injuryActive: st.injuryActive, choices: st.choices, equipmentOff: st.equipmentOff, place, profile: st.profile };
   if (GYM_TYPES.includes(type)) {
     const used = new Set();
+    const prefer = type === 'superiorB' ? { traccion_h: 'remo_pecho_apoyado', biceps: 'curl_martillo', triceps: 'press_frances', cuello: 'cuello_banda' } : null;
+    const upperMain = ['empuje_h', 'traccion_v', 'empuje_v', 'traccion_h'];
     for (const slot of sessionSlots(type, ph, st.injuryActive)) {
       let ex = null;
       if (type === 'activacion' && slot === 'reactivo' && !(st.choices && st.choices.activacion_reactivo)) ex = ctx.bank.find(e => e.id === 'pogo');
+      if (!ex && prefer && prefer[slot] && !(st.choices && st.choices[slot])) { const pf = ctx.bank.find(e => e.id === prefer[slot]); if (pf && exEligible(pf, ctx) && !used.has(pf.id)) ex = pf; }
       if (!ex) ex = pickExercise(slot, ctx, used);
       if (!ex) continue;
       used.add(ex.id);
       let spec = specFor(slot, ph);
       if (type === 'prevencion' && slot === 'rf_exc') spec = ph <= 3 ? { s: 2, r: [5, 5], note: 'ligero' } : { s: 2, r: [6, 6] };
+      if (type === 'prevencion' && ['gemelo', 'tibial', 'lumbar'].includes(slot) && spec.s > 2) spec.s = 2;
       if (type === 'potencia' && slot === 'rf_exc') spec = { s: 2, r: [5, 5], note: 'mantenimiento' };
       if (type === 'fuerzaCorta' && spec.s) spec.s = 2;
+      if ((type === 'superiorA' || type === 'superior') && upperMain.includes(slot)) spec = ph >= 2 ? { s: 4, r: [5, 6], rpe: '8', note: 'fuerza' } : { s: 3, r: [8, 8], rpe: '7' };
+      if (type === 'superiorB' && (slot === 'empuje_incl' || slot === 'traccion_h')) spec = { s: 4, r: [10, 12], rpe: '8', note: 'volumen' };
       s.items.push(makeItem(ex, slot, spec));
     }
+    if (UPPER_TYPES.includes(type)) { autoSupersets(s.items); capSession(s, st, 55); }
     s.short = T.short;
   }
   if (STRENGTH_TYPES.includes(type)) s.intense = true;
   if (type === 'fuerzaA') s.notes.push(ph >= 2 ? 'Primero el recto femoral, después el resto. Para con dolor mayor a 2/10.' : 'Todo sin dolor y submáximo.');
-  if (type === 'superior') s.notes.push('No carga el recto femoral.');
+  if (UPPER_TYPES.includes(type)) s.notes.push((type === 'superiorB' ? 'Volumen: 10-12 repeticiones. ' : type === 'superiorA' ? 'Fuerza: básicos pesados. ' : '') + 'Superseries de pares opuestos para entrar en ≈ 60 min. No carga el recto femoral.');
   if (type === 'golpeo' || type === 'golpeoTec') {
     const tec = type === 'golpeoTec';
     let L = Math.min(st.kick.level, KCAP[ph] || 0);
@@ -1108,6 +1147,7 @@ function buildWeekCore(st, weekStart, today, carry) {
     prevIntense = intense;
     out.push({ date: d.date, md: d.md, sessions, intense, notes: d.notes, override: d.override, past, trial: d.trial, types: d.types.slice(), phase: d.phase, projectedPhase: !past && d.phase !== st.phase });
   }
+  if (addDays(weekStart, 6) >= today) fillGaps(out, st, today);
   out.carry = { sim: cloneSim(sim), lastIntense: prevIntense, lastTest };
   return out;
 }
@@ -1206,6 +1246,86 @@ function coverage(sessions, today, days) {
     }
   }
   return res;
+}
+
+/* ---------- Series por grupo muscular ---------- */
+const Z_MG = { cuad: 'cuadriceps', rf: 'recto_femoral', isquio: 'isquios', aductor: 'aductores', gluteo: 'gluteo', gluteo_med: 'gluteo_med', pantorrilla: 'pantorrilla', lumbar: 'lumbar', core: 'core', pecho: 'pecho', espalda: 'espalda', hombro: 'deltoides_ant', cuello: 'cuello' };
+/* Grupos de un ejercicio: del banco, o deducidos de sus zonas (propios y biblioteca) */
+function exMg(ex) {
+  if (!ex) return {};
+  const b = BANK_INDEX[ex.id]; if (b) return b.mg || {};
+  if (ex.mg && Object.keys(ex.mg).length) return ex.mg;
+  if (['movilidad', 'respiracion', 'resistencia', 'sprint', 'cod'].includes(ex.pat) || ex.c === 'pliom' || ex.c === '—') return {};
+  const o = {};
+  (ex.z || []).forEach((z, i) => { const g = Z_MG[z]; if (g && o[g] === undefined) o[g] = i === 0 ? 1 : 0.5; });
+  return o;
+}
+function itemMg(it) { return exMg(BANK_INDEX[it.id] || Object.assign({ id: it.id }, it.tags || {})); }
+function setsDoneOf(e) { const sets = (e.sets || []).filter(Boolean), done = sets.filter(x => x.done !== false).length; return sets.some(x => x.side) ? done / 2 : done; }
+function addMg(out, mg, n) { for (const g in mg) out[g] = (out[g] || 0) + mg[g] * n; }
+function mgTarget(g, phase) { const t = MUSCLE_GROUPS[g] && MUSCLE_GROUPS[g].t; if (!t) return null; const m = MG_PHASE_MULT[clamp(phase || 6, 1, 6)] || 1; return [Math.round(t[0] * m), Math.round(t[1] * m)]; }
+/* Series por grupo de una semana: lo registrado + lo que falta del plan */
+function muscleLedger(st, weekStart, today, days) {
+  const end = addDays(weekStart, 6), done = {}, plan = {}, total = {};
+  for (const s of st.sessions) {
+    if (s.done === false || s.date < weekStart || s.date > end) continue;
+    for (const e of (s.exercises || [])) { if (!e || !e.id || e.warmup) continue; const n = setsDoneOf(e); if (n) addMg(done, itemMg(e), n); }
+  }
+  for (const d of (days || [])) {
+    if (d.date < today) continue;
+    for (const s of d.sessions) {
+      if (st.sessions.some(x => x.date === d.date && x.type === s.type)) continue;
+      for (const it of (s.items || [])) addMg(plan, itemMg(it), (it.spec && it.spec.s) || 0);
+    }
+  }
+  for (const g in MUSCLE_GROUPS) total[g] = Math.round(((done[g] || 0) + (plan[g] || 0)) * 10) / 10;
+  return { total, done, plan };
+}
+/* Grupos por debajo del objetivo semanal */
+function groupGaps(led, phase) {
+  return Object.keys(MUSCLE_GROUPS).map(g => { const t = mgTarget(g, phase); return t ? { g, n: MUSCLE_GROUPS[g].n, have: led.total[g] || 0, lo: t[0], hi: t[1], need: Math.round((t[0] - (led.total[g] || 0)) * 10) / 10 } : null; }).filter(Boolean);
+}
+const LEG_GROUPS = ['gluteo', 'isquios', 'aductores', 'cuadriceps', 'recto_femoral', 'flexores_cadera', 'gluteo_med'];
+/* Accesorios para llegar a las series de la semana, en la próxima sesión de gimnasio con margen de tiempo */
+function fillGaps(days, st, today) {
+  if (!days.length) return;
+  const led = muscleLedger(st, days[0].date, today, days);
+  const gaps = groupGaps(led, st.phase).filter(x => x.need >= 1.5).sort((a, b) => b.need - a.need);
+  if (!gaps.length) return;
+  const hosts = [];
+  for (const d of days) {
+    if (d.date < today || (d.notes || []).some(n => /^Dolor/.test(n))) continue;
+    for (const s of d.sessions) if (GYM_TYPES.includes(s.type) && !['movilidad', 'recuperacion', 'activacion'].includes(s.type) && !st.sessions.some(x => x.date === d.date && x.type === s.type)) hosts.push({ d, s });
+  }
+  for (const gp of gaps) {
+    let need = gp.need;
+    for (const h of hosts) {
+      if (need < 1.5) break;
+      const s = h.s;
+      if (LEG_GROUPS.includes(gp.g) && !['fuerzaA', 'prevencion', 'fuerzaMax', 'fuerzaCorta'].includes(s.type)) continue;
+      if ((s.fills || 0) >= 2) continue;
+      const gymMin = () => h.d.sessions.filter(x => GYM_TYPES.includes(x.type) || x.type === 'test').reduce((a, x) => a + estimateSession(x) * (st.durFactor || 1), 0);
+      const cap = h.d.sessions.filter(x => GYM_TYPES.includes(x.type) || x.type === 'test').every(x => UPPER_TYPES.includes(x.type)) ? 62 : 80;
+      if (gymMin() >= cap - 4) continue;
+      const ctx = { bank: st.bank, phase: h.d.phase || st.phase, injuryActive: st.injuryActive, place: s.place, profile: st.profile, avoid: s.avoid || null };
+      const used = new Set(s.items.map(i => i.id));
+      const cands = st.bank.filter(e => (e.mg || {})[gp.g] === 1 && exEligible(e, ctx) && !used.has(e.id) && (e.k || 2) <= 3 && e.c !== 'pliom');
+      if (!cands.length) continue;
+      cands.sort((a, b) => Object.keys(a.mg).length - Object.keys(b.mg).length || (a.k || 2) - (b.k || 2));
+      const ex = cands[0], slot = (ex.s || []).find(x => PRESC[x]) || null;
+      const base = slot ? specFor(slot, st.phase) : { s: 3, r: [10, 12] };
+      const sets = clamp(Math.round(need), 2, 3);
+      const spec = Object.assign({}, base.min || base.m || base.c ? { r: [10, 12] } : base, { s: sets, note: 'para completar ' + MUSCLE_GROUPS[gp.g].n.toLowerCase() });
+      const it = makeItem(ex, slot, spec); it.fill = gp.g; it.prio = 3;
+      s.items.push(it);
+      if (gymMin() > cap) { s.items.pop(); continue; }
+      s.fills = (s.fills || 0) + 1;
+      s.estRaw = estimateSession(s); s.est = st.durFactor && Math.abs(st.durFactor - 1) >= 0.05 ? Math.max(5, Math.round(s.estRaw * st.durFactor / 5) * 5) : s.estRaw;
+      need -= sets * ex.mg[gp.g];
+      (h.d._fill = h.d._fill || []).push(MUSCLE_GROUPS[gp.g].n.toLowerCase());
+    }
+  }
+  for (const d of days) if (d._fill) { d.notes.push('Se suma ' + Array.from(new Set(d._fill)).join(', ') + ' para llegar a las series de la semana.'); delete d._fill; }
 }
 
 /* Patrones sin estímulo que ya están permitidos en tu fase */
@@ -1352,7 +1472,7 @@ function dayKind(day, prof) {
   if (trials.includes(addDays(day.date, 1)) || day.md === 'MD-1') return 'prueba';
   if (!types.length || types.every(t => t === 'descanso')) return 'descanso';
   if (day.intense) return 'alto';
-  if (types.every(t => ['movilidad', 'recuperacion', 'descanso', 'prevencion', 'superior', 'activacion'].includes(t))) return 'bajo';
+  if (types.every(t => ['movilidad', 'recuperacion', 'descanso', 'prevencion', 'superior', 'superiorA', 'superiorB', 'activacion'].includes(t))) return 'bajo';
   return 'moderado';
 }
 

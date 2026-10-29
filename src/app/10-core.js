@@ -287,7 +287,7 @@ function hydrateMedia(root) {
     if (MEDIA[id]) set(MEDIA[id]); else loadMedia(id).then(set);
   });
 }
-const PHOTO_BY_TYPE = { fuerzaA: 'f1', fuerzaMax: 'f1', fuerzaCorta: 'f1', superior: 'f1', prevencion: 'f1', libre: 'f1', test: 'f4', golpeo: 'f6', golpeoTec: 'f6', sprint: 'f3', rt: 'f3', potenciaB: 'f5', potencia: 'f5', activacion: 'f3', juego: 'f5', equipo: 'f3', partido: 'f2', prueba: 'f2', movilidad: 'f4', recuperacion: 'f4', descanso: 'f4' };
+const PHOTO_BY_TYPE = { fuerzaA: 'f1', fuerzaMax: 'f1', fuerzaCorta: 'f1', superior: 'f1', superiorA: 'f1', superiorB: 'f1', prevencion: 'f1', balon: 'f6', libre: 'f1', test: 'f4', golpeo: 'f6', golpeoTec: 'f6', sprint: 'f3', rt: 'f3', potenciaB: 'f5', potencia: 'f5', activacion: 'f3', juego: 'f5', equipo: 'f3', partido: 'f2', prueba: 'f2', movilidad: 'f4', recuperacion: 'f4', descanso: 'f4' };
 function photoImg(key) { const p = PHOTOS[key] || PHOTOS.f3; const src = MEDIA[key] || ''; return '<img data-media="' + (PHOTOS[key] ? key : 'f3') + '"' + (src ? ' src="' + src + '" class="in"' : '') + ' alt="" decoding="async" style="object-position:' + p.pos + '">'; }
 function avatarImg() { return photoImg('avatar'); }
 const PHOTO_SLOTS = [['avatar', 'Perfil'], ['f5', 'Portada'], ['f1', 'Fuerza'], ['f3', 'Velocidad'], ['f6', 'Golpeo'], ['f4', 'Test y descanso'], ['f2', 'Progreso']];

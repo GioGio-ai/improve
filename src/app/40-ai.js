@@ -171,6 +171,7 @@ function coachContext(st, today) {
     nutricionHoy: { tipoDia: T.kindN, objetivos: { proteina: T.p, carbohidratos: T.c, grasa: T.f, kcal: T.kcal, aguaL: T.water }, consumido: tot, comidas: ms.map(m => (m.time || '') + ' ' + (m.items || []).map(i => i.n + ' ' + i.g + 'g').join(', ')) },
     dieta: 'Sin harinas, procesados ni azúcar (sí miel). Comida casera: leche de cabra (hervida), huevos caseros, carne, pescado, mandioca, arroz, frutas. Mate con cúrcuma por la mañana, café después del almuerzo.',
     patronesSinEstimulo28dias: coverageGaps(cov, st).map(p => LABELS.pat[p]),
+    seriesPorGrupoSemana: (() => { const ws = weekStartOf(today), led = muscleLedger(st, ws, today, weekPlan(ws)); return groupGaps(led, st.phase).map(g => g.n + ': ' + g.have + ' (objetivo ' + g.lo + '-' + g.hi + ')'); })(),
     balon: { recordsPorEstacion: BALL_DRILLS.map(d => { const b = ballBest(st.sessions, d.id, null); return b ? d.n + ': ' + fmtNum(b.val) + ' ' + d.unit + ' (' + b.date + ')' : null; }).filter(Boolean), minutosPorSemana: ballMinutesByWeek(st.sessions, today, 4).map(w => w.start + ': ' + w.min + ' min'), cabezazosFuerzaAltaSemana: ballHeaderCount(st.sessions, weekStartOf(today)) + '/' + BALL_HEADER_CAP, reglaDerecha: 'Derecha solo interior y control; empeine por la escalera K; voleas y centros con la derecha desde K7' },
     proyeccion: proj ? { F4: proj.phases[4] || null, K8: proj.k8, S6: proj.s6, listoParaPruebas: proj.phases[5] || null } : null,
   };
