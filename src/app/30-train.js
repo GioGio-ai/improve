@@ -4,14 +4,20 @@
    Descanso grande, sin descanso entre piernas, alternativas y ayuda con IA.
    ============================================================ */
 const TR_KEY = 'improve-entreno-v3';
-function loadDraft() { try { const r = localStorage.getItem(TR_KEY); return r ? JSON.parse(r) : null; } catch (e) { return null; } }
-let draftTimer = null;
-function saveDraft(now) {
-  clearTimeout(draftTimer);
-  const doSave = () => { try { if (TR && TR.id) localStorage.setItem(TR_KEY, JSON.stringify(Object.assign({}, TR, { open: false }))); } catch (e) { /* sin almacenamiento */ } };
-  if (now) doSave(); else draftTimer = setTimeout(doSave, 250);
+function loadDraft() { try { const r = localStorage.getItem(TR_KEY); const d = r ? JSON.parse(r) : null; return d && d.id ? d : null; } catch (e) { return null; } }
+function draftSnapshot(tr) { const d = Object.assign({}, tr || TR, { open: false, wasOpen: !!(tr || TR).open }); delete d._lastCur; return d; }
+/* Cada toque se escribe al instante en el teléfono (síncrono, sobrevive a que se cierre la app)
+   y, cada pocos segundos, en la nube (sobrevive a perder el teléfono o a borrar sus datos). */
+function saveDraft() {
+  if (!TR || !TR.id) return;
+  TR.lastActive = Date.now();
+  let ok = true;
+  try { localStorage.setItem(TR_KEY, JSON.stringify(draftSnapshot())); } catch (e) { ok = false; }
+  noteLocalSave(ok);
+  cloudDraftSoon();
 }
-function clearDraft() { clearTimeout(draftTimer); try { localStorage.removeItem(TR_KEY); } catch (e) { /* nada */ } }
+function clearDraft() { try { localStorage.removeItem(TR_KEY); } catch (e) { /* nada */ } }
+function flushTraining() { if (TR && TR.id) { flushTestSave(); saveDraft(); cloudDraftNow(); } }
 
 /* ---------- Audio y pantalla encendida ---------- */
 let audioCtx = null, wakeLock = null;
@@ -28,7 +34,14 @@ function beep(n, freq, vib) {
 }
 async function requestWake() { try { if ('wakeLock' in navigator && !wakeLock) { wakeLock = await navigator.wakeLock.request('screen'); wakeLock.addEventListener && wakeLock.addEventListener('release', () => { wakeLock = null; }); } } catch (e) { wakeLock = null; } }
 function releaseWake() { try { if (wakeLock) wakeLock.release(); } catch (e) { /* nada */ } wakeLock = null; }
-document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible' && TR.open) { requestWake(); updateTimers(); } if (document.visibilityState === 'hidden' && TR.id) saveDraft(true); });
+/* Salir de la app, bloquear la pantalla, cambiar de app o que el sistema la cierre: se guarda todo antes */
+document.addEventListener('visibilitychange', () => {
+  if (document.visibilityState === 'visible' && TR.open) { requestWake(); updateTimers(); renderTrain(); }
+  if (document.visibilityState === 'hidden') flushTraining();
+});
+window.addEventListener('pagehide', flushTraining);
+window.addEventListener('beforeunload', flushTraining);
+document.addEventListener('freeze', flushTraining);
 
 /* ---------- Construcción de pasos ---------- */
 function setsFromSpec(sp, side, injSide) {
@@ -90,10 +103,13 @@ function startSessionTraining(sess, opts) {
 function startTraining(spec, opts) {
   opts = opts || {};
   const dr = loadDraft();
-  if (dr && dr.id && !opts.force) {
+  if (dr && !opts.force) {
+    // El mismo entrenamiento que quedó abierto: se retoma donde quedó, sin preguntar
+    const same = dr.date === spec.date && sameTypes(dr.sessions.map(s => s.type), spec.sessions.map(s => s.type));
+    if (same || (TR.open && TR.id === dr.id)) { resumeTraining(); toast('Retomado donde quedaste.', 'info'); return; }
     UI.pendingStart = { spec, opts };
-    openSheet({ id: 'tr-conflict', render: () => sheetHead('Hay un entrenamiento en curso', esc(dr.title)) + '<div class="sheet-body"><p class="body">Si empiezas otro, el que está en curso se descarta.</p>' +
-      '<div class="sheet-foot"><button class="btn" data-act="tr-resume">Retomar</button><button class="btn primary" data-act="tr-force">Empezar nuevo</button></div></div>' });
+    openSheet({ id: 'tr-conflict', render: () => sheetHead('Tienes un entrenamiento abierto', esc(dr.title)) + '<div class="sheet-body"><p class="body">' + esc(draftProgressText(dr)) + '. No se borra nada: si empiezas otro, lo que hiciste se guarda como sesión.</p>' +
+      '<div class="sheet-foot"><button class="btn" data-act="tr-force">Guardar y empezar otro</button><button class="btn primary" data-act="tr-resume">Retomar</button></div></div>' });
     return;
   }
   ensureAudio();
@@ -110,14 +126,15 @@ function openTraining() {
   document.body.classList.add('training'); document.body.style.overflow = 'hidden';
   requestWake(); renderTrain(true); startTick(); saveDraft(true);
 }
-function resumeTraining() { const d = loadDraft(); if (!d || !d.id) return; TR = d; ensureAudio(); openTraining(); }
+function resumeTraining() { const d = loadDraft(); if (!d) return; TR = d; if (TR.cur >= TR.steps.length) TR.cur = Math.max(0, TR.steps.length - 1); ensureAudio(); openTraining(); }
+function sameTypes(a, b) { return a.slice().sort().join(',') === b.slice().sort().join(','); }
 function minimizeTraining(fromPop, silent) {
   if (!TR.open) return;
   TR.open = false;
   if (!fromPop && !silent) { const i = LAYERS.map(l => l.kind).lastIndexOf('train'); if (i === LAYERS.length - 1) popLayer(false); else if (i >= 0) LAYERS.splice(i, 1); }
   document.body.classList.remove('training'); document.body.style.overflow = '';
-  $('#train-root').innerHTML = ''; releaseWake(); stopTick(); saveDraft(true);
-  if (!silent) { toast('Entrenamiento en pausa. Retómalo desde Hoy.', 'info'); scheduleRender(); }
+  $('#train-root').innerHTML = ''; releaseWake(); stopTick(); flushTestSave(); saveDraft(); cloudDraftNow();
+  if (!silent) { toast('En pausa y guardado. Retómalo desde Hoy.', 'info'); scheduleRender(); }
 }
 
 /* ---------- Reloj ---------- */
@@ -182,7 +199,7 @@ function renderTrain(reset) {
   else if (step.kind === 'test') body = trTestHtml(step);
   else if (step.kind === 'list') body = trListHtml(step);
   root.innerHTML = '<div class="train' + (step.warmup ? ' warm' : '') + '" role="dialog" aria-label="Modo entrenamiento"><div class="train-in">' +
-    '<div class="tbar"><button class="iconbtn" data-act="tr-min" aria-label="Pausar y salir">' + ic('chevL') + '</button><div class="mid"><div class="t">' + esc(TR.title) + '</div><div class="clk" id="tr-clock">0:00</div></div><button class="btn sm primary" data-act="tr-finish">Terminar</button></div>' +
+    '<div class="tbar"><button class="iconbtn" data-act="tr-min" aria-label="Pausar y salir">' + ic('chevL') + '</button><div class="mid"><div class="t">' + esc(TR.title) + '</div><div class="clk" id="tr-clock">0:00</div>' + saveStatusHtml() + '</div><button class="btn sm primary" data-act="tr-finish">Terminar</button></div>' +
     '<div class="tprog" aria-hidden="true">' + TR.steps.map((s, i) => '<i class="' + (s.warmup ? 'w ' : '') + (i === TR.cur ? 'c' : stepComplete(s) ? 'd' : '') + '"></i>').join('') + '</div>' +
     '<div class="tstage"><span>' + esc(stage) + '</span>' + (step.warmup && warmIdx.length ? '<button class="chip warn" data-act="tr-skipwarm">Ya calenté · saltar</button>' : '<span class="num">' + (TR.cur + 1) + '/' + TR.steps.length + '</span>') + '</div>' +
     '<div class="excard">' + body + '</div></div></div>' + trFooter(step) + restOverlay();
@@ -467,10 +484,12 @@ function trAlt(id, mode) {
 }
 
 /* ---------- Tests en vivo: se guardan al escribir ---------- */
-let testTimer = null;
+let testTimer = null, testPending = null;
+function flushTestSave() { if (testPending) { const f = testPending; testPending = null; clearTimeout(testTimer); f(); } }
 function trTestSave(s) {
   clearTimeout(testTimer);
-  testTimer = setTimeout(() => {
+  saveDraft();
+  testPending = () => {
     const id = 't-' + TR.date, prev = clone((S.data.tests || []).find(t => t.id === id) || { date: TR.date });
     delete prev.id; prev.date = TR.date;
     if (s.key === 'rn') { prev.rn = s.val || null; prev.rnPain = num(s.rnPain); }
@@ -479,7 +498,8 @@ function trTestSave(s) {
     put('tests', id, prev);
     s.saved = true; saveDraft();
     const el = $('.tstage'); if (el && TR.open) { const sv = $('.saved') || null; if (!sv) renderTrainSoft(); }
-  }, 500);
+  };
+  testTimer = setTimeout(flushTestSave, 500);
 }
 function renderTrainSoft() { const ae = document.activeElement; if (ae && ae.tagName === 'INPUT' && $('#train-root').contains(ae)) return; renderTrain(); }
 function trTestInput(sd, raw) {
@@ -491,7 +511,7 @@ function trTestInput(sd, raw) {
     if (s.key !== 'stretch') { const L = lsi(s.val, inj); box.className = 'lsi-live' + (L === null ? '' : L >= 90 ? ' pass' : ' low'); box.querySelector('b').textContent = L === null ? '—' : fmtNum(L) + ' %'; }
     else { const a = num(s.val.d), b = num(s.val.i); box.className = 'lsi-live' + (a === null || b === null ? '' : Math.abs(a - b) <= 2 ? ' pass' : ' low'); box.querySelector('b').textContent = a === null || b === null ? '—' : fmtNum(Math.abs(a - b)) + ' cm'; }
   }
-  if (num(s.val.d) !== null && num(s.val.i) !== null) trTestSave(s);
+  if (num(s.val.d) !== null && num(s.val.i) !== null) trTestSave(s); else saveDraft();
 }
 
 /* ---------- Terminar ---------- */
@@ -509,7 +529,9 @@ function trSummary() {
 }
 function openFinish() {
   const needPain = TR.steps.some(s => (s.kind === 'golpeo' && !s.tec || s.kind === 'sprint') && num(s.pd) === null && (s.kind === 'golpeo' ? s.count > 0 : s.done.some(Boolean)));
-  UI.fin = { minutes: Math.max(1, Math.round((Date.now() - TR.startedAt) / 60000)), rpe: null, notes: '', tpl: false, tplName: TR.title, needPain, pd: null };
+  const prev = TR.fin || {};
+  UI.fin = { minutes: prev.minTouched ? prev.minutes : Math.max(1, Math.round((Date.now() - TR.startedAt) / 60000)), minTouched: !!prev.minTouched, rpe: prev.rpe ?? null, notes: prev.notes || '', tpl: !!prev.tpl, tplName: prev.tplName || TR.title, needPain, pd: prev.pd ?? null };
+  TR.fin = UI.fin; saveDraft();
   openSheet({ id: 'finish', render: finishHtml });
 }
 function finishHtml() {
@@ -538,15 +560,29 @@ function stepToLogEx(s) {
   if (!BANK_INDEX[s.id] && s.img) e.img = s.img;
   return e;
 }
-function trToLogs() {
-  const f = UI.fin, logs = [];
-  const sessions = TR.sessions.length ? TR.sessions : [{ type: 'libre', title: TR.title }];
+/* Convierte cualquier entrenamiento (el abierto o un borrador guardado) en registros de sesión.
+   auto = guardado sin pasar por «Terminar»: solo las sesiones con algo hecho. */
+function stepHasWork(s) {
+  if (s.kind === 'ex') return s.sets.some(x => x.done);
+  if (s.kind === 'golpeo') return s.count > 0;
+  if (s.kind === 'sprint' || s.kind === 'rt') return s.done.some(Boolean);
+  if (s.kind === 'test') return !!s.saved;
+  if (s.kind === 'list') return s.items.some(x => x.done);
+  return false;
+}
+function trToLogs(tr, f, auto) {
+  tr = tr || TR; f = f || UI.fin || {};
+  const logs = [], end = auto ? (tr.lastActive || Date.now()) : Date.now();
+  const sessions = tr.sessions.length ? tr.sessions : [{ type: 'libre', title: tr.title }];
   const totEst = sessions.reduce((a, s) => a + (s.est || 10), 0) || 1;
+  let warmDone = false;
   sessions.forEach((ss, idx) => {
-    const own = TR.steps.filter(s => s.sess === ss.type || (idx === 0 && !s.sess && !s.warmup));
-    const log = { date: TR.date, type: ss.type, title: ss.title, done: true, source: 'entreno', startedAt: TR.startedAt, endedAt: Date.now(), minutes: Math.max(1, Math.round((num(f.minutes) || 0) * (ss.est || 10) / totEst)), rpe: num(f.rpe), est: ss.est || null, notes: f.notes || '', modified: !!TR.modified, exercises: [], plan: ss.plan || null };
-    if (idx === 0) log.exercises = TR.steps.filter(s => s.warmup && s.kind === 'ex').map(stepToLogEx);
-    if (TR.compressed) log.compressed = TR.compressed;
+    const own = tr.steps.filter(s => s.sess === ss.type || (idx === 0 && !s.sess && !s.warmup));
+    if (auto && !own.some(stepHasWork)) return;
+    const log = { date: tr.date, type: ss.type, title: ss.title, done: true, source: 'entreno', trId: tr.id, startedAt: tr.startedAt, endedAt: end, minutes: Math.max(1, Math.round((num(f.minutes) || 0) * (ss.est || 10) / totEst)), rpe: num(f.rpe), est: ss.est || null, notes: f.notes || '', modified: !!tr.modified, exercises: [], plan: ss.plan || null };
+    if (auto) log.auto = true;
+    if (!warmDone) { log.exercises = tr.steps.filter(s => s.warmup && s.kind === 'ex').map(stepToLogEx); warmDone = true; }
+    if (tr.compressed) log.compressed = tr.compressed;
     for (const s of own) {
       if (s.kind === 'ex' && !s.warmup) log.exercises.push(stepToLogEx(s));
       else if (s.kind === 'golpeo') {
@@ -567,20 +603,19 @@ function trToLogs() {
   return logs;
 }
 function saveFinish() {
+  flushTestSave();
   const f = UI.fin;
   if (f.needPain && num(f.pd) === null) { toast('Marca el dolor durante la sesión.', 'warn'); return; }
-  const logs = trToLogs();
-  const tasks = [];
-  const ids = [];
-  for (const log of logs) { const id = log.type === 'libre' ? uid('s') : 's-' + log.date + '-' + log.type; ids.push(id); tasks.push(put('sessions', id, log)); }
-  if (f.tpl) tasks.push(put('templates', uid('tpl'), { name: (f.tplName || TR.title).trim(), exercises: TR.steps.filter(s => s.kind === 'ex' && !s.warmup).map(s => ({ id: s.id, n: s.n, slot: s.slot, spec: s.spec, side: s.side, mode: s.mode, tags: s.tags || null, img: s.img || null, group: s.group || null })) }));
-  Promise.all(tasks).then(() => {}, () => {});
+  const logs = trToLogs(TR, f);
+  const ids = commitLogs(TR, logs);
+  if (f.tpl) put('templates', uid('tpl'), { name: (f.tplName || TR.title).trim(), exercises: TR.steps.filter(s => s.kind === 'ex' && !s.warmup).map(s => ({ id: s.id, n: s.n, slot: s.slot, spec: s.spec, side: s.side, mode: s.mode, tags: s.tags || null, img: s.img || null, group: s.group || null })) });
   const hadField = logs.some(l => l.kick || l.spr);
   const strength = logs.some(l => STRENGTH_TYPES.includes(l.type));
   const intense = logs.some(isIntenseLog);
-  const sugg = [].concat(...logs.map((l, i) => postSuggestions(Object.assign({ id: ids[i] }, l), ST.sessions, ST)));
+  let sugg = [];
+  try { sugg = [].concat(...logs.map((l, i) => postSuggestions(Object.assign({ id: ids[i] }, l), ST.sessions, ST))); } catch (e) { sugg = []; }
   const date = TR.date;
-  clearDraft();
+  closeDraft(TR);
   TR = { open: false };
   document.body.classList.remove('training'); $('#train-root').innerHTML = ''; releaseWake(); stopTick();
   UI.post = { sugg, applied: {} };

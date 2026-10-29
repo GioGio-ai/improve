@@ -1,12 +1,12 @@
 /* ============================================================
    NÚCLEO: datos, render, capas (hojas y entrenamiento), avisos
    ============================================================ */
-const VERSION = '3.0.0';
+const VERSION = '3.1.0';
 const COLS = {
   profile: 'single', settings: 'single', weights: 'list', injuries: 'list', tests: 'list', checkins: 'list', sessions: 'list',
   custom: 'list', traducciones: 'list', templates: 'list', agenda: 'list', meals: 'list', nutri: 'list', foods: 'list',
 };
-const S = { mode: 'loading', user: null, data: {}, loaded: {}, canWrite: true };
+const S = { mode: 'loading', user: null, data: {}, loaded: {}, canWrite: true, live: [], liveLoaded: false };
 Object.keys(COLS).forEach(c => { S.data[c] = COLS[c] === 'single' ? null : []; });
 let FB = null;
 
@@ -18,6 +18,9 @@ function initStore(fb) {
       S.loaded[col] = true; scheduleRender();
     }, (err) => { S.loaded[col] = true; console.warn('[improve] ' + col, err && err.code); if (err && err.code === 'permission-denied') S.canWrite = false; scheduleRender(); });
   });
+  // Copias en la nube de entrenamientos abiertos (no forman parte de los datos exportables)
+  fb.subscribe('live', (docs) => { const first = !S.liveLoaded; S.live = docs; S.liveLoaded = true; if (first) scheduleRender(); }, () => { S.live = []; S.liveLoaded = true; scheduleRender(); });
+  setTimeout(() => { if (!S.liveLoaded) { S.liveLoaded = true; scheduleRender(); } }, 4000);
 }
 function allLoaded() { return Object.keys(COLS).every(c => S.loaded[c]); }
 function applyLocal(col, id, body) {
@@ -37,15 +40,20 @@ function stripUndef(o) {
   if (o && typeof o === 'object') { const r = {}; for (const k in o) if (o[k] !== undefined) r[k] = stripUndef(o[k]); return r; }
   return o;
 }
-/* Escribe primero en pantalla; Firestore guarda en el dispositivo y sincroniza al haber conexión */
-function put(col, id, data) {
+/* Escribe primero en pantalla; Firestore guarda en el dispositivo y sincroniza al haber conexión.
+   put() responde al instante; writeDoc() devuelve la confirmación del servidor (o el error). */
+function writeDoc(col, id, data) {
   const body = stripUndef(clone(data)); delete body.id;
   body.updatedAt = Date.now(); if (!body.createdAt) body.createdAt = body.updatedAt;
   if (COLS[col]) applyLocal(col, id, body);
-  try { const p = FB.set(col, id, body); if (p && p.catch) p.catch(writeError); } catch (e) { writeError(e); }
+  let p;
+  try { p = FB.set(col, id, body); } catch (e) { writeError(e); return Promise.reject(e); }
+  if (p && p.catch) { p.catch(writeError); return p; }
   return Promise.resolve();
 }
+function put(col, id, data) { writeDoc(col, id, data).catch(() => {}); return Promise.resolve(); }
 function remove(col, id) {
+  if (col === 'sessions') outboxDrop(id);
   if (COLS[col]) removeLocal(col, id);
   try { const p = FB.del(col, id); if (p && p.catch) p.catch(writeError); } catch (e) { writeError(e); }
   return Promise.resolve();
@@ -94,6 +102,7 @@ function render() {
   if (changed) { lastView = UI.view; window.scrollTo(0, 0); } else window.scrollTo(0, y);
   if (keep) { const el = document.getElementById(keep.id); if (el) { el.focus({ preventScroll: true }); try { el.setSelectionRange(keep.a, keep.b); } catch (e) { /* nada */ } } }
   afterRender();
+  maybeRecover();
 }
 document.addEventListener('focusout', () => { if (deferRender) { deferRender = false; setTimeout(scheduleRender, 60); } });
 function skeletonView() {
@@ -119,9 +128,11 @@ function checkinFor(date) { return (S.data.checkins || []).find(c => c.date === 
 const LAYERS = [];
 let ignorePop = 0;
 function pushLayer(layer) { LAYERS.push(layer); try { history.pushState({ improve: LAYERS.length }, ''); layer.hist = true; } catch (e) { layer.hist = false; } }
+/* Cuántas entradas del historial son nuestras: nunca se retrocede más allá (eso cerraría la app) */
+function ownDepth() { const st = history.state; return st && st.improve ? Number(st.improve) || 0 : 0; }
 function popLayer(fromPop) {
   const l = LAYERS.pop(); if (!l) return null;
-  if (!fromPop && l.hist) { ignorePop++; try { history.back(); } catch (e) { ignorePop--; } }
+  if (!fromPop && l.hist && ownDepth() > 0) { ignorePop++; try { history.back(); } catch (e) { ignorePop--; } }
   return l;
 }
 function topSheet() { for (let i = LAYERS.length - 1; i >= 0; i--) if (LAYERS[i].kind === 'sheet') return LAYERS[i]; return null; }
@@ -137,6 +148,7 @@ function closeSheet(fromPop) {
 function closeAllSheets() {
   let n = 0;
   while (LAYERS.length && LAYERS[LAYERS.length - 1].kind === 'sheet') { const l = LAYERS.pop(); if (l.onClose) l.onClose(); if (l.hist) n++; }
+  n = Math.min(n, ownDepth());
   if (n) { ignorePop++; try { history.go(-n); } catch (e) { ignorePop--; } }
   renderSheet(true);
 }
@@ -144,6 +156,7 @@ function resetLayers(newLayer) {
   let n = 0;
   while (LAYERS.length) { const l = LAYERS.pop(); if (l.kind === 'sheet' && l.onClose) l.onClose(); if (l.hist) n++; }
   if (newLayer) { if (n >= 1) { newLayer.hist = true; LAYERS.push(newLayer); n -= 1; } else pushLayer(newLayer); }
+  n = Math.min(n, Math.max(0, ownDepth() - (newLayer && newLayer.hist ? 1 : 0)));
   if (n > 0) { ignorePop++; try { history.go(-n); } catch (e) { ignorePop--; } }
   renderSheet(true);
 }

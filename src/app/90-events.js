@@ -164,7 +164,8 @@ document.addEventListener('click', (e) => {
     case 'pick': onPick(g('id')); return;
     /* ---- entrenamiento ---- */
     case 'tr-resume': resumeTraining(); return;
-    case 'tr-force': { const p = UI.pendingStart; clearDraft(); closeAllSheets(); if (p) startTraining(p.spec, Object.assign({}, p.opts, { force: true })); return; }
+    case 'tr-force': { const p = UI.pendingStart, dr = loadDraft(); const n = dr ? finalizeDraft(dr) : 0; if (p) startTraining(p.spec, Object.assign({}, p.opts, { force: true })); else closeAllSheets(); if (n) toast('Lo hecho quedó guardado como sesión.'); return; }
+    case 'tr-save-draft': { resumeTraining(); if (TR.open) openFinish(); return; }
     case 'tr-min': minimizeTraining(false); return;
     case 'tr-finish': openFinish(); return;
     case 'tr-ck': { const s = curStep(), x = s.items[Number(g('k'))]; x.done = !x.done; renderTrain(); saveDraft(); return; }
@@ -176,10 +177,10 @@ document.addEventListener('click', (e) => {
     case 'tr-step': trStep(Number(g('k')), g('f'), Number(g('d'))); return;
     case 'tr-edit': TR.edit = Number(g('k')); renderTrain(); return;
     case 'tr-done': { const s = curStep(), k = Number(g('k')); if (!s.sets[k]) return; if (s.sets[k].done) { s.sets[k].done = false; renderTrain(); saveDraft(); } else completeSet(TR.cur, k); return; }
-    case 'tr-hold': { const s = curStep(), k = Number(g('k')), secs = num(s.sets[k].secs) || (s.spec && s.spec.t ? s.spec.t[0] : s.spec && s.spec.min ? s.spec.min * 60 : 30); ensureAudio(); TR.rest = null; TR.restMin = false; TR.hold = { step: TR.cur, k, until: Date.now() + secs * 1000, total: secs }; renderTrain(); return; }
+    case 'tr-hold': { const s = curStep(), k = Number(g('k')), secs = num(s.sets[k].secs) || (s.spec && s.spec.t ? s.spec.t[0] : s.spec && s.spec.min ? s.spec.min * 60 : 30); ensureAudio(); TR.rest = null; TR.restMin = false; TR.hold = { step: TR.cur, k, until: Date.now() + secs * 1000, total: secs }; renderTrain(); saveDraft(); return; }
     case 'tr-hold-stop': { const h = TR.hold; if (!h) return; const s = TR.steps[h.step]; const done = Math.round((Date.now() - (h.until - h.total * 1000)) / 1000); if (s.sets[h.k]) s.sets[h.k].secs = Math.max(1, done); TR.hold = null; completeSet(h.step, h.k); return; }
-    case 'tr-hold-cancel': TR.hold = null; renderTrain(); return;
-    case 'tr-hold-add': if (TR.hold) { TR.hold.until += Number(g('d')) * 1000; TR.hold.total += Number(g('d')); } renderTrain(); return;
+    case 'tr-hold-cancel': TR.hold = null; renderTrain(); saveDraft(); return;
+    case 'tr-hold-add': if (TR.hold) { TR.hold.until += Number(g('d')) * 1000; TR.hold.total += Number(g('d')); } renderTrain(); saveDraft(); return;
     case 'tr-rest': if (TR.rest) { TR.rest.until += Number(g('d')) * 1000; TR.rest.total = Math.max(TR.rest.total, Math.round((TR.rest.until - Date.now()) / 1000)); if (TR.rest.until <= Date.now()) TR.rest = null; } haptic(8); renderTrain(); saveDraft(); return;
     case 'tr-rest-skip': e.stopPropagation(); TR.rest = null; renderTrain(); saveDraft(); return;
     case 'tr-rest-min': TR.restMin = true; renderTrain(); return;
@@ -205,9 +206,9 @@ document.addEventListener('click', (e) => {
     case 'tr-delset': { const s = curStep(); const n = s.side ? 2 : 1; if (s.sets.length > n) s.sets.splice(s.sets.length - n, n); renderTrain(); saveDraft(); return; }
     case 'tr-test-rn': { const s = curStep(); s.val = g('v'); renderTrain(); trTestSave(s); return; }
     case 'tr-test-scale': { const s = curStep(), v = Number(g('v')); if (g('name') === 'rnPain') s.rnPain = v; else s.val = v; renderTrain(); trTestSave(s); return; }
-    case 'fin-step': UI.fin.minutes = Math.max(1, (num(UI.fin.minutes) || 0) + Number(g('d')) * 5); refreshSheet(true); return;
-    case 'fin-scale': UI.fin[g('name')] = Number(g('v')); refreshSheet(true); return;
-    case 'fin-tpl': UI.fin.tpl = !UI.fin.tpl; refreshSheet(true); return;
+    case 'fin-step': UI.fin.minutes = Math.max(1, (num(UI.fin.minutes) || 0) + Number(g('d')) * 5); UI.fin.minTouched = true; saveDraft(); refreshSheet(true); return;
+    case 'fin-scale': UI.fin[g('name')] = Number(g('v')); saveDraft(); refreshSheet(true); return;
+    case 'fin-tpl': UI.fin.tpl = !UI.fin.tpl; saveDraft(); refreshSheet(true); return;
     case 'fin-save': saveFinish(); return;
     case 'post-apply': applyPostSuggestion(Number(g('i'))); return;
     /* ---- comida ---- */
@@ -256,9 +257,9 @@ function handleBind(el, isChange) {
     case 'ed-notes': UI.ed.notes = v; return;
     case 'ed-meta': UI.ed.minutes = parseNum(v); return;
     case 'se-notes': { const it = seItem(); if (it) it.notes = v; return; }
-    case 'fin-step': UI.fin.minutes = parseNum(v); return;
-    case 'fin-notes': UI.fin.notes = v; return;
-    case 'fin-tplname': UI.fin.tplName = v; return;
+    case 'fin-step': UI.fin.minutes = parseNum(v); UI.fin.minTouched = true; saveDraft(); return;
+    case 'fin-notes': UI.fin.notes = v; saveDraft(); return;
+    case 'fin-tplname': UI.fin.tplName = v; saveDraft(); return;
     case 'test': { const key = el.getAttribute('data-key'), s = el.getAttribute('data-s'); UI.test[key] = Object.assign({}, UI.test[key] || {}); UI.test[key][s] = parseNum(v); return; }
     case 'test-date': if (v) UI.test.date = v; return;
     case 'test-n': UI.test[el.getAttribute('data-key')] = parseNum(v); return;
@@ -308,5 +309,6 @@ function bootApp(fb) {
   };
   setInterval(() => { if (!TR.open && UI.view === 'hoy' && !DRAG.active && !LAYERS.length) scheduleRender(); }, 60000);
   setTimeout(() => { if (!allLoaded()) $('#view').innerHTML = '<section class="card"><div class="stack-sm"><div class="h2">No se pudieron cargar tus datos</div><p class="sub">Revisa la conexión y vuelve a abrir la app.</p><button class="btn" onclick="location.reload()">Reintentar</button></div></section>'; }, 20000);
+  bootSafety();
   if (loadDraft() && currentView() === 'hoy') scheduleRender();
 }

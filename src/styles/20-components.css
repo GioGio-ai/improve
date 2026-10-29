@@ -233,6 +233,11 @@ body.training .tabbar, body.locked .tabbar { transform: translateY(140%); opacit
 .banner .ic { width: 22px; height: 22px; }
 .banner.lime { background: linear-gradient(135deg, rgba(200, 242, 80, 0.28), rgba(152, 224, 42, 0.08)); border-color: var(--lime-line); }
 .banner.load { background: linear-gradient(135deg, rgba(255, 176, 32, 0.3), rgba(255, 109, 31, 0.08)); border-color: var(--load-line); }
+.banner.live { flex-wrap: wrap; align-items: flex-start; row-gap: 14px; }
+.banner.live > .ic { margin-top: 2px; }
+.banner.live .grow { min-width: 0; flex: 1 1 0; display: grid; gap: 3px; }
+.banner.live .bacts { flex: 1 0 100%; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+.banner.live .bacts .btn { min-height: 48px; padding: 0 12px; }
 
 /* ---------- Métricas ---------- */
 .stats { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }

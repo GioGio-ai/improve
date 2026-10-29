@@ -167,7 +167,8 @@ function saveEditor() {
     if (!log.est) log.est = planned.est || null;
     if (!log.plan) log.plan = planSnapshot(planned);
   }
-  if (e.kick) { const k = { level: Number(e.kick.level) || 1, pd: num(e.kick.pd), pn: num(e.kick.pn) }; if (e.kick.count) k.count = e.kick.count; if (e.type === 'golpeo') log.kick = k; else log.spr = k; }
+  // Conserva todo lo que ya tenía el registro (golpes, repeticiones, parcial) y solo cambia lo editado
+  if (e.kick) { const k = Object.assign({}, e.kick, { level: Number(e.kick.level) || 1, pd: num(e.kick.pd), pn: num(e.kick.pn) }); if (e.type === 'golpeo') { log.kick = k; delete log.spr; } else { log.spr = k; delete log.kick; } }
   if (e.rt) log.rt = Object.assign({}, log.rt || {}, { level: e.rt.level });
   const id = e.id || (e.type === 'libre' ? uid('s') : 's-' + e.date + '-' + e.type);
   const intense = isIntenseLog(log);

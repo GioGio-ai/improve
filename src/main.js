@@ -175,8 +175,14 @@ function registerSW() {
           const mine = ([...document.scripts].map(x => x.src).find(x => /assets\/app-[0-9a-f]+\.js/.test(x)) || '').split('/').pop();
           fetch('index.html?v=' + Date.now(), { cache: 'no-store' }).then(r => r.text()).then(html => {
             const m = html.match(/app-[0-9a-f]+\.js/); if (!m || m[0] === mine) return;
-            const t = document.getElementById('toast');
-            if (t) { t.innerHTML = '<span>Nueva versión lista.</span><button id="sw-reload">Actualizar</button>'; t.hidden = false; const b = document.getElementById('sw-reload'); if (b) b.onclick = () => location.reload(); }
+            // Nunca en medio de un entrenamiento: se ofrece al terminarlo
+            const offer = () => {
+              let open = false; try { open = !!localStorage.getItem('improve-entreno-v3'); } catch (e) { open = false; }
+              if (open) { setTimeout(offer, 60000); return; }
+              const t = document.getElementById('toast');
+              if (t) { t.innerHTML = '<span>Nueva versión lista.</span><button id="sw-reload">Actualizar</button>'; t.hidden = false; const b = document.getElementById('sw-reload'); if (b) b.onclick = () => location.reload(); }
+            };
+            offer();
           }).catch(() => {});
         }
       });

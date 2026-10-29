@@ -15,7 +15,14 @@ self.addEventListener('fetch', (e) => {
   const url = new URL(req.url);
   if (url.origin !== self.location.origin) return;
   if (req.mode === 'navigate') {
-    e.respondWith(fetch(req, { cache: 'no-cache' }).then((r) => { const cp = r.clone(); caches.open(CACHE).then((c) => c.put('./index.html', cp)); return r; }).catch(() => caches.match('./index.html')));
+    // Red primero, pero con señal débil (cancha, gimnasio) abre la copia guardada a los 3 s
+    e.respondWith((async () => {
+      const cached = await caches.match('./index.html');
+      const net = fetch(req, { cache: 'no-cache' }).then((r) => { if (r.ok) { const cp = r.clone(); caches.open(CACHE).then((c) => c.put('./index.html', cp)); } return r; });
+      if (!cached) return net;
+      const slow = new Promise((res) => setTimeout(() => res(cached), 3000));
+      return Promise.race([net.catch(() => cached), slow]);
+    })());
     return;
   }
   if (url.pathname.includes('/lib/')) {

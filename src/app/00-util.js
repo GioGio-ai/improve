@@ -56,6 +56,7 @@ const ICONS = {
   minus: SVG('<path d="M5 12h14"/>', 2.4),
   swap: SVG('<path d="M7 4L3 8l4 4M3 8h14M17 20l4-4-4-4M21 16H7"/>'),
   play: SVG('<path d="M8 5l11 7-11 7z" fill="currentColor"/>'),
+  cloud: SVG('<path d="M7.5 18.5h9.5a4 4 0 0 0 .5-7.97A6 6 0 0 0 6 9.7a4.4 4.4 0 0 0 1.5 8.8z"/>'),
   pause: SVG('<path d="M8 5v14M16 5v14"/>', 2.6),
   edit: SVG('<path d="M4 20h4L19 9l-4-4L4 16z"/><path d="M14 6l4 4"/>'),
   trash: SVG('<path d="M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3"/>'),

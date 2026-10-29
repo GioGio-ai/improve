@@ -41,9 +41,9 @@ function statusChips(st, today) {
 }
 function trainingBanner() {
   const dr = loadDraft();
-  if (!dr || !dr.id || TR.open) return '';
-  const mins = Math.max(1, Math.round((Date.now() - dr.startedAt) / 60000));
-  return '<button class="banner" data-act="tr-resume">' + ic('play') + '<div class="grow"><div class="h3">Entrenamiento en curso</div><div class="sub" style="color:var(--blue-ink)">' + esc(dr.title) + ' · hace ' + fmtDur(mins) + '</div></div><span class="btn sm white" style="pointer-events:none">Retomar</span></button>';
+  if (!dr || TR.open) return outboxBanner();
+  return '<div class="banner live" role="group" aria-label="Entrenamiento abierto">' + ic('play') + '<div class="grow"><div class="h3">Entrenamiento abierto · todo guardado</div><div class="sub" style="color:var(--blue-ink)">' + esc(dr.title) + '</div><div class="sub">' + esc(draftProgressText(dr)) + '</div></div>' +
+    '<div class="bacts"><button class="btn white" data-act="tr-resume">' + ic('play') + 'Retomar</button><button class="btn glass" data-act="tr-save-draft">' + ic('check') + 'Terminar</button></div></div>' + outboxBanner();
 }
 function pendingPainPrompts(st, today) {
   const list = st.sessions.filter(s => s.done !== false && s.date < today && s.date >= addDays(today, -3) && ((s.type === 'golpeo' && s.kick) || (s.type === 'sprint' && s.spr)))
