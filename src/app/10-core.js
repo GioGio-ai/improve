@@ -1,7 +1,7 @@
 /* ============================================================
    NÚCLEO: datos, render, capas (hojas y entrenamiento), avisos
    ============================================================ */
-const VERSION = '3.2.0';
+const VERSION = '3.3.0';
 const COLS = {
   profile: 'single', settings: 'single', weights: 'list', injuries: 'list', tests: 'list', checkins: 'list', sessions: 'list',
   custom: 'list', traducciones: 'list', templates: 'list', agenda: 'list', meals: 'list', nutri: 'list', foods: 'list', molestias: 'list',

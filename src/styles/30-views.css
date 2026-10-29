@@ -200,3 +200,38 @@ body.locked #view, body.locked #nav { display: none; }
 .grid4 { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; }
 .grid4.follow .btn { min-height: 44px; padding: 0 6px; }
 .mol-link { justify-self: center; color: var(--fg-3); margin-top: 6px; min-height: 44px; }
+
+/* ---------- Aviso compacto (ajustes por molestias) ---------- */
+.mini-alert { display: flex; align-items: stretch; min-height: 52px; border-radius: 16px; background: rgba(255, 176, 32, 0.08); border: 1px solid rgba(255, 176, 32, 0.26); overflow: hidden; animation: popIn var(--t) var(--ease); }
+.mini-alert.pain { background: var(--red-soft); border-color: var(--red-line); }
+.mini-alert .mini-main { flex: 1; min-width: 0; display: flex; align-items: center; gap: 10px; padding: 8px 4px 8px 14px; text-align: left; transition: transform var(--t-fast) var(--ease), background var(--t); }
+.mini-alert .mini-main:active { transform: scale(0.985); background: rgba(255, 255, 255, 0.04); }
+.mini-alert .mini-main > .ic { width: 18px; height: 18px; color: var(--amber); flex: none; }
+.mini-alert.pain .mini-main > .ic { color: var(--red); }
+.mini-alert .mini-main > .ic:last-child { width: 16px; height: 16px; color: var(--fg-4); }
+.mini-alert .grow { min-width: 0; display: grid; gap: 1px; }
+.mini-alert .t { font-size: 14px; font-weight: 640; letter-spacing: -0.01em; color: var(--fg); }
+.mini-alert .s { font-size: 12.5px; color: var(--fg-3); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.mini-alert .mini-x { flex: none; width: 48px; display: grid; place-items: center; color: var(--fg-3); border-left: 1px solid rgba(255, 255, 255, 0.06); transition: background var(--t), color var(--t); }
+.mini-alert .mini-x .ic { width: 16px; height: 16px; }
+.mini-alert .mini-x:active { background: rgba(255, 255, 255, 0.06); color: var(--fg); }
+.mini-alert button:focus-visible { outline: 2px solid var(--blue); outline-offset: -2px; }
+
+/* ---------- Sueño en el check-in ---------- */
+.sleep-times { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+.sleep-times label { display: grid; gap: 6px; min-width: 0; }
+.sleep-times .lab2 { font-size: 12px; font-weight: 600; letter-spacing: 0.02em; color: var(--fg-3); display: flex; align-items: center; gap: 6px; }
+.sleep-times .lab2 .ic { width: 14px; height: 14px; }
+.sleep-times .input { min-height: 48px; }
+.sleep-sum { display: flex; align-items: baseline; gap: 8px; margin-top: 10px; font-size: 13px; color: var(--fg-3); }
+.sleep-sum b { font: 650 20px/1 var(--mono); letter-spacing: -0.02em; color: var(--violet-ink); }
+.sleep-sum b.short { color: var(--amber); }
+
+/* ---------- Reorganizar sesión ---------- */
+.rs-opt { position: relative; }
+.rs-opt .blk { align-items: flex-start; }
+.rs-opt .blk .grow { display: grid; gap: 3px; }
+.rs-opt .rec { justify-self: start; margin-bottom: 2px; }
+.rs-opt .blk .s.fg2 { color: var(--fg-2); }
+.mini-alert.blue { background: linear-gradient(135deg, rgba(74, 133, 255, 0.22), rgba(36, 87, 245, 0.08)); border-color: var(--blue-line); }
+.mini-alert.blue .mini-main > .ic:first-child { color: var(--blue-ink); }

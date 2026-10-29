@@ -18,6 +18,7 @@ function viewHoy(st, today) {
   h += trainingBanner();
   h += pendingPainPrompts(st, today);
   if (isToday) h += molHoyHtml(day, today);
+  if (isToday) h += rsHoyCard(ag, today);
   if (isToday) h += pastBlockPrompts(ag, today);
   h += readinessCard(ci, adv);
   h += weekStrip(today, date);
@@ -64,10 +65,11 @@ function pastBlockPrompts(ag, today) {
   return items.map(it => {
     const b = it.block, pend = b.sessions.find(s => !findLog(today, s.type));
     if (!pend) return '';
+    const pendTypes = b.sessions.filter(s => !findLog(today, s.type)).map(s => s.type).join(',');
     return '<section class="card t-blue tight"><div class="stack-sm"><div class="micro" style="color:var(--blue-ink)">Sin registrar</div><div class="h3">¿Hiciste ' + esc(it.title.toLowerCase()) + ' · ' + esc(b.short) + '?</div>' +
       '<div class="grid3"><button class="btn sm" data-act="block-done" data-date="' + today + '" data-key="' + it.key + '">' + ic('check') + 'Tal cual</button>' +
       '<button class="btn sm" data-act="did-other" data-date="' + today + '" data-type="' + pend.type + '">' + ic('edit') + 'Lo que hice</button>' +
-      '<button class="btn sm ghost" data-act="not-done" data-date="' + today + '" data-type="' + pend.type + '">' + ic('x') + 'No la hice</button></div></div></section>';
+      '<button class="btn sm ghost" data-act="resched" data-date="' + today + '" data-types="' + esc(pendTypes) + '">' + ic('x') + 'No la hice</button></div></div></section>';
   }).join('');
 }
 function readinessCard(ci, adv) {
@@ -77,7 +79,7 @@ function readinessCard(ci, adv) {
   const label = sc >= 70 ? 'Listo para cargar' : sc >= 50 ? 'Estado normal' : 'Estado bajo';
   return '<button class="card tight ' + (tone === 'lime' ? 't-lime' : tone === 'load' ? 't-load' : 't-blue') + '" data-act="checkin" style="text-align:left;width:100%"><div class="ready">' + ring(sc / 100, 76, 8, grad, sc, '') +
     '<div class="stack-sm"><div class="row between nowrap"><div class="h3">' + label + '</div><span class="sub">Editar</span></div><div class="vals">' +
-    '<div class="s"><b class="c-sleep">' + (sleepH === null ? '—' : fmtNum(sleepH)) + '<small style="font-size:11px"> h</small></b><span>Sueño</span></div>' +
+    '<div class="s"><b class="c-sleep">' + (sleepH === null ? '—' : fmtNum(Math.round(sleepH * 10) / 10)) + '<small style="font-size:11px"> h</small></b><span>Sueño</span></div>' +
     '<div class="s"><b>' + (num(ci.fatigue) === null ? '—' : ci.fatigue + '/5') + '</b><span>Energía</span></div>' +
     '<div class="s"><b class="' + (pain >= 3 ? 'c-pain' : pain >= 1 ? 'c-load' : 'c-lime') + '">' + (pain === null ? '—' : pain) + '<small style="font-size:11px">/10</small></b><span>Dolor RF</span></div></div></div></div>' +
     (adv.items.length ? '<div style="margin-top:12px" class="stack-sm">' + adv.items.map(a => note(a.level === 'critical' ? 'pain' : 'warn', esc(a.text))).join('') + '</div>' : '') + '</button>';

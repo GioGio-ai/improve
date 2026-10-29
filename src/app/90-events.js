@@ -57,7 +57,9 @@ document.addEventListener('click', (e) => {
     case 'mol-lvl': UI.mol.nivel = Number(g('v')); refreshSheet(true); return;
     case 'mol-save': saveMolestia(); return;
     case 'mol-follow': molFollow(g('id'), g('v')); return;
-    case 'mol-undo': molSetNoAdjust(g('id'), g('date') || today, true); $('#toast').hidden = true; refreshSheet(true); return;
+    case 'mol-adj': openMolAdj(g('date') || today); return;
+    case 'mol-adj-hide': { const d = g('date') || today; molAdjMark(d, molAdjKey(dayPlan(d), d), true); haptic(8); scheduleRender(); return; }
+    case 'mol-undo':molSetNoAdjust(g('id'), g('date') || today, true); $('#toast').hidden = true; refreshSheet(true); return;
     case 'mol-redo': molSetNoAdjust(g('id'), g('date') || today, false); refreshSheet(true); return;
     case 'mol-del': openConfirm('Borrar molestia', 'Se borra el registro y el plan deja de ajustarse por ella.', 'do-mol-del', { id: g('id') }, true); return;
     case 'do-mol-del': remove('molestias', g('id')).then(() => toast('Molestia borrada.')); closeAllSheets(); return;
@@ -71,6 +73,11 @@ document.addEventListener('click', (e) => {
     case 'qd-scale': UI.qd[g('name')] = Number(g('v')); refreshSheet(true); return;
     case 'qd-save': saveQuickDone(); return;
     case 'not-done': markNotDone(g('date'), g('type')); return;
+    case 'resched': { const d = g('date') || today, ts = (g('types') || g('type') || '').split(',').filter(Boolean); if (d <= today) openResched(d, ts); else openMove(d, ts[0]); return; }
+    case 'rs-apply': applyResched(Number(g('i'))); return;
+    case 'rs-skip': skipResched(); return;
+    case 'rs-undo': undoResched(); return;
+    case 'rs-keep': rsAgenda(g('date') || today, null, null, 'keep'); toast('Se mantiene el horario.', 'info'); return;
     case 'did-other': openEditor({ date: g('date'), type: g('type'), modified: true }); return;
     case 'move': openMove(g('date'), g('type')); return;
     case 'move-to': moveBlock(g('from'), g('type'), g('to')); return;
@@ -268,6 +275,7 @@ function handleBind(el, isChange) {
   const b = el.getAttribute('data-bind'), v = el.value, name = el.getAttribute('data-name');
   switch (b) {
     case 'ck-step': UI.checkinDraft.sleepH = parseNum(v); return;
+    case 'ck-time': { if (!/^\d{1,2}:\d{2}$/.test(v)) return; const d = UI.checkinDraft; d[name] = v; const sp = sleepSpan(d.bedTime, d.wakeTime); d.sleepH = sp === null ? null : Math.round(sp / 60 * 100) / 100; const sum = $('#ck-sum'); if (sum) sum.innerHTML = ckSleepSum(d); return; }
     case 'qd-step': UI.qd.minutes = parseNum(v); return;
     case 'tr-step': trSetField(Number(el.getAttribute('data-k')), el.getAttribute('data-f'), v); return;
     case 'tr-notes': { const s = curStep(); if (s) { s.notes = v; saveDraft(); } return; }

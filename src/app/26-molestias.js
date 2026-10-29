@@ -76,6 +76,8 @@ function molDetailHtml(id) {
   let h = sheetHead(zoneName(m.zona, m.lado), capFirst(m.tipo) + ' ' + lvl + '/10 · ' + fmtDate(m.fecha) + (m.hora ? ' · ' + m.hora : '')) + '<div class="sheet-body">';
   h += '<div class="bmap-one sm">' + bodyMapSvg({ view: ZONE_VIEW[m.zona] || 'front', mode: 'pain', values: { [m.zona + ':' + m.lado]: painColor(m.tipo, lvl) } }) + '</div>';
   if (m.nota) h += note('info', esc(m.nota));
+  const adjT = act ? ((dayPlan(todayStr()) || {}).molAdj || []).find(a => a.id === m.id) : null;
+  if (adjT) h += note(adjT.tipo === 'dolor' ? 'pain' : 'warn', '<b>Hoy en el plan:</b> ' + esc(adjT.text));
   if ((m.updates || []).length) h += '<div class="stack-xs">' + m.updates.map(u => '<div class="lrow"><span class="fg2">' + fmtDate(u.fecha) + '</span><span class="sub">' + esc(MOL_ESTADOS[u.estado] || u.estado) + (u.nivel ? ' · ' + u.nivel + '/10' : '') + '</span></div>').join('') + '</div>';
   if (!m.resuelta) h += '<div class="field"><span class="lab">¿Sigue?</span>' + molFollowBtns(m.id) + '</div>';
   else h += note('good', 'Resuelta el ' + fmtDate(m.resueltaEn || m.fecha) + '.');
@@ -112,11 +114,50 @@ function molHoyHtml(day, today) {
   const ask = act.filter(m => m.fecha < today && !(m.last && m.last.fecha === today));
   let h = '';
   h += ask.map(m => '<section class="card t-load tight"><div class="stack-sm"><div class="micro" style="color:var(--amber)">Molestia · ' + fmtDate(m.fecha) + '</div><div class="h3">¿Sigue la molestia en ' + esc(zoneName(m.zona, m.lado).toLowerCase()) + '?</div>' + molFollowBtns(m.id) + '</div></section>').join('');
-  const adj = (day && day.molAdj) || [];
-  if (adj.length) h += '<section class="card tight"><div class="stack-sm"><div class="row between"><span class="h3">' + ic('warn') + ' Ajustes por molestias</span></div>' + adj.map(a => '<div class="note ' + (a.tipo === 'dolor' ? 'pain' : 'warn') + '">' + ic('warn') + '<div>' + esc(a.text) + '<div><button class="linkbtn" data-act="mol-undo" data-id="' + esc(a.id) + '" data-date="' + today + '">' + ic('undo') + 'Deshacer ajuste</button></div></div></div>').join('') + '</div></section>';
-  const ins = ST ? molestiaInsights(ST, today) : [];
-  if (ins.length) h += ins.map(x => note('blue', '<b>' + esc(zoneName(x.zona, x.lado)) + ': ' + x.n + ' veces en 14 días.</b> ' + esc(x.tip) + (x.causes.length ? ' En las 48 h previas: ' + esc(x.causes.join(', ')) + '.' : ''))).join('');
+  h += molAdjLine(day, today);
   return h;
+}
+/* Ajustes por molestias: una línea compacta que se ve una vez.
+   Se oculta al tocarla o al cerrarla, o sola 1 h después de verla; el detalle sigue en el chip de la molestia. */
+const MOL_SEEN_TTL = 60 * 60 * 1000;
+function molAdjKey(day, today) {
+  const adj = (day && day.molAdj) || [], ins = ST ? molestiaInsights(ST, today) : [];
+  return adj.map(a => a.id + ':' + a.sev).concat(ins.map(x => 'p:' + x.zona + x.lado + x.n)).sort().join('|');
+}
+function molAdjSeen(today) { try { return JSON.parse(localStorage.getItem('improve:moladj') || 'null'); } catch (e) { return null; } }
+function molAdjMark(today, key, hide) {
+  try {
+    const cur = molAdjSeen(today);
+    const same = cur && cur.date === today && cur.key === key;
+    localStorage.setItem('improve:moladj', JSON.stringify({ date: today, key, at: same ? cur.at : Date.now(), hidden: !!(hide || (same && cur.hidden)) }));
+  } catch (e) { /* sin almacenamiento: se muestra igual */ }
+}
+function molAdjLine(day, today) {
+  const adj = (day && day.molAdj) || [], ins = ST ? molestiaInsights(ST, today) : [];
+  if (!adj.length && !ins.length) return '';
+  const key = molAdjKey(day, today), seen = molAdjSeen(today);
+  if (seen && seen.date === today && seen.key === key && (seen.hidden || Date.now() - seen.at > MOL_SEEN_TTL)) return '';
+  if (!seen || seen.date !== today || seen.key !== key) molAdjMark(today, key, false);
+  const pain = adj.some(a => a.tipo === 'dolor');
+  const zones = Array.from(new Set(adj.map(a => { const m = molList().find(x => x.id === a.id); return m ? zoneName(m.zona, m.lado) : ''; }).filter(Boolean)));
+  const title = adj.length ? 'Plan ajustado por molestia' : 'Patrón de molestias';
+  const sub = adj.length ? zones.join(' · ') || plural(adj.length, 'ajuste', 'ajustes') : ins.map(x => zoneName(x.zona, x.lado)).join(' · ');
+  return '<div class="mini-alert' + (pain ? ' pain' : '') + '" role="status">' +
+    '<button class="mini-main" data-act="mol-adj" data-date="' + today + '">' + ic('warn') + '<span class="grow"><span class="t">' + esc(title) + '</span><span class="s">' + esc(sub) + ' · ver qué cambió</span></span>' + ic('chev') + '</button>' +
+    '<button class="mini-x" data-act="mol-adj-hide" data-date="' + today + '" aria-label="Ocultar aviso">' + ic('x') + '</button></div>';
+}
+function openMolAdj(date) {
+  const day = dayPlan(date); molAdjMark(date, molAdjKey(day, date), true);
+  openSheet({ id: 'mol-adj', render: () => molAdjHtml(date) });
+  scheduleRender();
+}
+function molAdjHtml(date) {
+  const day = dayPlan(date), adj = (day && day.molAdj) || [], ins = ST ? molestiaInsights(ST, date) : [];
+  let h = sheetHead('Ajustes por molestias', capFirst(fmtDateLong(date))) + '<div class="sheet-body">';
+  if (!adj.length && !ins.length) h += '<p class="sub">Hoy el plan no tiene ajustes por molestias.</p>';
+  h += adj.map(a => '<div class="note ' + (a.tipo === 'dolor' ? 'pain' : 'warn') + '">' + ic('warn') + '<div>' + esc(a.text) + '<div><button class="linkbtn" data-act="mol-undo" data-id="' + esc(a.id) + '" data-date="' + date + '">' + ic('undo') + 'Hoy no ajustar el plan</button></div></div></div>').join('');
+  h += ins.map(x => note('blue', '<b>' + esc(zoneName(x.zona, x.lado)) + ': ' + x.n + ' veces en 14 días.</b> ' + esc(x.tip) + (x.causes.length ? ' En las 48 h previas: ' + esc(x.causes.join(', ')) + '.' : ''))).join('');
+  return h + '<p class="sub">Cada molestia sigue disponible en su chip, arriba en Hoy.</p></div>';
 }
 function molChips(today) {
   const act = molActiveToday();

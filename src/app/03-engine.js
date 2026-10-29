@@ -1017,6 +1017,14 @@ function readinessTypes(types, st, date) {
     notes.push('Dolor ' + worst + '/10 ' + (p.rest >= 3 ? 'en reposo' : 'al día siguiente') + ': hoy nada intenso para el recto femoral. Si no baja en 48 h, consulta.');
     return { types: out.length ? out : ['movilidad'], notes, locked: true };
   }
+  // Menos de 5 h de sueño: sin cargas máximas en el gimnasio (la fuerza y la potencia bajan; el riesgo de lesión sube)
+  const sl = sleepOf(st, date);
+  if (sl && sl.h !== null && sl.h < 5 && types.some(t => STRENGTH_TYPES.includes(t))) {
+    const out = [];
+    types.forEach(t => { const v = STRENGTH_TYPES.includes(t) ? downgradeTypes([t])[0] : t; if (v && !out.includes(v)) out.push(v); });
+    notes.push('Dormiste ' + fmtDur(sl.h * 60) + ': hoy sin cargas máximas en el gimnasio.');
+    return { types: out, notes, locked: false };
+  }
   return { types, notes, locked: false };
 }
 const DOMS_SWAP = { rf_exc: ['iso_rf_zancada', 'rf_iso_largo', { s: 3, t: [20, 30], note: 'isométrica en lugar de excéntrica' }], isquio_exc: ['puente_isquio_iso', 'isquio', { s: 3, t: [20, 30], note: 'isométrica en lugar de excéntrica' }], aductor: ['copenhagen_corto', 'aductor', { s: 3, t: [15, 20], note: 'isométrica' }] };
@@ -1038,10 +1046,11 @@ function adjustSessionsForState(sessions, st, date) {
     }
     if (n) notes.push('Dolor muscular alto: hoy isometrías en lugar de excéntricos (' + plural(n, 'ejercicio', 'ejercicios') + ').');
   }
-  if (score !== null && score < 50) {
+  const sl = sleepOf(st, date), shortSleep = !!(sl && sl.h !== null && sl.h < 6);
+  if ((score !== null && score < 50) || shortSleep) {
     let n = 0;
     for (const s of sessions) for (const it of s.items) if (it.prio >= 2 && it.spec && it.spec.s > 2) { it.spec = Object.assign({}, it.spec, { s: it.spec.s - 1 }); n++; }
-    if (n) { sessions.forEach(s => { if (s.items.length) s.est = estimateSession(s); }); notes.push('Estado ' + score + '/100: una serie menos en ' + plural(n, 'accesorio', 'accesorios') + ', misma intensidad.'); }
+    if (n) { sessions.forEach(s => { if (s.items.length) s.est = estimateSession(s); }); notes.push((score !== null && score < 50 ? 'Estado ' + score + '/100' : 'Dormiste ' + fmtDur(sl.h * 60)) + ': una serie menos en ' + plural(n, 'accesorio', 'accesorios') + ', misma intensidad.'); }
   }
   return notes;
 }

@@ -10,6 +10,19 @@ function hm(s) { if (typeof s === 'number') return s; const p = String(s || '0:0
 function fmtHM(min) { min = ((Math.round(min) % 1440) + 1440) % 1440; return String(Math.floor(min / 60)).padStart(2, '0') + ':' + String(min % 60).padStart(2, '0'); }
 function fmtDur(min) { min = Math.round(min); if (min < 60) return min + ' min'; const h = Math.floor(min / 60), m = min % 60; return h + ' h' + (m ? ' ' + String(m).padStart(2, '0') : ''); }
 function scheduleOf(prof) { return Object.assign({}, AGENDA_DEFAULTS, (prof && prof.schedule) || {}); }
+const ceil15 = (m) => Math.ceil(m / 15) * 15;
+/* Minutos entre acostarse y levantarse (cruza la medianoche) */
+function sleepSpan(bed, wake) { if (!bed || !wake) return null; const d = (hm(wake) - hm(bed) + 1440) % 1440; return d || null; }
+/* Sueño real de la noche anterior a `date`, desde el check-in */
+function sleepOf(st, date) {
+  const ci = ((st && st.checkins) || []).find(c => c.date === date);
+  if (!ci) return null;
+  const span = sleepSpan(ci.bedTime, ci.wakeTime);
+  const h = span !== null ? span / 60 : num(ci.sleepH);
+  return { h, wake: ci.wakeTime ? hm(ci.wakeTime) : null, bed: ci.bedTime ? hm(ci.bedTime) : null };
+}
+/* Margen mínimo desde que te levantas hasta empezar el gimnasio: desayuno + traslado (como 07:30 → 08:30) */
+const WAKE_TO_GYM = 60;
 
 /* Por qué cada bloque va a esa hora (se muestra al tocarlo) */
 const AGENDA_WHY = {
@@ -42,8 +55,10 @@ function buildAgenda(day, st, agendaDoc, opts) {
   const hidden = (key) => !!(ov[key] && ov[key].hidden);
   const add = (it) => { if (!hidden(it.key)) { it.end = it.start + it.dur; it.moved = !!(ov[it.key] && num(ov[it.key].start) !== null); it.why = AGENDA_WHY[it.key] || AGENDA_WHY[it.kind] || ''; items.push(it); } return it; };
 
-  const wake = O('wake', hm(sch.wake)), sleep = O('sleep', hm(sch.sleep));
-  add({ key: 'wake', kind: 'wake', title: 'Despertar', start: wake, dur: 0, movable: true, marker: true });
+  const slept = sleepOf(st, day.date);
+  const wake = O('wake', slept && slept.wake !== null ? slept.wake : hm(sch.wake)), sleep = O('sleep', hm(sch.sleep));
+  const lateWake = !!(slept && slept.wake !== null && !(ov.wake && num(ov.wake.start) !== null) && slept.wake > hm(sch.wake) + 20);
+  add({ key: 'wake', kind: 'wake', title: slept && slept.wake !== null ? 'Te levantaste' : 'Despertar', start: wake, dur: 0, movable: true, marker: true });
 
   const blocks = dayBlocks(day);
   const B = {};
@@ -52,8 +67,10 @@ function buildAgenda(day, st, agendaDoc, opts) {
   const train = {};
   // ---- Gimnasio
   if (B.gym) {
-    const start = O('gym', hm(sch.gym));
+    const def = slept && slept.wake !== null ? Math.max(hm(sch.gym), ceil15(wake + WAKE_TO_GYM)) : hm(sch.gym);
+    const start = O('gym', def);
     train.gym = add({ key: 'gym', kind: 'train', block: B.gym, title: 'Gimnasio', sub: B.gym.short, start, dur: B.gym.est, movable: true, intense: B.gym.intense });
+    if (def > hm(sch.gym) && !train.gym.moved) { train.gym.lateShift = true; train.gym.why = 'Corrido por la hora en que te levantaste: ' + fmtHM(wake) + ' + desayuno y traslado.'; }
   }
   // ---- Cancha
   if (B.campo) {
@@ -80,7 +97,11 @@ function buildAgenda(day, st, agendaDoc, opts) {
   else if (kind === 'alto' || kind === 'prueba') add({ key: 'colacion', kind: 'meal', slot: 'colacion', title: 'Media mañana', start: O('colacion', 10 * 60 + 30), dur: 15, movable: true });
   const lunchDef = Math.max(12 * 60 + 30, train.gym && train.gym.start < 12 * 60 ? train.gym.end + 60 : 0);
   const lunch = add({ key: 'almuerzo', kind: 'meal', slot: 'almuerzo', title: 'Almuerzo', start: O('almuerzo', lunchDef), dur: 40, movable: true });
-  if (sch.nap !== false && !(afternoon && afternoon.start < 15 * 60)) add({ key: 'siesta', kind: 'nap', title: 'Siesta', sub: '20-30 min', start: O('siesta', lunch.start + lunch.dur + 20), dur: 25, movable: true, optional: true });
+  const debt = slept && slept.h !== null && slept.h < 7.5;
+  if ((sch.nap !== false || debt) && !(afternoon && afternoon.start < 15 * 60)) {
+    const nap = add({ key: 'siesta', kind: 'nap', title: 'Siesta', sub: debt ? '30 min · recupera sueño' : '20-30 min', start: O('siesta', lunch.start + lunch.dur + 20), dur: debt ? 30 : 25, movable: true, optional: !debt });
+    if (debt) nap.why = 'Dormiste ' + fmtDur(slept.h * 60) + ': una siesta de 30 min antes de las 15:00 recupera parte del sueño perdido sin quitarte el de la noche.';
+  }
   if (afternoon) add({ key: 'merienda', kind: 'meal', slot: 'merienda', title: 'Merienda', start: O('merienda', afternoon.start - 75), dur: 20, movable: true, anchor: afternoon.key });
   else add({ key: 'merienda', kind: 'meal', slot: 'merienda', title: 'Merienda', start: O('merienda', 16 * 60 + 30), dur: 20, movable: true });
   const cenaDef = afternoon ? Math.max(19 * 60 + 15, afternoon.end + 30) : 19 * 60 + 30;
@@ -88,7 +109,8 @@ function buildAgenda(day, st, agendaDoc, opts) {
   if (kind === 'alto' || kind === 'prueba') add({ key: 'nocturna', kind: 'meal', slot: 'nocturna', title: 'Antes de dormir', start: O('nocturna', sleep - 45), dur: 10, movable: true, optional: true });
   // ---- Recuperación nocturna
   if (B.recup) add({ key: 'recup', kind: 'recup', block: B.recup, title: B.recup.sessions.length === 1 ? B.recup.sessions[0].short : 'Recuperación', sub: B.recup.short, start: O('recup', sleep - 60), dur: Math.max(10, B.recup.est), movable: true });
-  add({ key: 'sleep', kind: 'sleep', title: 'Dormir', start: sleep, dur: 0, movable: true, marker: true, sub: fmtDur(wake + 1440 - sleep) + ' de sueño' });
+  const nextWake = slept && slept.wake !== null ? hm(sch.wake) : wake;
+  add({ key: 'sleep', kind: 'sleep', title: 'Dormir', start: sleep, dur: 0, movable: true, marker: true, sub: fmtDur(nextWake + 1440 - sleep) + ' de sueño' });
 
   items.sort((a, b) => a.start - b.start || (a.marker ? -1 : 1));
   // ---- Avisos
@@ -109,12 +131,16 @@ function buildAgenda(day, st, agendaDoc, opts) {
   }
   if (train.gym && train.campo && train.gym.intense && train.campo.start - train.gym.end < 360 && train.campo.start > train.gym.start)
     warnings.push({ key: 'campo', level: 'warning', text: 'Menos de 6 h entre la fuerza y la cancha: el sprint y el golpeo salen con menos calidad.' });
-  const sleepH = (wake + 1440 - sleep) / 60;
-  if (sleepH < 8.5) warnings.push({ key: 'sleep', level: 'warning', text: 'Quedan ' + fmtDur(wake + 1440 - sleep) + ' de sueño: apunta a 9 h o más.' });
+  const sleepH = (nextWake + 1440 - sleep) / 60;
+  if (sleepH < 8.5) warnings.push({ key: 'sleep', level: 'warning', text: 'Quedan ' + fmtDur(nextWake + 1440 - sleep) + ' de sueño: apunta a 9 h o más.' });
+  if (debt) {
+    const sl = items.find(x => x.key === 'sleep');
+    if (sl) sl.why = 'Anoche dormiste ' + fmtDur(slept.h * 60) + '. Acuéstate a tu hora de siempre y levántate a la hora fija: así se recupera el ritmo sin arrastrar el desfase.';
+  }
 
   const first = Math.min(wake, ...items.map(x => x.start));
   const last = Math.max(sleep, ...items.map(x => x.end));
-  return { date: day.date, items, warnings, wake, sleep, kind, range: [Math.floor((first - 30) / 30) * 30, Math.ceil((last + 30) / 30) * 30], blocks };
+  return { date: day.date, items, warnings, wake, sleep, kind, range: [Math.floor((first - 30) / 30) * 30, Math.ceil((last + 30) / 30) * 30], blocks, slept, lateWake };
 }
 
 /* Elemento de agenda en curso o el próximo */

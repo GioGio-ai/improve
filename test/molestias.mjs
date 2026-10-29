@@ -124,9 +124,17 @@ try {
   ok(nueva && nueva[1].zona === 'isquio' && nueva[1].lado === 'd' && nueva[1].tipo === 'dolor' && nueva[1].nivel === 4, 'molestia nueva mal guardada: ' + JSON.stringify(nueva));
   await shot('hoy-ajustado');
   ok(await page.locator('.topbar ~ .scroll-x [data-act="mol-open"]').count() >= 1, 'sin chip de molestia activa');
-  const undo = page.locator('section.card [data-act="mol-undo"]');
-  ok(await undo.count() > 0, 'sin ajuste con deshacer en Hoy');
+  // Aviso compacto (una línea) que abre el detalle con «deshacer»; al abrirlo ya no vuelve a aparecer hoy
+  const line = page.locator('.mini-alert [data-act="mol-adj"]');
+  ok(await line.count() === 1, 'sin aviso compacto de ajuste en Hoy');
+  ok(await page.locator('section.card:has-text("Ajustes por molestias")').count() === 0, 'sigue la tarjeta grande de ajustes');
+  if (await line.count()) { const bb = await page.locator('.mini-alert').first().boundingBox(); ok(bb.height <= 72, 'aviso compacto demasiado alto: ' + bb.height); await line.first().click(); await page.waitForTimeout(400); }
+  const undo = page.locator('.sheet [data-act="mol-undo"]');
+  ok(await undo.count() > 0, 'sin ajuste con deshacer en el detalle');
   if (await undo.count()) { await undo.first().click(); await page.waitForTimeout(500); const m2 = (await db())[nueva[0]]; ok(m2 && (m2.noAdjust || []).includes(today), 'deshacer no guardado'); }
+  await page.evaluate(() => { const c = document.querySelector('.sheet [data-act="close"]'); if (c) c.click(); });
+  await page.waitForTimeout(400);
+  ok(await page.locator('.mini-alert [data-act="mol-adj"]').count() === 0, 'el aviso compacto sigue tras abrirlo');
   await shot('hoy-deshecho');
   await page.evaluate(() => { location.hash = '#progreso'; });
   await page.waitForTimeout(600);

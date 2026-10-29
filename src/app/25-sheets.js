@@ -43,6 +43,7 @@ function blockSheetHtml(date, key) {
   h += '<div class="stack-sm">';
   if (!dn.all && !past) h += '<button class="btn primary lg block" data-act="start-block" data-date="' + date + '" data-key="' + key + '">' + ic('play') + (dn.some ? 'Seguir con lo pendiente' : 'Empezar ' + it.title.toLowerCase()) + '</button>';
   if (!dn.all) h += '<div class="grid2"><button class="btn sm" data-act="block-done" data-date="' + date + '" data-key="' + key + '">' + ic('check') + 'Hecho tal cual</button><button class="btn sm" data-act="block-short" data-date="' + date + '" data-key="' + key + '">' + ic('timer') + 'Poco tiempo</button></div>';
+  if (!dn.all && date <= today && (it.kind === 'train')) h += '<button class="btn sm ghost block" data-act="resched" data-date="' + date + '" data-types="' + esc(b.sessions.filter(s => !findLog(date, s.type)).map(s => s.type).join(',')) + '">' + ic('cal') + (past ? 'No la hice · recuperarla' : 'No llego · reorganizar') + '</button>';
   return h + '</div></div>';
 }
 function logLine(log) {
@@ -91,7 +92,7 @@ function sessionSheetHtml(date, type) {
   if (!club && !past) h += '<button class="btn primary lg block" data-act="start" data-date="' + date + '" data-type="' + type + '">' + ic('play') + 'Empezar solo esta sesión</button>';
   h += '<div class="grid2"><button class="btn sm" data-act="quick-done" data-date="' + date + '" data-type="' + type + '">' + ic('check') + 'Hecha tal cual</button>' +
     '<button class="btn sm" data-act="did-other" data-date="' + date + '" data-type="' + type + '">' + ic('edit') + 'Lo que hice</button></div>';
-  h += '<div class="grid2"><button class="btn sm ghost" data-act="not-done" data-date="' + date + '" data-type="' + type + '">' + ic('x') + 'No la hice</button>' + (past ? '<span></span>' : '<button class="btn sm ghost" data-act="move" data-date="' + date + '" data-type="' + type + '">' + ic('cal') + 'Otro día</button>') + '</div>';
+  h += '<div class="grid2"><button class="btn sm ghost" data-act="' + (date <= today ? 'resched' : 'not-done') + '" data-date="' + date + '" data-type="' + type + '">' + ic('x') + 'No la hice</button>' + (past ? '<span></span>' : '<button class="btn sm ghost" data-act="move" data-date="' + date + '" data-type="' + type + '">' + ic('cal') + 'Otro día</button>') + '</div>';
   return h + '</div></div>';
 }
 /* Revisión de una sesión hecha: clara y comparada con la vez anterior */
@@ -165,6 +166,7 @@ function sessionReviewHtml(log, planned) {
     const plan = fieldSummary(planned) + (planned.items.length ? '<div class="exlist">' + planned.items.map(it => itemRow(it, true)).join('') + '</div>' : '');
     h += '<details><summary>' + ic('cal') + 'Plan original</summary><div class="in">' + plan + '</div></details>';
   }
+  if (!done && log.date <= todayStr() && planned && !FIXED_TYPES.includes(log.type)) h += '<button class="btn primary block" data-act="resched" data-date="' + log.date + '" data-types="' + esc(log.type) + '">' + ic('refresh') + (log.date === todayStr() ? 'Reorganizar: moverla o adaptarla' : 'Recuperarla otro día') + '</button>';
   h += '<div class="grid2"><button class="btn sm" data-act="edit-log" data-id="' + esc(log.id) + '">' + ic('edit') + 'Editar</button>' + (done ? '<button class="btn sm" data-act="day" data-date="' + log.date + '">' + ic('cal') + 'Ver el día</button>' : (log.date >= todayStr() && !FIXED_TYPES.includes(log.type) ? '<button class="btn sm primary" data-act="start" data-date="' + log.date + '" data-type="' + log.type + '">' + ic('play') + 'Empezar</button>' : '<span></span>')) + '</div>';
   return h + '</div>';
 }
@@ -205,15 +207,30 @@ function dayHtml(date) {
 
 /* ---------- Check-in ---------- */
 function openCheckin() {
-  const today = todayStr(), ci = checkinFor(today);
-  UI.checkinDraft = Object.assign({ sleepH: 9.5, sleepQ: null, fatigue: null, soreness: null, stress: null, rfPain: null }, ci || {});
+  const today = todayStr(), ci = checkinFor(today), sch = scheduleOf(S.data.profile), now = nowMin();
+  const v = Object.assign({ sleepH: null, sleepQ: null, fatigue: null, soreness: null, stress: null, rfPain: null }, ci || {});
+  // Hora de levantarse: la ya guardada; si no, la hora actual si es de mañana (el check-in se hace al despertar); si no, la habitual
+  if (!v.wakeTime) v.wakeTime = now >= 4 * 60 && now <= hm(sch.wake) + 300 ? fmtHM(Math.floor(now / 5) * 5) : sch.wake;
+  if (!v.bedTime) v.bedTime = num(v.sleepH) !== null ? fmtHM(hm(v.wakeTime) - Math.round(num(v.sleepH) * 60)) : sch.sleep;
+  v.sleepH = Math.round(sleepSpan(v.bedTime, v.wakeTime) / 60 * 100) / 100;
+  UI.checkinDraft = v;
   openSheet({ id: 'checkin', render: checkinHtml });
+}
+function ckSleepSum(v) {
+  const sch = scheduleOf(S.data.profile), span = sleepSpan(v.bedTime, v.wakeTime);
+  if (span === null) return 'Marca las dos horas.';
+  const late = (hm(v.bedTime) - hm(sch.sleep) + 1440 + 720) % 1440 - 720, lateW = hm(v.wakeTime) - hm(sch.wake);
+  const tips = [];
+  if (late >= 45) tips.push('te acostaste ' + fmtDur(late) + ' más tarde de lo habitual');
+  if (lateW >= 30) tips.push('el plan de la mañana se corre');
+  return '<b class="' + (span < 7 * 60 ? 'short' : '') + '">' + fmtDur(span) + '</b><span>de sueño' + (tips.length ? ' · ' + esc(tips.join(' y ')) : '') + '</span>';
 }
 function checkinHtml() {
   const v = UI.checkinDraft;
   const five = (k, lab, l, r, tone) => '<div class="field"><span class="lab">' + lab + '</span>' + scaleHtml(k, v[k], { five: true, act: 'ck-scale', l, r, tone }) + '</div>';
+  const tin = (name, label, icon) => '<label><span class="lab2">' + ic(icon) + label + '</span><input class="input num" type="time" step="300" id="ck-' + name + '" value="' + esc(v[name] || '') + '" data-bind="ck-time" data-name="' + name + '" autocomplete="off"></label>';
   return sheetHead('¿Cómo amaneciste?', 'Check-in · 30 segundos') + '<div class="sheet-body">' +
-    '<div class="field"><span class="lab">Horas de sueño</span>' + stepperHtml('ck-sleep', v.sleepH, 'ck-step', 'data-name="sleepH"', 'h') + '</div>' +
+    '<div class="field"><span class="lab">Sueño de anoche</span><div class="sleep-times">' + tin('bedTime', 'Me dormí', 'moon') + tin('wakeTime', 'Me levanté', 'sunrise') + '</div><div class="sleep-sum" id="ck-sum" aria-live="polite">' + ckSleepSum(v) + '</div></div>' +
     five('sleepQ', 'Calidad del sueño', 'Mala', 'Excelente', 'sleep') + five('fatigue', 'Energía', 'Agotado', 'Fresco') + five('soreness', 'Dolor muscular general', 'Mucho', 'Nada') + five('stress', 'Estrés', 'Muy alto', 'Bajo') +
     '<div class="field"><span class="lab">Dolor en el recto femoral en reposo</span>' + scaleHtml('rfPain', v.rfPain, { pain: true, act: 'ck-scale', l: '0 nada', r: '10 máximo' }) + '<span class="hint">Dolor, no cansancio ni carga muscular.</span></div>' +
     '<button class="btn block ghost" data-act="mol-new" data-from="checkin">' + ic('plus') + '¿Alguna otra molestia? Marcar en el mapa</button>' +
@@ -221,9 +238,15 @@ function checkinHtml() {
 }
 function saveCheckin() {
   const v = UI.checkinDraft, date = todayStr();
-  put('checkins', date, { date, sleepH: num(v.sleepH), sleepQ: num(v.sleepQ), fatigue: num(v.fatigue), soreness: num(v.soreness), stress: num(v.stress), rfPain: num(v.rfPain) }).then(() => {
-    const sc = readinessScore(v);
-    toast(num(v.rfPain) >= 3 ? 'Guardado. Hoy nada intenso para el recto femoral.' : sc < 50 ? 'Guardado. Hoy una serie menos en accesorios.' : 'Check-in guardado.', num(v.rfPain) >= 3 || sc < 50 ? 'warn' : 'ok');
+  const span = sleepSpan(v.bedTime, v.wakeTime);
+  if (span === null) { toast('Marca a qué hora te dormiste y te levantaste.', 'warn'); return; }
+  const sleepH = Math.round(span / 60 * 100) / 100;
+  put('checkins', date, { date, bedTime: v.bedTime, wakeTime: v.wakeTime, sleepH, sleepQ: num(v.sleepQ), fatigue: num(v.fatigue), soreness: num(v.soreness), stress: num(v.stress), rfPain: num(v.rfPain) }).then(() => sleepMs(160)).then(() => {
+    const sc = readinessScore(Object.assign({}, v, { sleepH }));
+    const ag = agendaFor(date), gym = ag.items.find(x => x.key === 'gym');
+    const moved = gym && gym.lateShift && !blockDone(gym.block, date).all;
+    const clash = moved && rsHoyCard(ag, date) !== '';
+    toast(num(v.rfPain) >= 3 ? 'Guardado. Hoy nada intenso para el recto femoral.' : clash ? 'Guardado. Te levantaste tarde: reorganiza el gimnasio arriba.' : moved ? 'Guardado. El gimnasio pasa a las ' + fmtHM(gym.start) + '.' : sleepH < 6 ? 'Guardado. Sueño corto: una serie menos en accesorios y siesta.' : sc < 50 ? 'Guardado. Hoy una serie menos en accesorios.' : 'Check-in guardado.', num(v.rfPain) >= 3 || sc < 50 || sleepH < 6 || moved ? 'warn' : 'ok');
   });
   closeSheet();
 }
