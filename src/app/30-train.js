@@ -674,11 +674,11 @@ function saveFinish() {
   const intense = logs.some(isIntenseLog);
   let sugg = [];
   try { sugg = [].concat(...logs.map((l, i) => postSuggestions(Object.assign({ id: ids[i] }, l), ST.sessions, ST))); } catch (e) { sugg = []; }
-  const date = TR.date;
+  const date = TR.date, place = TR.place;
   closeDraft(TR);
   TR = { open: false };
   document.body.classList.remove('training'); $('#train-root').innerHTML = ''; releaseWake(); stopTick();
-  UI.post = { sugg, applied: {} };
+  UI.post = { sugg, applied: {}, place };
   resetLayers({ kind: 'sheet', id: 'post', render: () => postHtml(date, hadField, intense, strength) });
   renderSheet(true);
   scheduleRender();
@@ -706,6 +706,6 @@ function applyPostSuggestion(i) {
   const P = UI.post; if (!P || !P.sugg[i]) return;
   const s = P.sugg[i];
   if (s.kind === 'choice' && s.slot && s.to) setChoice(s.slot, s.to);
-  if (s.kind === 'equip' && s.eq) updateProfile(p => { const off = (p.equipmentOff || []).slice(); if (!off.includes(s.eq)) off.push(s.eq); p.equipmentOff = off; });
+  if (s.kind === 'equip' && s.eq) { const pl = P.place || 'gimnasio'; updateProfile(p => { p.places = p.places || {}; p.places[pl] = p.places[pl] || { off: [] }; const off = (p.places[pl].off || []).slice(); if (!off.includes(s.eq)) off.push(s.eq); p.places[pl].off = off; if (pl === 'gimnasio') delete p.equipmentOff; }); }
   P.applied[i] = true; refreshSheet(true);
 }
