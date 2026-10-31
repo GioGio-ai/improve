@@ -142,18 +142,18 @@ function datoHtml(id) {
 const APR_FILTERS = [['todos', 'Todos'], ['guardados', 'Guardados'], ['aplico', 'Lo aplico']];
 function viewAprende(st, today) {
   const A = UI.apr;
-  let h = '<div class="page-head"><a class="iconbtn" href="#hoy" aria-label="Volver">' + ic('chevL') + '</a><h1 class="h1 grow">Aprende</h1></div>';
+  let h = '<div class="aura" aria-hidden="true"></div><div class="page-head"><a class="iconbtn" href="#hoy" aria-label="Volver">' + ic('chevL') + '</a><h1 class="h1 grow">Aprende</h1></div>';
   h += '<div class="seg blue" role="tablist" aria-label="Secciones">' + [['datos', 'Datos'], ['investigar', 'Investigar'], ['guias', 'Guías']].map(([k, l]) => '<button type="button" role="tab" aria-selected="' + (A.tab === k) + '" class="' + (A.tab === k ? 'on' : '') + '" data-act="apr-tab" data-v="' + k + '">' + l + '</button>').join('') + '</div>';
   if (A.tab === 'investigar') return h + researchPanel(st, today);
-  if (A.tab === 'guias') return h + '<p class="sub">Guías prácticas de la app, con la evidencia que las respalda.</p>' + guidesPanel(st) + '<div class="stack-sm">' +
+  if (A.tab === 'guias') return h + '<p class="sub">Guías prácticas con su evidencia.</p>' + guidesPanel(st) + '<div class="stack-sm">' +
     '<button class="blk" data-act="guide" data-g="nutricion"><span class="c food">' + ic('fork') + '</span><div class="grow"><div class="t">Nutrición por evidencia</div><div class="s">Qué funciona, qué es preliminar y qué evitar</div></div>' + ic('chev') + '</button>' +
     '<button class="blk" data-act="guide" data-g="balon"><span class="c">' + ic('ball') + '</span><div class="grow"><div class="t">Guía de balón</div><div class="s">Estaciones, pierna derecha y tope de cabeceo</div></div>' + ic('chev') + '</button></div>';
   if (!DAT.list) {
     if (!DAT.error) loadDatos().catch(() => {});
-    return h + (DAT.error ? '<div class="empty"><b>No se pudieron cargar los datos</b><span class="small">Revisa la conexión.</span><button class="btn sm" data-act="apr-retry">' + ic('refresh') + 'Reintentar</button></div>' : '<div class="stack-sm">' + [1, 2, 3, 4].map(() => '<div class="skel" style="height:76px;border-radius:18px"></div>').join('') + '</div>');
+    return h + (DAT.error ? '<div class="empty"><b>No se pudieron cargar los datos</b><span class="small">Revisa la conexión.</span><button class="btn sm" data-act="apr-retry">' + ic('refresh') + 'Reintentar</button></div>' : '<div class="stack-sm">' + [1, 2, 3, 4].map(() => '<div class="skel sk-row"></div>').join('') + '</div>');
   }
   const ap = aprendeDoc(), dia = datoDelDia(today);
-  if (dia && A.filter === 'todos' && !A.q) h += '<section class="card dato-card k-' + ((DATO_CATS[dia.cat] || {}).tone || 'blue') + '"><div class="dato-top">' + catTile(dia.cat, true) + '<span class="grow"><span class="micro">Hoy</span><span class="dato-cat">' + esc((DATO_CATS[dia.cat] || {}).n || '') + '</span></span>' + nivelHtml(dia.nivel, true) + '</div><button class="dato-main" data-act="dato-open" data-id="' + esc(dia.id) + '"><span class="dato-num">' + esc(dia.cifra) + '</span><span class="dato-lbl">' + esc(dia.cifraLbl) + '</span><span class="dato-t">' + esc(dia.titular) + '</span></button></section>';
+  if (dia && A.filter === 'todos' && !A.q) h += '<section class="panel dato-card k-' + ((DATO_CATS[dia.cat] || {}).tone || 'blue') + '"><div class="dato-top"><span class="kicker grow"><span class="d"></span>Hoy · ' + esc((DATO_CATS[dia.cat] || {}).n || '') + '</span>' + nivelHtml(dia.nivel, true) + '</div><button class="dato-main" data-act="dato-open" data-id="' + esc(dia.id) + '"><span class="dato-num">' + esc(dia.cifra) + '</span><span class="dato-t">' + esc(dia.titular) + '</span></button></section>';
   h += '<label class="search"><span class="sr">Buscar</span>' + ic('search') + '<input id="apr-q" class="input" type="search" inputmode="search" enterkeyhint="search" autocomplete="off" placeholder="Buscar: sueño, creatina, sprint…" value="' + esc(A.q) + '" data-input="apr-q"></label>';
   h += '<div class="scroll-x snap" role="toolbar" aria-label="Filtros">' + APR_FILTERS.map(([k, l]) => '<button class="pill' + (A.filter === k ? ' on' : '') + '" data-act="apr-filter" data-v="' + k + '">' + l + (k === 'guardados' && ap.guardados.length ? ' · ' + ap.guardados.length : k === 'aplico' && ap.aplico.length ? ' · ' + ap.aplico.length : '') + '</button>').join('') +
     Object.entries(DATO_CATS).map(([k, c]) => '<button class="pill' + (A.filter === k ? ' on' : '') + '" data-act="apr-filter" data-v="' + k + '">' + esc(c.n) + '</button>').join('') + '</div>';
@@ -164,7 +164,7 @@ function viewAprende(st, today) {
     (!nq || norm(d.titular + ' ' + d.resumen + ' ' + (DATO_CATS[d.cat] || {}).n).includes(nq)));
   if (!list.length) h += '<div class="empty"><b>' + (A.filter === 'guardados' ? 'Todavía no guardaste datos' : A.filter === 'aplico' ? 'Todavía no marcaste datos que aplicas' : 'Sin resultados') + '</b><span class="small">' + (A.filter === 'guardados' || A.filter === 'aplico' ? 'Ábrelos desde la ficha de cada dato.' : 'Prueba con otra palabra.') + '</span></div>';
   else h += '<div class="stack-sm" role="list">' + list.map(d => '<button class="dt-row" role="listitem" data-act="dato-open" data-id="' + esc(d.id) + '">' + catTile(d.cat) + '<span class="grow"><span class="t">' + esc(d.titular) + '</span><span class="s"><b>' + esc(d.cifra) + '</b> ' + esc(d.cifraLbl) + (ap.aplico.includes(d.id) ? ' · lo aplicas' : '') + '</span></span>' + nivelHtml(d.nivel, true) + '</button>').join('') + '</div>';
-  h += '<details class="ev-legend"><summary>Qué significan los niveles de evidencia</summary><div class="in">' + ['A', 'B', 'C', 'D'].map(n => '<div class="row nowrap" style="align-items:flex-start">' + nivelHtml(n) + '<span class="small fg2 pretty">' + esc(NIVEL_DEF[n]) + '</span></div>').join('') + '</div></details>';
+  h += '<details class="ev-legend"><summary>Qué significan los niveles de evidencia</summary><div class="in">' + ['A', 'B', 'C', 'D'].map(n => '<div class="row nowrap top">' + nivelHtml(n) + '<span class="small fg2 pretty">' + esc(NIVEL_DEF[n]) + '</span></div>').join('') + '</div></details>';
   return h;
 }
 /* Contexto para el coach: dato de hoy, lo que aplica e investigaciones no privadas (las privadas nunca salen de aquí) */

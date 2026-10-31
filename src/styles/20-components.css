@@ -420,8 +420,8 @@ details > .in { padding: 0 0 var(--s-5); display: grid; gap: var(--s-3); }
 
 /* Coach: tus mensajes en burbuja neutra; las respuestas, en tarjeta */
 .msg { padding: var(--s-3) 14px; border-radius: var(--r-lg); font-size: var(--fs-3); line-height: 1.55; white-space: pre-wrap; max-width: 92%; }
-.msg.me { justify-self: end; color: var(--fg); background: var(--surface-3); border-bottom-right-radius: 6px; }
-.msg.cl { justify-self: start; color: var(--fg); background: var(--surface-1); border: 1px solid var(--line); border-bottom-left-radius: 6px; }
+.msg.me { justify-self: end; color: var(--on-blue); background: var(--grad-primary); border-bottom-right-radius: 6px; box-shadow: var(--glow-primary); }
+.msg.cl { justify-self: start; color: var(--fg); background: linear-gradient(165deg, rgba(91, 140, 255, 0.12), rgba(255, 255, 255, 0.03)); border-bottom-left-radius: 6px; }
 .msg.cl.pending { color: var(--fg-3); animation: pulse 1.4s ease-in-out infinite; }
 
 @media (prefers-reduced-transparency: reduce) {
