@@ -1,0 +1,937 @@
+[
+  {
+    "id": "proteina-dia",
+    "cat": "nutricion",
+    "titular": "Más allá de 1,6 g de proteína por kilo, el músculo casi no gana más",
+    "cifra": "1,6 g/kg",
+    "cifraLbl": "por día",
+    "resumen": "Un metaanálisis de 49 ensayos con 1863 personas encontró que sumar proteína aumenta la fuerza y la masa muscular con entrenamiento, pero el beneficio se estabiliza alrededor de 1,6 g por kilo al día (hasta 2,2 para ir sobre seguro).",
+    "mecanismo": "La proteína aporta los aminoácidos para reparar y construir músculo. Pasado cierto punto, el exceso se usa como energía.",
+    "nivel": "A",
+    "estudios": [
+      {
+        "cita": "Morton RW y col. · Br J Sports Med 2018",
+        "titulo": "A systematic review, meta-analysis and meta-regression of the effect of protein supplementation on resistance training-induced gains in muscle mass and strength in healthy adults",
+        "diseno": "Metaanálisis",
+        "n": 1863,
+        "poblacion": "Adultos que entrenan fuerza (49 ensayos)"
+      }
+    ],
+    "aplicar": [
+      "Tu objetivo de 2,0 g/kg ya cubre el máximo útil con margen.",
+      "Llegar todos los días importa más que pasarse algunos.",
+      "Huevos, leche de cabra, carne, pescado y queso alcanzan sin suplementos."
+    ],
+    "contexto": [
+      "gimnasio",
+      "nutricion"
+    ]
+  },
+  {
+    "id": "proteina-reparto",
+    "cat": "nutricion",
+    "titular": "Repartir la proteína en 4 comidas construye más músculo que 2 grandes",
+    "cifra": "4 × 20 g",
+    "cifraLbl": "mejor que 2 × 40 g",
+    "resumen": "En 24 hombres, tomar 20 g de proteína cada 3 h (4 tomas) tras entrenar estimuló más la síntesis de proteína muscular en 12 h que 8 tomas pequeñas o 2 grandes con la misma cantidad total. Las revisiones recomiendan unos 0,4 g/kg por comida.",
+    "mecanismo": "El músculo responde a picos de aminoácidos. Con 4 picos bien espaciados, la síntesis se reactiva varias veces al día.",
+    "nivel": "B",
+    "estudios": [
+      {
+        "cita": "Areta JL y col. · J Physiol 2013",
+        "titulo": "Timing and distribution of protein ingestion during prolonged recovery from resistance exercise alters myofibrillar protein synthesis",
+        "diseno": "Ensayo aleatorizado",
+        "n": 24,
+        "poblacion": "Hombres entrenados"
+      },
+      {
+        "cita": "Schoenfeld BJ, Aragon AA · J Int Soc Sports Nutr 2018",
+        "titulo": "How much protein can the body use in a single meal for muscle-building? Implications for daily protein distribution",
+        "diseno": "Revisión",
+        "n": null,
+        "poblacion": "Adultos que entrenan"
+      }
+    ],
+    "aplicar": [
+      "Unos 0,4 g/kg por comida: para 85 kg, 30-40 g en desayuno, almuerzo, merienda y cena.",
+      "El desayuno suele quedarse corto: suma huevos o leche.",
+      "La app reparte tu proteína entre las comidas del día."
+    ],
+    "contexto": [
+      "nutricion",
+      "gimnasio"
+    ]
+  },
+  {
+    "id": "proteina-noche",
+    "cat": "nutricion",
+    "titular": "Proteína antes de dormir: la síntesis muscular nocturna sube un 22 %",
+    "cifra": "+22 %",
+    "cifraLbl": "síntesis nocturna",
+    "resumen": "En 16 hombres que entrenaron fuerza por la tarde, 40 g de caseína 30 min antes de dormir aumentaron la síntesis de proteína muscular durante la noche y mejoraron el balance de proteína de todo el cuerpo. Otro ensayo de 12 semanas mostró más fuerza y más músculo con esa práctica.",
+    "mecanismo": "La caseína se digiere lento y libera aminoácidos durante horas, cuando el músculo se repara mientras duermes.",
+    "nivel": "B",
+    "estudios": [
+      {
+        "cita": "Res PT y col. · Med Sci Sports Exerc 2012",
+        "titulo": "Protein ingestion before sleep improves postexercise overnight recovery",
+        "diseno": "Ensayo aleatorizado",
+        "n": 16,
+        "poblacion": "Hombres jóvenes"
+      },
+      {
+        "cita": "Snijders T y col. · J Nutr 2015",
+        "titulo": "Protein Ingestion before Sleep Increases Muscle Mass and Strength Gains during Prolonged Resistance-Type Exercise Training in Healthy Young Men",
+        "diseno": "Ensayo aleatorizado",
+        "n": 44,
+        "poblacion": "Hombres jóvenes"
+      }
+    ],
+    "aplicar": [
+      "En días de fuerza o carga alta: leche de cabra, ricota o queso antes de dormir.",
+      "Unos 30-40 g de proteína.",
+      "La app agrega la colación nocturna en los días de carga alta."
+    ],
+    "contexto": [
+      "gimnasio",
+      "intenso",
+      "nutricion"
+    ]
+  },
+  {
+    "id": "creatina",
+    "cat": "nutricion",
+    "titular": "La creatina es el suplemento con más evidencia para fuerza y sprints repetidos",
+    "cifra": "3-5 g",
+    "cifraLbl": "al día",
+    "resumen": "La posición de la Sociedad Internacional de Nutrición Deportiva, basada en cientos de estudios, la considera el suplemento más eficaz para esfuerzos intensos repetidos, ganancia de fuerza y masa muscular, y segura en personas sanas.",
+    "mecanismo": "Aumenta la fosfocreatina del músculo, la energía inmediata de los primeros segundos de un sprint o una serie.",
+    "nivel": "A",
+    "estudios": [
+      {
+        "cita": "Kreider RB y col. · J Int Soc Sports Nutr 2017",
+        "titulo": "International Society of Sports Nutrition position stand: safety and efficacy of creatine supplementation in exercise, sport, and medicine",
+        "diseno": "Consenso",
+        "n": null,
+        "poblacion": "Revisión de la evidencia"
+      }
+    ],
+    "aplicar": [
+      "3-5 g todos los días, a cualquier hora; no hace falta fase de carga.",
+      "Con comida y agua.",
+      "El efecto aparece en 3-4 semanas de toma constante."
+    ],
+    "contexto": [
+      "gimnasio",
+      "nutricion"
+    ]
+  },
+  {
+    "id": "cafeina-rendimiento",
+    "cat": "nutricion",
+    "titular": "La cafeína mejora el rendimiento con 3-6 mg por kilo, 60 min antes",
+    "cifra": "3-6 mg/kg",
+    "cifraLbl": "60 min antes",
+    "resumen": "La posición de la Sociedad Internacional de Nutrición Deportiva concluye que la cafeína mejora la resistencia, la fuerza, la potencia y el rendimiento en deportes de equipo con 3-6 mg por kilo tomados unos 60 min antes. Dosis más bajas también ayudan.",
+    "mecanismo": "Bloquea la adenosina, baja la percepción de esfuerzo y de dolor y mejora la atención.",
+    "nivel": "A",
+    "estudios": [
+      {
+        "cita": "Guest NS y col. · J Int Soc Sports Nutr 2021",
+        "titulo": "International society of sports nutrition position stand: caffeine and exercise performance",
+        "diseno": "Consenso",
+        "n": null,
+        "poblacion": "Revisión de la evidencia"
+      }
+    ],
+    "aplicar": [
+      "Pruébala en entrenamientos antes de usarla en una prueba.",
+      "Empieza por 3 mg/kg (unos 250 mg para 85 kg).",
+      "Nunca dentro de las 6 h antes de dormir."
+    ],
+    "contexto": [
+      "precompetencia",
+      "nutricion"
+    ]
+  },
+  {
+    "id": "carbos-partido",
+    "cat": "nutricion",
+    "titular": "El día antes y el día del partido: 6-8 g de carbohidratos por kilo",
+    "cifra": "6-8 g/kg",
+    "cifraLbl": "carbohidratos",
+    "resumen": "El grupo de expertos de la UEFA en nutrición recomienda 6-8 g de carbohidratos por kilo el día anterior y el día del partido para llenar los depósitos de glucógeno, que limitan el rendimiento al final de los partidos.",
+    "mecanismo": "El glucógeno es el combustible de los sprints. Cuando se agota, baja la distancia a alta velocidad y la precisión técnica.",
+    "nivel": "B",
+    "estudios": [
+      {
+        "cita": "Collins J y col. · Br J Sports Med 2021",
+        "titulo": "UEFA expert group statement on nutrition in elite football. Current evidence to inform practical recommendations and guide future research",
+        "diseno": "Consenso",
+        "n": null,
+        "poblacion": "Fútbol de élite"
+      }
+    ],
+    "aplicar": [
+      "Mandioca, arroz, papa, fruta y miel: tu dieta ya los tiene.",
+      "La app sube los carbohidratos a 7 g/kg en días de prueba y de carga alta.",
+      "Menos grasa y fibra en la comida previa para digerir mejor."
+    ],
+    "contexto": [
+      "precompetencia",
+      "nutricion"
+    ]
+  },
+  {
+    "id": "recarga-dos-sesiones",
+    "cat": "nutricion",
+    "titular": "Con dos sesiones el mismo día, recarga 1-1,2 g/kg de carbohidratos por hora",
+    "cifra": "1-1,2 g/kg/h",
+    "cifraLbl": "primeras horas",
+    "resumen": "El consenso del COI sobre carbohidratos indica que, si hay menos de 8 h entre dos sesiones, conviene comer 1-1,2 g de carbohidratos por kilo por hora durante las primeras 4 h para reponer el glucógeno a tiempo.",
+    "mecanismo": "Justo después de entrenar, el músculo absorbe glucosa más rápido. Aprovechar esa ventana importa cuando la siguiente sesión está cerca.",
+    "nivel": "B",
+    "estudios": [
+      {
+        "cita": "Burke LM y col. · J Sports Sci 2011",
+        "titulo": "Carbohydrates for training and competition",
+        "diseno": "Consenso",
+        "n": null,
+        "poblacion": "Deportistas"
+      }
+    ],
+    "aplicar": [
+      "Gimnasio a la mañana y cancha a la tarde: post entreno y almuerzo con carbohidratos.",
+      "Banana con miel, mandioca, arroz.",
+      "Si hay un solo entrenamiento al día, no hace falta apurarse."
+    ],
+    "contexto": [
+      "gimnasio",
+      "cancha",
+      "nutricion"
+    ]
+  },
+  {
+    "id": "gelatina-vitamina-c",
+    "cat": "nutricion",
+    "titular": "Gelatina con vitamina C antes de entrenar duplicó la síntesis de colágeno",
+    "cifra": "×2",
+    "cifraLbl": "marcador de colágeno",
+    "resumen": "En 8 hombres, 15 g de gelatina con vitamina C una hora antes de 6 min de saltos con cuerda duplicaron un marcador de síntesis de colágeno en sangre. Es un estudio pequeño, pero con base fisiológica clara.",
+    "mecanismo": "El ejercicio estimula a las células del tendón y el cartílago; la gelatina aporta glicina y prolina y la vitamina C es necesaria para formar colágeno.",
+    "nivel": "C",
+    "estudios": [
+      {
+        "cita": "Shaw G y col. · Am J Clin Nutr 2017",
+        "titulo": "Vitamin C-enriched gelatin supplementation before intermittent activity augments collagen synthesis",
+        "diseno": "Ensayo cruzado",
+        "n": 8,
+        "poblacion": "Hombres sanos"
+      }
+    ],
+    "aplicar": [
+      "15 g de gelatina con vitamina C (naranja o jugo) 1 h antes del trabajo de tendón.",
+      "Funciona con cargas cortas: isometrías, saltos suaves, 5-10 min.",
+      "La app te lo recuerda en Comida."
+    ],
+    "contexto": [
+      "lesion",
+      "nutricion"
+    ]
+  },
+  {
+    "id": "remolacha-nitrato",
+    "cat": "nutricion",
+    "titular": "El jugo de remolacha mejora el rendimiento, pero el efecto es pequeño",
+    "cifra": "80",
+    "cifraLbl": "estudios",
+    "resumen": "Un metaanálisis de 80 estudios encontró que el nitrato (remolacha) mejora el rendimiento de forma pequeña en hombres jóvenes activos. No hubo efecto claro en atletas de resistencia muy entrenados ni en los estudios solo con mujeres.",
+    "mecanismo": "El nitrato se convierte en óxido nítrico, que mejora la eficiencia del músculo para usar oxígeno.",
+    "nivel": "A",
+    "estudios": [
+      {
+        "cita": "Senefeld JW y col. · Med Sci Sports Exerc 2020",
+        "titulo": "Ergogenic Effect of Nitrate Supplementation: A Systematic Review and Meta-analysis",
+        "diseno": "Metaanálisis",
+        "n": null,
+        "poblacion": "80 estudios"
+      }
+    ],
+    "aplicar": [
+      "Úsalo solo para pruebas o partidos importantes: 2-3 h antes.",
+      "Remolacha en jugo o cocida; pruébalo antes en un entrenamiento.",
+      "No reemplaza dormir bien ni comer suficiente: es un detalle final."
+    ],
+    "contexto": [
+      "precompetencia",
+      "nutricion"
+    ]
+  },
+  {
+    "id": "alcohol-proteina",
+    "cat": "nutricion",
+    "titular": "El alcohol después de entrenar baja la síntesis muscular un 24 %, aun con proteína",
+    "cifra": "−24 %",
+    "cifraLbl": "síntesis muscular",
+    "resumen": "En 8 hombres activos, tomar alcohol después de entrenar redujo la síntesis de proteína muscular un 24 % aunque se tomara proteína al mismo tiempo, y un 37 % si se acompañaba solo de carbohidratos.",
+    "mecanismo": "El alcohol interfiere con la señal que activa la síntesis de proteína y además empeora el sueño.",
+    "nivel": "C",
+    "estudios": [
+      {
+        "cita": "Parr EB y col. · PLoS One 2014",
+        "titulo": "Alcohol ingestion impairs maximal post-exercise rates of myofibrillar protein synthesis following a single bout of concurrent training",
+        "diseno": "Ensayo cruzado",
+        "n": 8,
+        "poblacion": "Hombres activos"
+      }
+    ],
+    "aplicar": [
+      "Nada de alcohol las noches de entrenamientos intensos.",
+      "Si hay un evento, que sea poco y lejos del entrenamiento.",
+      "La dosis del estudio fue alta (unas 12 bebidas): con menos, el efecto es menor."
+    ],
+    "contexto": [
+      "intenso",
+      "nutricion"
+    ]
+  },
+  {
+    "id": "vitamina-d",
+    "cat": "nutricion",
+    "titular": "Vitamina D: mide antes de suplementar",
+    "cifra": "25(OH)D",
+    "cifraLbl": "análisis de sangre",
+    "resumen": "Las revisiones en deportistas muestran que la deficiencia de vitamina D es frecuente incluso en lugares con sol y que se asocia a peor función muscular y más fracturas por estrés. Suplementar sin medir puede llevar a niveles demasiado altos.",
+    "mecanismo": "La vitamina D regula la absorción de calcio y participa en la función del músculo y del sistema inmune.",
+    "nivel": "C",
+    "estudios": [
+      {
+        "cita": "Owens DJ, Allison R, Close GL · Sports Med 2018",
+        "titulo": "Vitamin D and the Athlete: Current Perspectives and New Challenges",
+        "diseno": "Revisión",
+        "n": null,
+        "poblacion": "Deportistas"
+      }
+    ],
+    "aplicar": [
+      "Pide un análisis de 25(OH)D en tu próximo control médico.",
+      "Sol en brazos y piernas 10-20 min al mediodía varias veces por semana.",
+      "Suplementa solo si el análisis lo indica y con la dosis que te den."
+    ],
+    "contexto": [
+      "nutricion"
+    ]
+  },
+  {
+    "id": "comida-previa",
+    "cat": "nutricion",
+    "titular": "La comida previa va 3-4 h antes; un snack, 60-90 min antes",
+    "cifra": "3-4 h",
+    "cifraLbl": "antes de jugar",
+    "resumen": "La posición conjunta del Colegio Americano de Medicina del Deporte recomienda comer 1-4 g/kg de carbohidratos entre 1 y 4 h antes de competir, con poca grasa y fibra, y practicarlo en los entrenamientos.",
+    "mecanismo": "Da tiempo a vaciar el estómago y deja el glucógeno del hígado lleno para mantener la glucosa durante el esfuerzo.",
+    "nivel": "B",
+    "estudios": [
+      {
+        "cita": "Thomas DT, Erdman KA, Burke LM · Med Sci Sports Exerc 2016",
+        "titulo": "American College of Sports Medicine Joint Position Statement. Nutrition and Athletic Performance",
+        "diseno": "Consenso",
+        "n": null,
+        "poblacion": "Deportistas"
+      }
+    ],
+    "aplicar": [
+      "Almuerzo completo 3-4 h antes de la cancha.",
+      "Merienda liviana 60-90 min antes: banana con miel, fruta.",
+      "La app pone la merienda 75 min antes de la cancha."
+    ],
+    "contexto": [
+      "cancha",
+      "precompetencia",
+      "nutricion"
+    ]
+  },
+  {
+    "id": "deshidratacion-2",
+    "cat": "hidratacion",
+    "titular": "Perder más del 2 % del peso en sudor ya afecta el rendimiento",
+    "cifra": "2 %",
+    "cifraLbl": "del peso corporal",
+    "resumen": "El Colegio Americano de Medicina del Deporte concluye que perder más del 2 % del peso corporal por deshidratación empeora el rendimiento aeróbico y la función mental, sobre todo con calor.",
+    "mecanismo": "Baja el volumen de sangre: el corazón trabaja más para enfriar el cuerpo y llevar oxígeno, y sube la temperatura central.",
+    "nivel": "B",
+    "estudios": [
+      {
+        "cita": "Sawka MN y col. · Med Sci Sports Exerc 2007",
+        "titulo": "American College of Sports Medicine position stand. Exercise and fluid replacement",
+        "diseno": "Consenso",
+        "n": null,
+        "poblacion": "Deportistas"
+      }
+    ],
+    "aplicar": [
+      "Para 85 kg, el 2 % son 1,7 kg: pésate antes y después de la cancha un par de veces para conocer tu pérdida.",
+      "Bebe durante la cancha, sobre todo con calor.",
+      "Llega hidratado: orina clara antes de entrenar."
+    ],
+    "contexto": [
+      "cancha",
+      "hidratacion"
+    ]
+  },
+  {
+    "id": "deshidratacion-tecnica",
+    "cat": "hidratacion",
+    "titular": "Sin beber, la habilidad con el balón empeora al final del esfuerzo",
+    "cifra": "9",
+    "cifraLbl": "futbolistas",
+    "resumen": "En un estudio con futbolistas, tras 90 min de carreras intermitentes, la habilidad de conducción empeoró cuando no bebían y se mantuvo cuando bebían líquidos. Es un estudio pequeño.",
+    "mecanismo": "La deshidratación y el calor aumentan la fatiga central, que afecta primero a la precisión y la toma de decisiones.",
+    "nivel": "C",
+    "estudios": [
+      {
+        "cita": "McGregor SJ y col. · J Sports Sci 1999",
+        "titulo": "The influence of intermittent high-intensity shuttle running and fluid ingestion on the performance of a soccer skill",
+        "diseno": "Ensayo cruzado",
+        "n": 9,
+        "poblacion": "Futbolistas"
+      }
+    ],
+    "aplicar": [
+      "Bebe en cada pausa de la cancha.",
+      "En las estaciones de balón del final, una botella a mano.",
+      "Agua con una pizca de sal si sudas mucho."
+    ],
+    "contexto": [
+      "cancha",
+      "hidratacion"
+    ]
+  },
+  {
+    "id": "reponer-150",
+    "cat": "hidratacion",
+    "titular": "Para rehidratarte, bebe 1,25-1,5 L por cada kilo perdido, con algo de sal",
+    "cifra": "150 %",
+    "cifraLbl": "de lo perdido",
+    "resumen": "Los estudios de rehidratación muestran que beber solo lo que perdiste no alcanza, porque parte se va en la orina. Hace falta alrededor del 150 % del peso perdido, con sodio para retener el líquido.",
+    "mecanismo": "El sodio mantiene el agua en la sangre y estimula la sed; sin él, los riñones eliminan buena parte de lo que bebes.",
+    "nivel": "B",
+    "estudios": [
+      {
+        "cita": "Shirreffs SM y col. · Med Sci Sports Exerc 1996",
+        "titulo": "Post-exercise rehydration in man: effects of volume consumed and drink sodium content",
+        "diseno": "Ensayo cruzado",
+        "n": null,
+        "poblacion": "Hombres sanos"
+      }
+    ],
+    "aplicar": [
+      "Pésate antes y después de la cancha: cada kilo perdido son 1,25-1,5 L a reponer.",
+      "Repártelo en las 2-4 h siguientes, no de golpe.",
+      "La cena con sal y caldo ayuda a retener."
+    ],
+    "contexto": [
+      "cancha",
+      "hidratacion"
+    ]
+  },
+  {
+    "id": "leche-hidrata",
+    "cat": "hidratacion",
+    "titular": "La leche hidrata más que el agua",
+    "cifra": "1,5",
+    "cifraLbl": "índice vs. 1 del agua",
+    "resumen": "En 72 hombres, la leche entera, la leche descremada y el suero oral retuvieron más líquido que el agua en las 4 h siguientes (índice de hidratación de 1,5 a 1,58 frente a 1 del agua).",
+    "mecanismo": "Las proteínas, el azúcar natural y el sodio de la leche vacían más despacio el estómago y reducen la orina.",
+    "nivel": "B",
+    "estudios": [
+      {
+        "cita": "Maughan RJ y col. · Am J Clin Nutr 2016",
+        "titulo": "A randomized trial to assess the potential of different beverages to affect hydration status: development of a beverage hydration index",
+        "diseno": "Ensayo aleatorizado",
+        "n": 72,
+        "poblacion": "Hombres sanos"
+      }
+    ],
+    "aplicar": [
+      "Leche de cabra (siempre hervida) después de la cancha: hidrata y aporta proteína.",
+      "Agua durante el entrenamiento; leche o suero después.",
+      "Cuenta la leche en tu meta de agua del día."
+    ],
+    "contexto": [
+      "cancha",
+      "hidratacion"
+    ]
+  },
+  {
+    "id": "color-orina",
+    "cat": "hidratacion",
+    "titular": "El color de la orina es una guía práctica de tu hidratación",
+    "cifra": "Limonada",
+    "cifraLbl": "el color objetivo",
+    "resumen": "Los estudios de validación mostraron que el color de la orina se relaciona con su concentración y sirve como guía simple: color limonada clara indica buena hidratación; oscuro, falta de líquido.",
+    "mecanismo": "Cuando falta agua, el riñón concentra la orina y se oscurece.",
+    "nivel": "C",
+    "estudios": [
+      {
+        "cita": "Armstrong LE y col. · Int J Sport Nutr 1994",
+        "titulo": "Urinary indices of hydration status",
+        "diseno": "Estudio de validación",
+        "n": null,
+        "poblacion": "Hombres sanos"
+      }
+    ],
+    "aplicar": [
+      "Mira la primera orina de la mañana y la de antes de entrenar.",
+      "Las vitaminas del complejo B la tiñen de amarillo fuerte: no te confundas.",
+      "Si está oscura, suma 500 ml antes de la cancha."
+    ],
+    "contexto": [
+      "hidratacion"
+    ]
+  },
+  {
+    "id": "pre-enfriamiento",
+    "cat": "hidratacion",
+    "titular": "Enfriarse antes y durante el esfuerzo mejora el rendimiento con calor",
+    "cifra": "Calor",
+    "cifraLbl": "donde más ayuda",
+    "resumen": "Un metaanálisis encontró que enfriarse antes (bebidas heladas, toallas frías, chaleco) y durante el ejercicio mejora el rendimiento, sobre todo en ambientes calurosos.",
+    "mecanismo": "Bajar la temperatura del cuerpo o de la piel da más margen antes de llegar a la temperatura que limita el esfuerzo.",
+    "nivel": "A",
+    "estudios": [
+      {
+        "cita": "Tyler CJ, Sunderland C, Cheung SS · Br J Sports Med 2015",
+        "titulo": "The effect of cooling prior to and during exercise on exercise performance and capacity: a systematic review and meta-analysis",
+        "diseno": "Metaanálisis",
+        "n": null,
+        "poblacion": "Deportistas"
+      }
+    ],
+    "aplicar": [
+      "En días de más de 30 °C: agua helada antes de la cancha y toalla mojada en la nuca.",
+      "Entrena a la sombra cuando puedas en las pausas.",
+      "Más importante en pruebas de verano por la tarde."
+    ],
+    "contexto": [
+      "cancha",
+      "hidratacion",
+      "precompetencia"
+    ]
+  },
+  {
+    "id": "sentadilla-sprint",
+    "cat": "fuerza",
+    "titular": "En futbolistas de élite, más fuerza en sentadilla va con sprint y salto más rápidos",
+    "cifra": "17",
+    "cifraLbl": "internacionales medidos",
+    "resumen": "En 17 futbolistas internacionales, la fuerza máxima en media sentadilla se relacionó fuertemente con el tiempo en 10 y 30 m y con la altura de salto. Es una correlación, pero coincide con los estudios de entrenamiento.",
+    "mecanismo": "Acelerar es empujar el suelo con fuerza en poco tiempo. Más fuerza máxima eleva el techo de esa fuerza.",
+    "nivel": "C",
+    "estudios": [
+      {
+        "cita": "Wisløff U y col. · Br J Sports Med 2004",
+        "titulo": "Strong correlation of maximal squat strength with sprint performance and vertical jump height in elite soccer players",
+        "diseno": "Observacional",
+        "n": 17,
+        "poblacion": "Futbolistas internacionales"
+      }
+    ],
+    "aplicar": [
+      "Fuerza A: básicos pesados de 4-6 repeticiones.",
+      "Junta fuerza pesada con algo de velocidad (saltos, sprints cortos) en la misma semana.",
+      "Sigue la progresión: no hace falta ir al fallo."
+    ],
+    "contexto": [
+      "gimnasio",
+      "intenso"
+    ]
+  },
+  {
+    "id": "intencion-velocidad",
+    "cat": "fuerza",
+    "titular": "Mover cada repetición lo más rápido posible da más fuerza que hacerla lenta",
+    "cifra": "Máx.",
+    "cifraLbl": "velocidad intencional",
+    "resumen": "En un ensayo con press de banca, el grupo que movía cada repetición a la máxima velocidad posible ganó más fuerza y velocidad que el que hacía las mismas repeticiones a la mitad de velocidad.",
+    "mecanismo": "La intención de acelerar recluta más unidades motoras rápidas y entrena al sistema nervioso para aplicar fuerza rápido.",
+    "nivel": "B",
+    "estudios": [
+      {
+        "cita": "González-Badillo JJ y col. · Eur J Sport Sci 2014",
+        "titulo": "Maximal intended velocity training induces greater gains in bench press performance than deliberately slower half-velocity training",
+        "diseno": "Ensayo aleatorizado",
+        "n": null,
+        "poblacion": "Hombres entrenados"
+      }
+    ],
+    "aplicar": [
+      "Baja controlado y sube con la máxima intención, aunque la barra vaya lenta.",
+      "Si la velocidad cae mucho en la serie, termínala.",
+      "Excepción: los excéntricos lentos de la rehabilitación."
+    ],
+    "contexto": [
+      "gimnasio"
+    ]
+  },
+  {
+    "id": "fallo-no-necesario",
+    "cat": "fuerza",
+    "titular": "Llegar al fallo no da más fuerza ni más músculo",
+    "cifra": "1-3",
+    "cifraLbl": "repeticiones en reserva",
+    "resumen": "Un metaanálisis comparó entrenar hasta el fallo muscular contra quedarse a unas repeticiones: no hubo diferencias relevantes en fuerza ni en masa muscular.",
+    "mecanismo": "Las últimas repeticiones antes del fallo suman mucha fatiga y poco estímulo extra. Esa fatiga afecta la sesión de cancha siguiente.",
+    "nivel": "A",
+    "estudios": [
+      {
+        "cita": "Grgic J y col. · J Sport Health Sci 2022",
+        "titulo": "Effects of resistance training performed to repetition failure or non-failure on muscular strength and hypertrophy: A systematic review and meta-analysis",
+        "diseno": "Metaanálisis",
+        "n": null,
+        "poblacion": "Adultos que entrenan fuerza"
+      }
+    ],
+    "aplicar": [
+      "Termina las series con 1-3 repeticiones en reserva.",
+      "Con cancha a la tarde, más margen todavía.",
+      "El feedback Fácil/Justo/Difícil ajusta tu carga sin buscar el fallo."
+    ],
+    "contexto": [
+      "gimnasio"
+    ]
+  },
+  {
+    "id": "volumen-semanal",
+    "cat": "fuerza",
+    "titular": "10 o más series semanales por músculo dan más hipertrofia que menos de 5",
+    "cifra": "≥ 10",
+    "cifraLbl": "series por semana",
+    "resumen": "Un metaanálisis de la relación dosis-respuesta encontró que más series semanales por grupo muscular producen más crecimiento: 10 o más superaron claramente a menos de 5.",
+    "mecanismo": "El estímulo de crecimiento se acumula a lo largo de la semana; repartirlo en 2 sesiones por músculo permite más volumen de calidad.",
+    "nivel": "A",
+    "estudios": [
+      {
+        "cita": "Schoenfeld BJ, Ogborn D, Krieger JW · J Sports Sci 2017",
+        "titulo": "Dose-response relationship between weekly resistance training volume and increases in muscle mass: A systematic review and meta-analysis",
+        "diseno": "Metaanálisis",
+        "n": null,
+        "poblacion": "Adultos que entrenan fuerza"
+      }
+    ],
+    "aplicar": [
+      "Mira en Progreso las series por grupo contra el objetivo.",
+      "El motor suma accesorios donde te faltan series.",
+      "En temporada, el objetivo es mantener, no maximizar."
+    ],
+    "contexto": [
+      "gimnasio"
+    ]
+  },
+  {
+    "id": "fuerza-y-cancha",
+    "cat": "fuerza",
+    "titular": "La carrera interfiere más con la fuerza que el ciclismo: sepáralas",
+    "cifra": "≥ 6 h",
+    "cifraLbl": "entre fuerza y cancha",
+    "resumen": "Un metaanálisis sobre entrenamiento concurrente encontró que combinar fuerza con resistencia reduce algo las ganancias de fuerza y músculo, y que la carrera interfiere más que la bicicleta. Más frecuencia y duración de cardio, más interferencia.",
+    "mecanismo": "Las señales de adaptación a la resistencia y a la fuerza compiten dentro del músculo si van muy juntas.",
+    "nivel": "A",
+    "estudios": [
+      {
+        "cita": "Wilson JM y col. · J Strength Cond Res 2012",
+        "titulo": "Concurrent training: a meta-analysis examining interference of aerobic and resistance exercises",
+        "diseno": "Metaanálisis",
+        "n": null,
+        "poblacion": "Adultos"
+      }
+    ],
+    "aplicar": [
+      "Gimnasio a la mañana y cancha a la tarde, con 6 h o más entre medio.",
+      "Si van el mismo bloque, primero lo que más te importa ese día.",
+      "La app avisa si quedan menos de 6 h tras un gimnasio intenso."
+    ],
+    "contexto": [
+      "gimnasio",
+      "cancha"
+    ]
+  },
+  {
+    "id": "fuerza-en-temporada",
+    "cat": "fuerza",
+    "titular": "Una sesión de fuerza por semana mantiene la fuerza y el sprint en temporada",
+    "cifra": "1/sem",
+    "cifraLbl": "mantiene; 1/15 días no",
+    "resumen": "En 14 futbolistas profesionales, una sesión semanal de fuerza durante 12 semanas de temporada mantuvo la fuerza y el sprint de 40 m ganados en pretemporada. Con una sesión cada dos semanas, ambos bajaron.",
+    "mecanismo": "Mantener cuesta mucho menos que ganar, pero hace falta un estímulo regular.",
+    "nivel": "C",
+    "estudios": [
+      {
+        "cita": "Rønnestad BR, Nymark BS, Raastad T · J Strength Cond Res 2011",
+        "titulo": "Effects of in-season strength maintenance training frequency in professional soccer players",
+        "diseno": "Ensayo controlado",
+        "n": 14,
+        "poblacion": "Futbolistas profesionales"
+      }
+    ],
+    "aplicar": [
+      "En semanas con partido, al menos una sesión de fuerza.",
+      "Pocas series pesadas alcanzan para mantener.",
+      "No la pongas el día antes del partido."
+    ],
+    "contexto": [
+      "gimnasio",
+      "precompetencia"
+    ]
+  },
+  {
+    "id": "isometria-tendon",
+    "cat": "fuerza",
+    "titular": "La isometría alivia el dolor de tendón en el momento; a largo plazo, no supera a otros ejercicios",
+    "cifra": "6",
+    "cifraLbl": "deportistas, primer estudio",
+    "resumen": "Un estudio con 6 voleibolistas mostró que 5 isometrías de 45 s redujeron el dolor del tendón rotuliano durante unos 45 min. Estudios posteriores con más personas dieron resultados mixtos: ayuda como alivio, no como solución única.",
+    "mecanismo": "La contracción sostenida reduce la sensibilidad al dolor y permite entrenar con menos molestia.",
+    "nivel": "C",
+    "estudios": [
+      {
+        "cita": "Rio E y col. · Br J Sports Med 2015",
+        "titulo": "Isometric exercise induces analgesia and reduces inhibition in patellar tendinopathy",
+        "diseno": "Ensayo cruzado",
+        "n": 6,
+        "poblacion": "Voleibolistas con tendinopatía"
+      }
+    ],
+    "aplicar": [
+      "Úsala antes de entrenar si un tendón molesta: 5 × 30-45 s al 70 %.",
+      "La solución a largo plazo es la carga progresiva completa.",
+      "Si el dolor sube al día siguiente, baja la carga."
+    ],
+    "contexto": [
+      "molestia",
+      "lesion"
+    ]
+  },
+  {
+    "id": "pliometria-salto",
+    "cat": "fuerza",
+    "titular": "La pliometría mejora el salto vertical; programas de 10 semanas o más rinden más",
+    "cifra": "56",
+    "cifraLbl": "estudios",
+    "resumen": "Un metaanálisis de 56 estudios confirmó que el entrenamiento pliométrico mejora la altura de salto, con mayores efectos en programas de al menos 10 semanas y combinando varios tipos de salto.",
+    "mecanismo": "Entrena el ciclo de estiramiento-acortamiento: el músculo y el tendón aprenden a devolver energía rápido.",
+    "nivel": "A",
+    "estudios": [
+      {
+        "cita": "de Villarreal ES y col. · J Strength Cond Res 2009",
+        "titulo": "Determining variables of plyometric training for improving vertical jump height performance: a meta-analysis",
+        "diseno": "Metaanálisis",
+        "n": null,
+        "poblacion": "56 estudios"
+      }
+    ],
+    "aplicar": [
+      "Saltos de calidad con descanso completo, no en fatiga.",
+      "Pocos contactos y bien hechos; sube el volumen semana a semana.",
+      "En rehabilitación, la app los habilita por fase."
+    ],
+    "contexto": [
+      "gimnasio",
+      "cancha"
+    ]
+  },
+  {
+    "id": "carga-ligera-hipertrofia",
+    "cat": "fuerza",
+    "titular": "Con cargas ligeras se gana el mismo músculo si llegas cerca del fallo",
+    "cifra": "= músculo",
+    "cifraLbl": "ligero vs. pesado",
+    "resumen": "Un metaanálisis encontró hipertrofia similar con cargas ligeras y pesadas cuando las series se llevan cerca del fallo. Para la fuerza máxima, las cargas pesadas siguen siendo superiores.",
+    "mecanismo": "Al final de una serie ligera y exigente se reclutan también las fibras grandes, que son las que más crecen.",
+    "nivel": "A",
+    "estudios": [
+      {
+        "cita": "Schoenfeld BJ y col. · J Strength Cond Res 2017",
+        "titulo": "Strength and Hypertrophy Adaptations Between Low- vs. High-Load Resistance Training: A Systematic Review and Meta-analysis",
+        "diseno": "Metaanálisis",
+        "n": null,
+        "poblacion": "Adultos que entrenan fuerza"
+      }
+    ],
+    "aplicar": [
+      "En casa o con poco equipo, series de 15-25 repeticiones exigentes.",
+      "Útil en rehabilitación cuando la carga pesada todavía no está permitida.",
+      "Para fuerza máxima, vuelve a las cargas pesadas en cuanto puedas."
+    ],
+    "contexto": [
+      "gimnasio",
+      "lesion"
+    ]
+  },
+  {
+    "id": "sprint-gol",
+    "cat": "velocidad",
+    "titular": "En el 45 % de los goles, el goleador hace un sprint recto antes de marcar",
+    "cifra": "45 %",
+    "cifraLbl": "de los goles",
+    "resumen": "Al analizar 360 goles de la Bundesliga, el sprint recto fue la acción más frecuente: lo hizo el goleador en el 45 % de los goles y el asistente en cerca del 38 %. El salto apareció en el 16 %.",
+    "mecanismo": "Ganar un metro al defensor en los últimos 10-20 m decide si llegas al remate.",
+    "nivel": "C",
+    "estudios": [
+      {
+        "cita": "Faude O, Koch T, Meyer T · J Sports Sci 2012",
+        "titulo": "Straight sprinting is the most frequent action in goal situations in professional football",
+        "diseno": "Análisis de partidos",
+        "n": null,
+        "poblacion": "360 goles de la Bundesliga"
+      }
+    ],
+    "aplicar": [
+      "Para un delantero, el sprint es tan importante como la definición.",
+      "Respeta la escalera S hasta S6 y luego mantenla todas las semanas.",
+      "Combina sprint con remate: sprint de 15 m y definición."
+    ],
+    "contexto": [
+      "cancha",
+      "intenso"
+    ]
+  },
+  {
+    "id": "potenciacion",
+    "cat": "velocidad",
+    "titular": "Un esfuerzo pesado o explosivo antes del sprint lo hace más rápido si esperas 5-7 min",
+    "cifra": "5-7 min",
+    "cifraLbl": "de pausa",
+    "resumen": "Un metaanálisis sobre la potenciación tras un esfuerzo intenso encontró mejoras en salto y sprint, mayores en personas fuertes y con 5-7 min de descanso entre el esfuerzo y la prueba.",
+    "mecanismo": "El esfuerzo previo aumenta la sensibilidad del músculo y la activación nerviosa; la pausa deja pasar la fatiga.",
+    "nivel": "A",
+    "estudios": [
+      {
+        "cita": "Seitz LB, Haff GG · Sports Med 2016",
+        "titulo": "Factors Modulating Post-Activation Potentiation of Jump, Sprint, Throw, and Upper-Body Ballistic Performances: A Systematic Review with Meta-Analysis",
+        "diseno": "Metaanálisis",
+        "n": null,
+        "poblacion": "Deportistas"
+      }
+    ],
+    "aplicar": [
+      "En el calentamiento de sprint: 2-3 saltos o aceleraciones con trineo, y 5 min de pausa.",
+      "Útil antes de una prueba de velocidad.",
+      "Si no estás fuerte todavía, el efecto es menor."
+    ],
+    "contexto": [
+      "cancha",
+      "precompetencia"
+    ]
+  },
+  {
+    "id": "fuerza-horizontal",
+    "cat": "velocidad",
+    "titular": "Lo que más separa a los rápidos es cómo orientan la fuerza, no cuánta tienen",
+    "cifra": "Horizontal",
+    "cifraLbl": "orientación de la fuerza",
+    "resumen": "En un estudio con velocistas y no velocistas, el rendimiento en sprint dependió más de la capacidad técnica de dirigir la fuerza hacia adelante que de la fuerza total aplicada al suelo.",
+    "mecanismo": "En la aceleración, empujar hacia atrás y no hacia abajo convierte la fuerza en velocidad.",
+    "nivel": "C",
+    "estudios": [
+      {
+        "cita": "Morin JB, Edouard P, Samozino P · Med Sci Sports Exerc 2011",
+        "titulo": "Technical ability of force application as a determinant factor of sprint performance",
+        "diseno": "Observacional",
+        "n": 12,
+        "poblacion": "Velocistas y no velocistas"
+      }
+    ],
+    "aplicar": [
+      "Salidas desde posición inclinada, tronco adelante los primeros pasos.",
+      "Empuje de trineo o de pared para sentir la dirección.",
+      "Pasos cortos y potentes al principio, que se alargan solos."
+    ],
+    "contexto": [
+      "cancha"
+    ]
+  },
+  {
+    "id": "trineo-pesado",
+    "cat": "velocidad",
+    "titular": "El trineo muy pesado mejoró la fuerza horizontal en futbolistas (estudio piloto)",
+    "cifra": "80 %",
+    "cifraLbl": "del peso corporal",
+    "resumen": "En 16 futbolistas amateurs, 8 semanas de sprints de 20 m arrastrando un trineo con el 80 % de su peso mejoraron la aplicación de fuerza horizontal y los 5 m más que el sprint libre. Es un estudio piloto pequeño.",
+    "mecanismo": "La carga obliga a inclinarse y a empujar hacia atrás durante más tiempo.",
+    "nivel": "C",
+    "estudios": [
+      {
+        "cita": "Morin JB y col. · Int J Sports Physiol Perform 2017",
+        "titulo": "Very-Heavy Sled Training for Improving Horizontal-Force Output in Soccer Players",
+        "diseno": "Ensayo controlado piloto",
+        "n": 16,
+        "poblacion": "Futbolistas amateurs"
+      }
+    ],
+    "aplicar": [
+      "Si tienes trineo o neumático: 6-10 arrastres de 20 m, 1-2 veces por semana.",
+      "Pausas completas: es trabajo de calidad.",
+      "En rehabilitación, solo desde las fases que habilitan sprint."
+    ],
+    "contexto": [
+      "cancha"
+    ]
+  },
+  {
+    "id": "velocidad-maxima",
+    "cat": "velocidad",
+    "titular": "La velocidad máxima se entrena corriendo a más del 90 % y con pausa completa",
+    "cifra": "> 90 %",
+    "cifraLbl": "de tu velocidad",
+    "resumen": "Una revisión que integra la ciencia y la práctica de velocistas de élite resume que la velocidad máxima mejora con esfuerzos casi máximos, pocas repeticiones y pausas largas; correr cansado entrena otra cosa.",
+    "mecanismo": "El sistema nervioso aprende a reclutar y coordinar rápido solo cuando la velocidad es alta y no hay fatiga.",
+    "nivel": "D",
+    "estudios": [
+      {
+        "cita": "Haugen T y col. · Sports Med Open 2019",
+        "titulo": "The Training and Development of Elite Sprint Performance: an Integration of Scientific and Best Practice Literature",
+        "diseno": "Revisión",
+        "n": null,
+        "poblacion": "Velocistas de élite"
+      }
+    ],
+    "aplicar": [
+      "Pausa de 1 min por cada 10 m de sprint.",
+      "Termina cuando el tiempo empeora.",
+      "No mezcles sprint de calidad con RT en el mismo bloque."
+    ],
+    "contexto": [
+      "cancha",
+      "intenso"
+    ]
+  },
+  {
+    "id": "sprints-repetidos",
+    "cat": "velocidad",
+    "titular": "Los sprints repetidos con poca pausa mejoran la resistencia a esfuerzos de partido",
+    "cifra": "RSA",
+    "cifraLbl": "sprints repetidos",
+    "resumen": "Un metaanálisis encontró que el entrenamiento de sprints repetidos (muchos sprints cortos con pausas breves) mejora la capacidad de repetir sprints, el sprint y la resistencia intermitente en deportistas de equipo.",
+    "mecanismo": "Mejora la recuperación de la fosfocreatina y la capacidad aeróbica entre esfuerzos.",
+    "nivel": "A",
+    "estudios": [
+      {
+        "cita": "Taylor J y col. · Sports Med 2015",
+        "titulo": "The effects of repeated-sprint training on field-based fitness measures: a meta-analysis of controlled and non-controlled trials",
+        "diseno": "Metaanálisis",
+        "n": null,
+        "poblacion": "Deportistas de equipo"
+      }
+    ],
+    "aplicar": [
+      "Es tu bloque RT: no lo hagas el mismo día que la velocidad máxima.",
+      "Cuenta como día de carga para los isquios.",
+      "Con molestias en piernas, el plan lo quita primero."
+    ],
+    "contexto": [
+      "cancha",
+      "intenso"
+    ]
+  }
+]

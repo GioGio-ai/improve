@@ -1,9 +1,10 @@
 /* ============================================================
    EVENTOS E INICIO
    ============================================================ */
-const RENDERERS = { hoy: viewHoy, entreno: viewEntreno, comida: viewComida, progreso: viewProgreso, perfil: viewPerfil, coach: viewCoach };
+const RENDERERS = { hoy: viewHoy, entreno: viewEntreno, comida: viewComida, progreso: viewProgreso, perfil: viewPerfil, coach: viewCoach, aprende: viewAprende };
 function afterRender() {
   markNavBadge();
+  aprendeAfterRender();
   hydrateThumbs($('#view'));
   hydrateMealImgs($('#view'));
   hydrateMedia($('#view'));
@@ -269,6 +270,25 @@ document.addEventListener('click', (e) => {
     case 'meal-skip': skipMeal(g('date'), g('key')); return;
     case 'pend-opts': openPendOpts(g('date'), g('key')); return;
     case 'pend-all': openPendAll(); return;
+    /* ---- aprende ---- */
+    case 'dato-open': if (UI.view === 'aprende' || LAYERS.length) openDato(g('id')); else goDato(g('id')); return;
+    case 'dato-save': { const on = aprendeToggle('guardados', g('id')); toast(on ? 'Guardado en Aprende.' : 'Quitado de guardados.', 'ok'); refreshSheet(true); return; }
+    case 'dato-aplico': { const on = aprendeToggle('aplico', g('id')); toast(on ? 'Anotado: lo aplicas. El coach lo tiene en cuenta.' : 'Quitado de lo que aplicas.', 'ok'); refreshSheet(true); return; }
+    case 'dato-hide': { const on = aprendeToggle('ocultos', g('id')); toast(on ? 'No vuelve a salir como dato del día.' : 'Vuelve a la rotación.', 'info'); refreshSheet(true); return; }
+    case 'apr-tab': UI.apr.tab = g('v'); scheduleRender(); return;
+    case 'apr-filter': UI.apr.filter = g('v'); scheduleRender(); return;
+    case 'apr-retry': DAT.error = false; loadDatos().catch(() => {}); scheduleRender(); return;
+    case 'inv-go': { const t = $('#inv-q'); if (t) UI.inv.q = t.value; runResearch(UI.inv.q, UI.inv.privado); return; }
+    case 'inv-example': UI.inv.q = g('q'); scheduleRender(); return;
+    case 'inv-priv': UI.inv.privado = !UI.inv.privado; scheduleRender(); return;
+    case 'inv-showpriv': UI.inv.showPriv = !UI.inv.showPriv; scheduleRender(); return;
+    case 'inv-open': openInvestigacion(g('id')); return;
+    case 'inv-cite': { const sh = el.closest('.sheet'), sid = sh && sh.getAttribute('data-sid'), t = sid && document.getElementById('est-' + sid.replace(/^inv-/, '') + '-' + g('id')); if (t) { t.scrollIntoView({ behavior: 'smooth', block: 'center' }); t.classList.add('flash'); setTimeout(() => t.classList.remove('flash'), 1200); } return; }
+    case 'inv-ask': closeAllSheets(); UI.apr.tab = 'investigar'; UI.inv.q = g('q'); if (UI.view !== 'aprende') location.hash = '#aprende'; else scheduleRender(); setTimeout(() => runResearch(UI.inv.q, UI.inv.privado), 60); return;
+    case 'inv-from-dato': { const d = DAT.index[g('id')]; closeAllSheets(); UI.apr.tab = 'investigar'; UI.inv.q = d ? d.titular : ''; if (UI.view !== 'aprende') location.hash = '#aprende'; else scheduleRender(); setTimeout(() => runResearch(UI.inv.q, UI.inv.privado), 60); return; }
+    case 'inv-setpriv': { const x = invList().find(v => v.id === g('id')); if (x) invSetPrivate(x.id, !x.privado); return; }
+    case 'inv-del': openConfirm('Borrar investigación', 'Se borra el informe y la lista de estudios.', 'do-inv-del', { id: g('id') }, true); return;
+    case 'do-inv-del': remove('investigaciones', g('id')).then(() => toast('Investigación borrada.')); closeAllSheets(); return;
     case 'pend-dismiss': pendDismissYesterday(); return;
     case 'meal-undo': remove('meals', g('id')).then(() => toast('Registro deshecho.', 'info')); return;
     case 'meal-edit': editMeal(g('id')); return;
@@ -313,6 +333,7 @@ function handleBind(el, isChange) {
     case 'wt-step': UI.wt.kg = parseNum(v); return;
     case 'cx': UI.cx[name] = v; return;
     case 'coach-q': UI.coach.draft = v; return;
+    case 'inv-q': UI.inv.q = v; return;
     case 'mol-z': if (UI.mol && v && isChange) { UI.mol.view = ZONE_VIEW[v] || UI.mol.view; molAdd(UI.mol, v, (ST && ST.side) || 'd'); el.value = ''; refreshSheet(true); } return;
     case 'mol-nota': if (UI.mol) UI.mol.nota = v; return;
     case 'ag-time': if (isChange && /^\d{1,2}:\d{2}$/.test(v)) { agendaSet(el.getAttribute('data-date'), el.getAttribute('data-key'), { start: hm(v) }).then(() => toast('Hora cambiada a ' + v + '.')); } return;
@@ -334,7 +355,7 @@ document.addEventListener('input', (e) => {
   if (el.getAttribute('data-pick')) { UI.pick.q = el.value; clearTimeout(UI.pickTimer); UI.pickTimer = setTimeout(updatePickList, 150); return; }
   if (el.getAttribute('data-food-q')) { UI.foodQ = el.value; UI.foodAIErr = ''; const l = $('#food-list'); if (l) l.innerHTML = foodListHtml(); return; }
   const k = el.getAttribute('data-input');
-  if (k) { if (k === 'bank-q') { UI.bank.q = el.value; UI.bank.limit = 30; } if (k === 'lib-q') { UI.lib.q = el.value; UI.lib.limit = 40; } clearTimeout(UI.inputTimer); UI.inputTimer = setTimeout(scheduleRender, 200); }
+  if (k) { if (k === 'bank-q') { UI.bank.q = el.value; UI.bank.limit = 30; } if (k === 'lib-q') { UI.lib.q = el.value; UI.lib.limit = 40; } if (k === 'apr-q') UI.apr.q = el.value; clearTimeout(UI.inputTimer); UI.inputTimer = setTimeout(scheduleRender, 200); }
 });
 document.addEventListener('change', (e) => { const el = e.target; if (el.getAttribute && el.hasAttribute('data-bind')) handleBind(el, true); });
 document.addEventListener('focusin', (e) => { const el = e.target; if (el && el.tagName === 'INPUT' && el.closest && (el.closest('.stepper') || el.classList.contains('num'))) { try { el.select(); } catch (err) { /* nada */ } } });
@@ -355,7 +376,7 @@ function bootApp(fb) {
   UI.view = currentView(); markNav();
   initStore(fb);
   window.IMPROVE = {
-    version: VERSION, importObject, exportData, tr: () => TR,
+    version: VERSION, importObject, exportData, tr: () => TR, coachCtx: () => coachContext(ST, todayStr()),
     putMedia(id, data) { return setMedia(id, data); },
     counts() { const o = {}; Object.keys(COLS).forEach(c => { o[c] = COLS[c] === 'single' ? (S.data[c] ? 1 : 0) : (S.data[c] || []).length; }); return o; },
   };

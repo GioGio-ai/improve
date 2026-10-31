@@ -1,0 +1,844 @@
+[
+  {
+    "id": "autodialogo",
+    "cat": "mente",
+    "titular": "Hablarte con instrucciones y ánimo mejora el rendimiento de forma medible",
+    "cifra": "d = 0,48",
+    "cifraLbl": "efecto medio",
+    "resumen": "Un metaanálisis de 32 estudios encontró que el autodiálogo (frases cortas dirigidas a uno mismo) mejora el rendimiento deportivo con un efecto moderado. Funciona mejor si se entrena y si las frases son instrucciones concretas en tareas de precisión.",
+    "mecanismo": "Dirige la atención a lo importante, reduce los pensamientos que distraen y regula la activación.",
+    "nivel": "A",
+    "estudios": [
+      {
+        "cita": "Hatzigeorgiadis A y col. · Perspect Psychol Sci 2011",
+        "titulo": "Self-Talk and Sports Performance: A Meta-Analysis",
+        "diseno": "Metaanálisis",
+        "n": null,
+        "poblacion": "32 estudios"
+      }
+    ],
+    "aplicar": [
+      "Elige 2-3 palabras para cada gesto: «tobillo firme», «mira el punto», «empuja».",
+      "Úsalas en los entrenamientos, no solo en partidos.",
+      "Para el esfuerzo: «una más», «fuerte hasta el final»."
+    ],
+    "contexto": [
+      "cancha",
+      "precompetencia"
+    ]
+  },
+  {
+    "id": "mirada-quieta",
+    "cat": "mente",
+    "titular": "Los expertos fijan la mirada más tiempo antes del gesto, y se puede entrenar",
+    "cifra": "Quiet eye",
+    "cifraLbl": "mirada quieta",
+    "resumen": "Un metaanálisis encontró que los deportistas expertos mantienen una fijación visual final más larga antes de ejecutar (patear, lanzar, tirar) y que entrenar esa mirada mejora la precisión.",
+    "mecanismo": "La fijación final organiza la información para programar el movimiento y reduce las distracciones del momento.",
+    "nivel": "A",
+    "estudios": [
+      {
+        "cita": "Lebeau JC y col. · J Sport Exerc Psychol 2016",
+        "titulo": "Quiet Eye and Performance in Sport: A Meta-Analysis",
+        "diseno": "Metaanálisis",
+        "n": null,
+        "poblacion": "Deportes de precisión"
+      }
+    ],
+    "aplicar": [
+      "En penales y tiros libres: elige el punto del arco y fíjalo 1-2 s antes de arrancar.",
+      "No cambies de idea después de mirar el punto.",
+      "Practícalo en las estaciones de definición."
+    ],
+    "contexto": [
+      "cancha"
+    ]
+  },
+  {
+    "id": "fatiga-mental",
+    "cat": "mente",
+    "titular": "30 min de esfuerzo mental antes de entrenar empeoran la carrera, el pase y el tiro",
+    "cifra": "30 min",
+    "cifraLbl": "de tarea mental",
+    "resumen": "En dos estudios con futbolistas, 30 min de una tarea mental exigente antes de las pruebas redujeron la distancia recorrida en el Yo-Yo y empeoraron el pase y la velocidad y precisión del tiro, comparado con leer revistas.",
+    "mecanismo": "La fatiga mental sube la percepción de esfuerzo: el mismo trabajo se siente más duro y se rinde menos.",
+    "nivel": "B",
+    "estudios": [
+      {
+        "cita": "Smith MR y col. · Med Sci Sports Exerc 2016",
+        "titulo": "Mental Fatigue Impairs Soccer-Specific Physical and Technical Performance",
+        "diseno": "Ensayos cruzados",
+        "n": 26,
+        "poblacion": "Futbolistas"
+      }
+    ],
+    "aplicar": [
+      "Nada de redes sociales ni pantallas exigentes en la hora previa a la cancha.",
+      "Antes de una prueba, música o respiración en lugar del teléfono.",
+      "Si llegas mentalmente agotado, empieza con el calentamiento más largo."
+    ],
+    "contexto": [
+      "cancha",
+      "precompetencia"
+    ]
+  },
+  {
+    "id": "penal-sin-prisa",
+    "cat": "mente",
+    "titular": "Los que patean apurados tras el silbato convierten menos penales",
+    "cifra": "57 vs 80 %",
+    "cifraLbl": "apurado vs. con calma",
+    "resumen": "Al analizar las tandas de penales de Mundiales, Eurocopas y Champions, los jugadores que arrancaron en menos de 0,2 s tras el silbato marcaron alrededor del 57 %; los que esperaron más de 1 s, más del 80 %. Es un análisis retrospectivo.",
+    "mecanismo": "Apurarse es una forma de escapar de la presión; tomarse un segundo permite ejecutar la rutina y el plan.",
+    "nivel": "C",
+    "estudios": [
+      {
+        "cita": "Jordet G, Hartman E, Sigmundstad E · Psychol Sport Exerc 2009",
+        "titulo": "Temporal links to performing under pressure in international soccer penalty shootouts",
+        "diseno": "Análisis de partidos",
+        "n": null,
+        "poblacion": "Tandas de penales internacionales"
+      }
+    ],
+    "aplicar": [
+      "Tras el silbato: respira, mira el punto y recién arranca.",
+      "Ten una sola rutina de penal y úsala siempre.",
+      "Practica penales al final de la cancha, cansado."
+    ],
+    "contexto": [
+      "cancha",
+      "precompetencia"
+    ]
+  },
+  {
+    "id": "respiracion-lenta",
+    "cat": "mente",
+    "titular": "Respirar a unas 6 respiraciones por minuto activa el freno del sistema nervioso",
+    "cifra": "6/min",
+    "cifraLbl": "respiraciones",
+    "resumen": "Un metaanálisis encontró que la respiración lenta voluntaria aumenta de forma inmediata la variabilidad de la frecuencia cardiaca, un marcador del sistema parasimpático (el modo de recuperación).",
+    "mecanismo": "Respirar lento y con espiración larga estimula el nervio vago, que baja las pulsaciones y la activación.",
+    "nivel": "A",
+    "estudios": [
+      {
+        "cita": "Laborde S y col. · Neurosci Biobehav Rev 2022",
+        "titulo": "Effects of voluntary slow breathing on heart rate and heart rate variability: A systematic review and a meta-analysis",
+        "diseno": "Metaanálisis",
+        "n": null,
+        "poblacion": "Adultos"
+      }
+    ],
+    "aplicar": [
+      "5 min de respiración guiada antes de dormir.",
+      "Antes de un penal o una prueba: 2-3 respiraciones lentas con espiración larga.",
+      "Inhala 4 s, exhala 6 s."
+    ],
+    "contexto": [
+      "descanso",
+      "precompetencia",
+      "sueno-bajo"
+    ],
+    "accion": {
+      "tipo": "guia",
+      "id": "respiracion"
+    }
+  },
+  {
+    "id": "rutina-previa",
+    "cat": "mente",
+    "titular": "Una rutina fija antes del gesto mejora la consistencia bajo presión",
+    "cifra": "Rutina",
+    "cifraLbl": "pre-ejecución",
+    "resumen": "Las revisiones sobre rutinas previas a la ejecución (en golf, básquet, rugby, fútbol) muestran que una secuencia estable de pasos antes del gesto se asocia a más consistencia y mejor manejo de la ansiedad.",
+    "mecanismo": "La rutina lleva la atención a lo que se controla y automatiza la preparación, dejando menos espacio a las dudas.",
+    "nivel": "C",
+    "estudios": [
+      {
+        "cita": "Cotterill ST · Int Rev Sport Exerc Psychol 2010",
+        "titulo": "Pre-performance routines in sport: current understanding and future directions",
+        "diseno": "Revisión",
+        "n": null,
+        "poblacion": "Deportes de precisión"
+      }
+    ],
+    "aplicar": [
+      "Define tu rutina de tiro libre y de penal: mismos pasos, mismo tiempo.",
+      "Ensáyala en cada estación de definición.",
+      "Respiración, punto fijo y una palabra clave."
+    ],
+    "contexto": [
+      "cancha"
+    ]
+  },
+  {
+    "id": "mentalidad-crecimiento",
+    "cat": "mente",
+    "titular": "La «mentalidad de crecimiento» tiene un efecto mucho menor de lo que se vende",
+    "cifra": "d = 0,08",
+    "cifraLbl": "efecto de las intervenciones",
+    "resumen": "Dos metaanálisis encontraron una relación débil entre mentalidad de crecimiento y rendimiento académico, y un efecto muy pequeño de las intervenciones que intentan cambiarla. No es inútil, pero no es la llave del éxito.",
+    "mecanismo": "Creer que puedes mejorar ayuda si viene con un plan concreto, práctica deliberada y feedback.",
+    "nivel": "A",
+    "mito": "matiz",
+    "estudios": [
+      {
+        "cita": "Sisk VF y col. · Psychol Sci 2018",
+        "titulo": "To What Extent and Under Which Circumstances Are Growth Mind-Sets Important to Academic Achievement? Two Meta-Analyses",
+        "diseno": "Metaanálisis",
+        "n": null,
+        "poblacion": "Estudiantes"
+      }
+    ],
+    "aplicar": [
+      "Menos frases motivacionales y más plan: qué entreno, cuánto y cómo lo mido.",
+      "Registra para ver el progreso real, no el imaginado.",
+      "Las mejoras vienen de la práctica con feedback."
+    ],
+    "contexto": []
+  },
+  {
+    "id": "entrenar-con-presion",
+    "cat": "mente",
+    "titular": "Practicar con un poco de nervios evita bloquearse cuando la presión es alta",
+    "cifra": "Ansiedad leve",
+    "cifraLbl": "en el entrenamiento",
+    "resumen": "En un experimento, quienes practicaron una tarea de precisión con ansiedad leve rindieron igual cuando la ansiedad fue alta, mientras que el grupo que practicó tranquilo empeoró bajo presión.",
+    "mecanismo": "El cuerpo y la atención se acostumbran a funcionar con activación alta, y la presión deja de ser una situación nueva.",
+    "nivel": "C",
+    "estudios": [
+      {
+        "cita": "Oudejans RRD, Pijpers JR · Psychol Sport Exerc 2010",
+        "titulo": "Training with mild anxiety may prevent choking under higher levels of anxiety",
+        "diseno": "Ensayo controlado",
+        "n": null,
+        "poblacion": "Novatos en tarea de precisión"
+      }
+    ],
+    "aplicar": [
+      "Ponle consecuencias a la definición: si fallas, 10 flexiones.",
+      "Tanda de 5 penales que hay que convertir para terminar.",
+      "Cuenta tus aciertos en voz alta para sumar presión."
+    ],
+    "contexto": [
+      "cancha",
+      "precompetencia"
+    ]
+  },
+  {
+    "id": "nervios-como-energia",
+    "cat": "mente",
+    "titular": "Decirte «estoy emocionado» rinde más que intentar calmarte",
+    "cifra": "+8 %",
+    "cifraLbl": "en el rendimiento",
+    "resumen": "En tres experimentos (hablar en público, problemas de matemática y cantar), quienes interpretaron los nervios como entusiasmo rindieron mejor que quienes intentaron calmarse; en matemática, alrededor de un 8 % más. No eran deportistas.",
+    "mecanismo": "Pasar de la ansiedad a la calma cuesta mucho; pasar de ansiedad a entusiasmo es fácil porque las dos son activación alta.",
+    "nivel": "C",
+    "estudios": [
+      {
+        "cita": "Brooks AW · J Exp Psychol Gen 2014",
+        "titulo": "Get excited: reappraising pre-performance anxiety as excitement",
+        "diseno": "Experimentos aleatorizados",
+        "n": 441,
+        "poblacion": "Adultos (no deportistas)"
+      }
+    ],
+    "aplicar": [
+      "Antes de una prueba, no te digas «calma»: di «estoy listo, esto me activa».",
+      "El corazón acelerado es energía para el sprint.",
+      "Combínalo con 2 respiraciones lentas."
+    ],
+    "contexto": [
+      "precompetencia"
+    ]
+  },
+  {
+    "id": "escaneo",
+    "cat": "percepcion",
+    "titular": "Los que más miran alrededor antes de recibir completan más pases",
+    "cifra": "9574",
+    "cifraLbl": "posesiones analizadas",
+    "resumen": "En 27 jugadores de un club de la Premier League y 9574 posesiones, más giros de cabeza para mirar alrededor antes de recibir se asociaron a más pases completados, sobre todo hacia adelante.",
+    "mecanismo": "Mirar antes de recibir da información sobre espacio y rivales: decides antes y juegas más rápido.",
+    "nivel": "C",
+    "estudios": [
+      {
+        "cita": "Jordet G y col. · Front Psychol 2020",
+        "titulo": "Scanning, Contextual Factors, and Association With Performance in English Premier League Footballers: An Investigation Across a Season",
+        "diseno": "Análisis de partidos",
+        "n": 27,
+        "poblacion": "Jugadores de la Premier League"
+      }
+    ],
+    "aplicar": [
+      "En el pase a la pared: mira por encima del hombro antes de cada recepción.",
+      "Cuenta los giros de cabeza en los juegos reducidos.",
+      "Para un delantero: mira la posición del defensor antes del control orientado."
+    ],
+    "contexto": [
+      "cancha"
+    ]
+  },
+  {
+    "id": "pie-no-dominante",
+    "cat": "percepcion",
+    "titular": "Entrenar el pie no dominante mejoró las dos piernas en jóvenes futbolistas",
+    "cifra": "2 piernas",
+    "cifraLbl": "mejoraron, no solo una",
+    "resumen": "En un ensayo con jóvenes futbolistas, entrenar con el pie no dominante mejoró las habilidades de ambas piernas, no solo de la entrenada.",
+    "mecanismo": "El aprendizaje motor se transfiere entre lados: el cerebro aprende el patrón del gesto y lo aplica a las dos piernas.",
+    "nivel": "C",
+    "estudios": [
+      {
+        "cita": "Haaland E, Hoff J · Scand J Med Sci Sports 2003",
+        "titulo": "Non-dominant leg training improves the bilateral motor performance of soccer players",
+        "diseno": "Ensayo controlado",
+        "n": null,
+        "poblacion": "Futbolistas jóvenes"
+      }
+    ],
+    "aplicar": [
+      "Mientras la derecha se recupera, la zurda trabaja cada día de cancha.",
+      "Mismas estaciones con las dos piernas cuando la escalera K lo permita.",
+      "Un delantero con dos piernas es más difícil de marcar."
+    ],
+    "contexto": [
+      "cancha",
+      "lesion"
+    ]
+  },
+  {
+    "id": "sueno-aprendizaje",
+    "cat": "percepcion",
+    "titular": "Una noche de sueño después de practicar mejora la habilidad sin entrenar más",
+    "cifra": "~20 %",
+    "cifraLbl": "más velocidad",
+    "resumen": "En experimentos con una tarea de secuencias de dedos, quienes durmieron una noche después de practicar mejoraron la velocidad alrededor de un 20 % sin practicar más; el mismo tiempo despiertos no produjo mejora.",
+    "mecanismo": "Durante el sueño, el cerebro consolida lo aprendido, sobre todo en el sueño de las últimas horas de la noche.",
+    "nivel": "C",
+    "estudios": [
+      {
+        "cita": "Walker MP y col. · Neuron 2002",
+        "titulo": "Practice with sleep makes perfect: sleep-dependent motor skill learning",
+        "diseno": "Experimentos controlados",
+        "n": null,
+        "poblacion": "Adultos jóvenes"
+      }
+    ],
+    "aplicar": [
+      "El día que trabajas técnica nueva, cuida especialmente el sueño.",
+      "No cortes el final de la noche: ahí se consolida.",
+      "Repite el gesto al día siguiente para fijarlo."
+    ],
+    "contexto": [
+      "cancha",
+      "sueno-bajo"
+    ]
+  },
+  {
+    "id": "foco-externo",
+    "cat": "percepcion",
+    "titular": "Pensar en el efecto (la trayectoria) rinde más que pensar en el cuerpo",
+    "cifra": "Externo",
+    "cifraLbl": "foco de atención",
+    "resumen": "Revisiones sistemáticas con metaanálisis encontraron que enfocar la atención en el efecto del movimiento (el balón, el blanco) mejora el rendimiento y el aprendizaje más que enfocarse en partes del cuerpo.",
+    "mecanismo": "El foco externo deja que el cerebro organice el movimiento de forma automática; el foco interno lo vuelve consciente y rígido.",
+    "nivel": "A",
+    "estudios": [
+      {
+        "cita": "Chua LK y col. · Psychol Bull 2021",
+        "titulo": "Superiority of external attentional focus for motor performance and learning: Systematic reviews and meta-analyses",
+        "diseno": "Metaanálisis",
+        "n": null,
+        "poblacion": "Tareas motoras"
+      }
+    ],
+    "aplicar": [
+      "Al patear: «balón al palo lejano», no «tobillo firme».",
+      "Al esprintar: «empuja el suelo hacia atrás».",
+      "Las indicaciones del cuerpo, solo para aprender; en el partido, el efecto."
+    ],
+    "contexto": [
+      "cancha"
+    ]
+  },
+  {
+    "id": "cabeceo-cerebro",
+    "cat": "percepcion",
+    "titular": "Exfutbolistas profesionales: 3,5 veces más muertes por enfermedades neurodegenerativas",
+    "cifra": "3,5×",
+    "cifraLbl": "riesgo",
+    "resumen": "Un estudio con 7676 exfutbolistas escoceses y 23 028 controles encontró una mortalidad por enfermedades neurodegenerativas 3,5 veces mayor en los exjugadores. Es observacional: el cabeceo repetido es la principal sospecha, no está probado.",
+    "mecanismo": "Los impactos repetidos de baja intensidad podrían acumular daño en el cerebro a lo largo de los años.",
+    "nivel": "C",
+    "estudios": [
+      {
+        "cita": "Mackay DF y col. · N Engl J Med 2019",
+        "titulo": "Neurodegenerative Disease Mortality among Former Professional Soccer Players",
+        "diseno": "Cohorte retrospectiva",
+        "n": 30704,
+        "poblacion": "7676 exfutbolistas y 23 028 controles"
+      }
+    ],
+    "aplicar": [
+      "Cabeceo de calidad, no de cantidad: la app limita a 10 cabezazos fuertes por semana.",
+      "Técnica: cuello firme, frente, ojos abiertos.",
+      "Fortalece el cuello: está en tu plan de superior."
+    ],
+    "contexto": [
+      "cancha"
+    ]
+  },
+  {
+    "id": "fatiga-tecnica",
+    "cat": "percepcion",
+    "titular": "Con la fatiga del partido, el tiro pierde un 25 % de precisión",
+    "cifra": "−25 %",
+    "cifraLbl": "precisión del tiro",
+    "resumen": "En 15 futbolistas de academia, en una simulación de partido de 90 min, los tiros al final fueron un 25 % menos precisos y los pases más lentos que al principio. La conducción no se afectó.",
+    "mecanismo": "La fatiga reduce la fuerza y la coordinación fina del golpeo, y la atención.",
+    "nivel": "C",
+    "estudios": [
+      {
+        "cita": "Russell M, Benton D, Kingsley M · Int J Sports Physiol Perform 2011",
+        "titulo": "The effects of fatigue on soccer skills performed during a soccer match simulation",
+        "diseno": "Estudio experimental",
+        "n": 15,
+        "poblacion": "Futbolistas de academia"
+      }
+    ],
+    "aplicar": [
+      "Termina algunas sesiones con definición cansado.",
+      "Mejora la resistencia (RT) para que el final del partido te encuentre fresco.",
+      "Hidratación y carbohidratos también sostienen la técnica al final."
+    ],
+    "contexto": [
+      "cancha",
+      "intenso"
+    ]
+  },
+  {
+    "id": "elite-visualizacion",
+    "cat": "elite",
+    "titular": "Phelps visualizaba cada carrera «como un video»; la evidencia lo respalda",
+    "cifra": "d = 0,43",
+    "cifraLbl": "efecto de la imaginería",
+    "resumen": "Un metaanálisis encontró que la imaginería (ensayar mentalmente) mejora el rendimiento motor con un efecto moderado, y también la motivación y el estado de ánimo. Michael Phelps la usó cada noche durante su carrera por indicación de su entrenador.",
+    "mecanismo": "Imaginar el gesto activa redes cerebrales parecidas a las de ejecutarlo y prepara las respuestas ante imprevistos.",
+    "nivel": "A",
+    "estudios": [
+      {
+        "cita": "Simonsmeier BA y col. · Int Rev Sport Exerc Psychol 2021",
+        "titulo": "The effects of imagery interventions in sports: a meta-analysis",
+        "diseno": "Metaanálisis",
+        "n": null,
+        "poblacion": "Deportistas"
+      }
+    ],
+    "testimonios": [
+      {
+        "quien": "Michael Phelps (natación)",
+        "texto": "Su entrenador Bob Bowman le pedía «ver el video» cada noche: la carrera perfecta imaginada en detalle. En Pekín 2008, con las antiparras llenas de agua, nadó a ciegas los 200 m mariposa y ganó con récord mundial.",
+        "fuente": "Bob Bowman, «The Golden Rules» (2016); entrevistas a Bowman y Phelps"
+      }
+    ],
+    "aplicar": [
+      "5 min antes de dormir: imagina tu golpeo perfecto o un sprint ganado, en primera persona.",
+      "Incluye imprevistos: un mal control, un rebote, y cómo lo resuelves.",
+      "La noche antes de una prueba, repasa el calentamiento y las primeras acciones."
+    ],
+    "contexto": [
+      "precompetencia",
+      "descanso",
+      "lesion"
+    ]
+  },
+  {
+    "id": "elite-registro",
+    "cat": "elite",
+    "titular": "Kipchoge anota cada entrenamiento desde 2003; medir la carga es práctica de élite",
+    "cifra": "Desde 2003",
+    "cifraLbl": "cuaderno de Kipchoge",
+    "resumen": "Eliud Kipchoge, el mejor maratonista de la historia, registra en un cuaderno cada sesión desde 2003. En fútbol, la carga por esfuerzo percibido (minutos × esfuerzo 1-10) es un método validado que se relaciona con la carga medida por pulsaciones.",
+    "mecanismo": "Lo que se registra se puede ajustar: permite ver tendencias, saltos de carga y qué funcionó antes de una buena prueba.",
+    "nivel": "B",
+    "estudios": [
+      {
+        "cita": "Foster C y col. · J Strength Cond Res 2001",
+        "titulo": "A new approach to monitoring exercise training",
+        "diseno": "Estudio de validación",
+        "n": null,
+        "poblacion": "Deportistas"
+      },
+      {
+        "cita": "Impellizzeri FM y col. · Med Sci Sports Exerc 2004",
+        "titulo": "Use of RPE-based training load in soccer",
+        "diseno": "Estudio de validación",
+        "n": 19,
+        "poblacion": "Futbolistas jóvenes"
+      }
+    ],
+    "testimonios": [
+      {
+        "quien": "Eliud Kipchoge (maratón)",
+        "texto": "Registra a mano cada entrenamiento en un cuaderno, una práctica que empezó en 2003 y que mantiene en su etapa de récords.",
+        "fuente": "Outside Magazine, perfil de los principios de entrenamiento de Kipchoge"
+      }
+    ],
+    "aplicar": [
+      "Registra cada sesión con minutos y esfuerzo; la app calcula la carga.",
+      "Anota cómo te sentiste: es lo que más sirve al mirar atrás.",
+      "Revisa la semana cada domingo en Progreso."
+    ],
+    "contexto": []
+  },
+  {
+    "id": "elite-disponibilidad",
+    "cat": "elite",
+    "titular": "Los equipos con menos lesiones ganan más: 11 temporadas de la Champions lo muestran",
+    "cifra": "11 temp.",
+    "cifraLbl": "de seguimiento",
+    "resumen": "El seguimiento de lesiones de la UEFA durante 11 temporadas encontró que los equipos con menos carga de lesiones y más jugadores disponibles terminaron mejor en la liga, sumaron más puntos y llegaron más lejos en Europa.",
+    "mecanismo": "El mejor plantel no sirve si no está disponible: la regularidad de entrenar y jugar es una ventaja competitiva.",
+    "nivel": "C",
+    "estudios": [
+      {
+        "cita": "Hägglund M y col. · Br J Sports Med 2013",
+        "titulo": "Injuries affect team performance negatively in professional football: an 11-year follow-up of the UEFA Champions League injury study",
+        "diseno": "Cohorte prospectiva",
+        "n": null,
+        "poblacion": "Equipos de la Champions League"
+      }
+    ],
+    "aplicar": [
+      "Prioriza llegar sano a la prueba sobre hacer una sesión extra.",
+      "Las molestias se reportan el mismo día: el plan se ajusta antes de que crezcan.",
+      "La prevención (Nórdico, Copenhagen, fuerza) es entrenamiento, no un extra."
+    ],
+    "contexto": [
+      "prevencion",
+      "molestia"
+    ]
+  },
+  {
+    "id": "elite-carbos-periodizados",
+    "cat": "elite",
+    "titular": "En la Premier League comen más carbohidratos el día de partido que en los de entrenamiento",
+    "cifra": "6,4 vs 4,2",
+    "cifraLbl": "g/kg partido vs. entreno",
+    "resumen": "Seis jugadores profesionales del Liverpool registraron su dieta: comieron 6,4 g de carbohidratos por kilo los días de partido y 4,2 g/kg los de entrenamiento. Ajustan el combustible a la carga del día.",
+    "mecanismo": "Más carbohidratos cuando la sesión los necesita y menos en días suaves ayuda a rendir sin sobrar energía.",
+    "nivel": "C",
+    "estudios": [
+      {
+        "cita": "Anderson L y col. · Int J Sport Nutr Exerc Metab 2017",
+        "titulo": "Energy Intake and Expenditure of Professional Soccer Players of the English Premier League: Evidence of Carbohydrate Periodization",
+        "diseno": "Observacional",
+        "n": 6,
+        "poblacion": "Futbolistas de la Premier League"
+      }
+    ],
+    "aplicar": [
+      "Tu plan ya lo hace: 3,5 g/kg en descanso y hasta 7 g/kg en días de prueba.",
+      "Mira el tipo de día en Comida antes de armar el plato.",
+      "La proteína se mantiene alta todos los días."
+    ],
+    "contexto": [
+      "nutricion",
+      "precompetencia"
+    ]
+  },
+  {
+    "id": "elite-microciclo",
+    "cat": "elite",
+    "titular": "Los clubes de élite bajan la carga a medida que se acerca el partido",
+    "cifra": "MD-1",
+    "cifraLbl": "el día más suave",
+    "resumen": "Al medir la carga de un club de la Premier League durante una temporada, la carga de entrenamiento fue menor en el día previo al partido y más alta en los días alejados del partido.",
+    "mecanismo": "Llegar con las piernas frescas exige reducir volumen e intensidad sin perder los estímulos de velocidad.",
+    "nivel": "C",
+    "estudios": [
+      {
+        "cita": "Malone JJ y col. · Int J Sports Physiol Perform 2015",
+        "titulo": "Seasonal training-load quantification in elite English premier league soccer players",
+        "diseno": "Observacional",
+        "n": 30,
+        "poblacion": "Jugadores de la Premier League"
+      }
+    ],
+    "aplicar": [
+      "Agrega tus pruebas y partidos en Perfil: la app arma los días previos.",
+      "El día antes: activación corta, no entrenamiento.",
+      "Lo intenso, 3-4 días antes."
+    ],
+    "contexto": [
+      "precompetencia"
+    ]
+  },
+  {
+    "id": "elite-practica-juego",
+    "cat": "elite",
+    "titular": "Los juveniles que llegaron a profesionales acumularon más horas de juego libre con balón",
+    "cifra": "Juego",
+    "cifraLbl": "libre con balón",
+    "resumen": "Al comparar la historia deportiva de juveniles de élite, los que llegaron a profesionales habían acumulado más horas de juego de fútbol informal en la infancia, además de la práctica organizada.",
+    "mecanismo": "El juego libre da miles de repeticiones de decisiones y técnica en contextos variados.",
+    "nivel": "C",
+    "estudios": [
+      {
+        "cita": "Ford PR y col. · High Abil Stud 2009",
+        "titulo": "The role of deliberate practice and play in career progression in sport: the early engagement hypothesis",
+        "diseno": "Retrospectivo",
+        "n": null,
+        "poblacion": "Futbolistas juveniles de élite"
+      }
+    ],
+    "aplicar": [
+      "Las estaciones de balón son tu práctica deliberada: con objetivo y registro.",
+      "Suma juego libre cuando puedas: picaditos, rondos, 1 contra 1.",
+      "La técnica se mantiene tocando balón todos los días."
+    ],
+    "contexto": [
+      "cancha"
+    ]
+  },
+  {
+    "id": "mito-grounding",
+    "cat": "mitos",
+    "titular": "Grounding (caminar descalzo) contra la inflamación: la evidencia es mínima",
+    "cifra": "8",
+    "cifraLbl": "personas en el estudio piloto",
+    "resumen": "Las cifras que circulan sobre «menos inflamación» vienen de estudios piloto con pocas personas: el de dolor muscular tuvo 8 (4 conectadas a tierra y 4 de control). Los autores de la revisión que lo resume trabajan para la empresa que vende los productos y tienen acciones en ella.",
+    "mecanismo": "La hipótesis es que el contacto con la tierra transfiere electrones con efecto antioxidante. No está demostrada con ensayos grandes e independientes.",
+    "nivel": "D",
+    "mito": "poca",
+    "estudios": [
+      {
+        "cita": "Brown D, Chevalier G, Hill M · J Altern Complement Med 2010",
+        "titulo": "Pilot study on the effect of grounding on delayed-onset muscle soreness",
+        "diseno": "Estudio piloto",
+        "n": 8,
+        "poblacion": "Adultos sanos"
+      },
+      {
+        "cita": "Oschman JL, Chevalier G, Brown R · J Inflamm Res 2015",
+        "titulo": "The effects of grounding (earthing) on inflammation, the immune response, wound healing, and prevention and treatment of chronic inflammatory and autoimmune diseases",
+        "diseno": "Artículo de hipótesis (con conflicto de interés)",
+        "n": null,
+        "poblacion": "Revisión de estudios propios"
+      }
+    ],
+    "aplicar": [
+      "Caminar descalzo en el pasto es agradable y no hace daño: hazlo si te gusta.",
+      "No lo cuentes como recuperación: sueño, comida y carga ajustada sí funcionan.",
+      "Desconfía de cifras exactas sin estudios grandes detrás."
+    ],
+    "contexto": [
+      "descanso"
+    ]
+  },
+  {
+    "id": "mito-estirar-agujetas",
+    "cat": "mitos",
+    "titular": "Estirar no evita las agujetas",
+    "cifra": "1/100",
+    "cifraLbl": "puntos menos de dolor",
+    "resumen": "Una revisión Cochrane de 12 estudios encontró que estirar antes o después de entrenar reduce el dolor muscular en apenas 1 punto en una escala de 100: un efecto que nadie nota.",
+    "mecanismo": "Las agujetas vienen del microdaño por contracciones excéntricas; estirar no repara ni previene ese daño.",
+    "nivel": "A",
+    "mito": "mito",
+    "estudios": [
+      {
+        "cita": "Herbert RD, de Noronha M, Kamper SJ · Cochrane 2011",
+        "titulo": "Stretching to prevent or reduce muscle soreness after exercise",
+        "diseno": "Revisión sistemática Cochrane",
+        "n": null,
+        "poblacion": "12 estudios"
+      }
+    ],
+    "aplicar": [
+      "Si estiras, que sea por movilidad, no para no tener agujetas.",
+      "Lo que reduce las agujetas: progresar la carga excéntrica poco a poco.",
+      "El efecto de carga repetida: la segunda vez duele mucho menos."
+    ],
+    "contexto": [
+      "descanso"
+    ]
+  },
+  {
+    "id": "mito-estatico-largo",
+    "cat": "mitos",
+    "titular": "El estiramiento estático largo antes de entrenar baja un poco la potencia; corto, no",
+    "cifra": "60 s",
+    "cifraLbl": "por músculo, el límite",
+    "resumen": "Una revisión sistemática encontró que estirar en estático más de 60 s por músculo antes de entrenar reduce algo la fuerza y la potencia, mientras que menos de 60 s, dentro de un calentamiento completo, tiene un efecto mínimo.",
+    "mecanismo": "El estiramiento largo reduce temporalmente la rigidez útil del músculo y la activación nerviosa.",
+    "nivel": "A",
+    "mito": "matiz",
+    "estudios": [
+      {
+        "cita": "Behm DG y col. · Appl Physiol Nutr Metab 2016",
+        "titulo": "Acute effects of muscle stretching on physical performance, range of motion, and injury incidence in healthy active individuals: a systematic review",
+        "diseno": "Revisión sistemática",
+        "n": null,
+        "poblacion": "Personas activas"
+      }
+    ],
+    "aplicar": [
+      "Antes de sprint y golpeo: movilidad dinámica, no estiramientos largos.",
+      "Si te gusta estirar, menos de 30-60 s por músculo y luego activación.",
+      "El estático largo, al final del día."
+    ],
+    "contexto": [
+      "cancha"
+    ]
+  },
+  {
+    "id": "mito-ventana-anabolica",
+    "cat": "mitos",
+    "titular": "La «ventana anabólica» de 30 min no es tan estricta: importa el total del día",
+    "cifra": "Total",
+    "cifraLbl": "del día, no el minuto",
+    "resumen": "Un metaanálisis encontró que el beneficio de tomar proteína justo después de entrenar desaparece cuando la cantidad total del día es la misma. No hay que salir corriendo del gimnasio a comer.",
+    "mecanismo": "La síntesis de proteína se mantiene elevada durante horas después de entrenar; lo que cuenta es llegar a la meta diaria repartida en comidas.",
+    "nivel": "A",
+    "mito": "matiz",
+    "estudios": [
+      {
+        "cita": "Schoenfeld BJ, Aragon AA, Krieger JW · J Int Soc Sports Nutr 2013",
+        "titulo": "The effect of protein timing on muscle strength and hypertrophy: a meta-analysis",
+        "diseno": "Metaanálisis",
+        "n": null,
+        "poblacion": "Adultos que entrenan fuerza"
+      }
+    ],
+    "aplicar": [
+      "Come proteína en las 2-3 h después de entrenar, sin estrés por los minutos.",
+      "Si entrenaste en ayunas, ahí sí conviene comer pronto.",
+      "Prioriza llegar a tu meta diaria."
+    ],
+    "contexto": [
+      "gimnasio",
+      "nutricion"
+    ]
+  },
+  {
+    "id": "mito-acido-lactico",
+    "cat": "mitos",
+    "titular": "Las agujetas no son ácido láctico",
+    "cifra": "1 h",
+    "cifraLbl": "y el lactato ya se fue",
+    "resumen": "Las revisiones sobre el dolor muscular de aparición tardía coinciden: el lactato se elimina en una hora después del ejercicio, mientras que el dolor aparece a las 24-72 h. Lo produce el microdaño de las contracciones excéntricas.",
+    "mecanismo": "Frenar cargas (bajar, desacelerar, aterrizar) produce microrroturas e inflamación que sensibilizan el músculo días después.",
+    "nivel": "C",
+    "mito": "mito",
+    "estudios": [
+      {
+        "cita": "Cheung K, Hume P, Maxwell L · Sports Med 2003",
+        "titulo": "Delayed onset muscle soreness: treatment strategies and performance factors",
+        "diseno": "Revisión",
+        "n": null,
+        "poblacion": "Deportistas"
+      }
+    ],
+    "aplicar": [
+      "Las agujetas fuertes avisan de un salto de carga excéntrica: progresa más despacio.",
+      "No hace falta «soltar el ácido» trotando.",
+      "Si duele un punto y no todo el músculo, regístralo como molestia."
+    ],
+    "contexto": [
+      "molestia",
+      "descanso"
+    ]
+  },
+  {
+    "id": "mito-sin-gluten",
+    "cat": "mitos",
+    "titular": "Dejar el gluten no mejoró el rendimiento de deportistas sin celiaquía",
+    "cifra": "245 = 245",
+    "cifraLbl": "kJ con y sin gluten",
+    "resumen": "En un ensayo doble ciego con 13 ciclistas sin celiaquía, una semana sin gluten no cambió el rendimiento en una contrarreloj de 15 min, ni los síntomas digestivos ni la inflamación, comparado con una semana con gluten.",
+    "mecanismo": "Sin celiaquía ni sensibilidad diagnosticada, el gluten no afecta el rendimiento. Muchos mejoran al dejarlo porque comen menos procesados.",
+    "nivel": "B",
+    "mito": "mito",
+    "estudios": [
+      {
+        "cita": "Lis DM y col. · Med Sci Sports Exerc 2015",
+        "titulo": "No Effects of a Short-Term Gluten-free Diet on Performance in Nonceliac Athletes",
+        "diseno": "Ensayo cruzado doble ciego",
+        "n": 13,
+        "poblacion": "Ciclistas sin celiaquía"
+      }
+    ],
+    "testimonios": [
+      {
+        "quien": "Novak Djokovic (tenis)",
+        "texto": "Dejó el gluten tras un test de intolerancia y lo contó como clave de su mejora en 2011. Su caso puede deberse a una sensibilidad real: no aplica a todos.",
+        "fuente": "Novak Djokovic, «Serve to Win» (2013)"
+      }
+    ],
+    "aplicar": [
+      "Tu dieta sin harinas mejora por menos procesados, no por quitar el gluten en sí.",
+      "Si sospechas intolerancia, consulta y hazte el análisis.",
+      "No hace falta evitar la avena si te sienta bien."
+    ],
+    "contexto": [
+      "nutricion"
+    ]
+  },
+  {
+    "id": "mito-keto",
+    "cat": "mitos",
+    "titular": "La dieta cetogénica empeoró la eficiencia de marchistas de élite",
+    "cifra": "21",
+    "cifraLbl": "atletas de élite",
+    "resumen": "En 21 marchistas de élite, 3 semanas de dieta alta en grasa y baja en carbohidratos aumentaron el uso de grasa, pero empeoraron la economía del esfuerzo y anularon la mejora del entrenamiento intenso. Los grupos con carbohidratos sí mejoraron.",
+    "mecanismo": "Oxidar grasa necesita más oxígeno por unidad de energía que los carbohidratos: a ritmos altos, cuesta más.",
+    "nivel": "B",
+    "mito": "mito",
+    "estudios": [
+      {
+        "cita": "Burke LM y col. · J Physiol 2017",
+        "titulo": "Low carbohydrate, high fat diet impairs exercise economy and negates the performance benefit from intensified training in elite race walkers",
+        "diseno": "Ensayo controlado",
+        "n": 21,
+        "poblacion": "Marchistas de élite"
+      }
+    ],
+    "aplicar": [
+      "Para el fútbol, los carbohidratos son el combustible de los sprints.",
+      "Ajusta la cantidad al tipo de día, no los elimines.",
+      "Menos carbohidratos solo en días de descanso."
+    ],
+    "contexto": [
+      "nutricion"
+    ]
+  },
+  {
+    "id": "mito-creatina-rinones",
+    "cat": "mitos",
+    "titular": "La creatina no daña los riñones en personas sanas",
+    "cifra": "Segura",
+    "cifraLbl": "en dosis normales",
+    "resumen": "Una revisión de las preguntas frecuentes sobre la creatina concluyó que, en personas sanas y con las dosis habituales, no daña los riñones ni causa calambres, y que el aumento de peso inicial es agua dentro del músculo.",
+    "mecanismo": "La creatina eleva la creatinina en sangre (un producto de su uso), lo que a veces se confunde con daño renal en los análisis.",
+    "nivel": "A",
+    "mito": "mito",
+    "estudios": [
+      {
+        "cita": "Antonio J y col. · J Int Soc Sports Nutr 2021",
+        "titulo": "Common questions and misconceptions about creatine supplementation: what does the scientific evidence really show?",
+        "diseno": "Revisión",
+        "n": null,
+        "poblacion": "Revisión de la evidencia"
+      }
+    ],
+    "aplicar": [
+      "3-5 g al día es la dosis normal.",
+      "Si te hacen un análisis, avisa que tomas creatina: sube la creatinina.",
+      "Con enfermedad renal previa, consulta al médico."
+    ],
+    "contexto": [
+      "nutricion"
+    ]
+  }
+]

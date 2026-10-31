@@ -1,10 +1,11 @@
 /* ============================================================
    NÚCLEO: datos, render, capas (hojas y entrenamiento), avisos
    ============================================================ */
-const VERSION = '3.3.0';
+const VERSION = '3.4.0';
 const COLS = {
   profile: 'single', settings: 'single', weights: 'list', injuries: 'list', tests: 'list', checkins: 'list', sessions: 'list',
   custom: 'list', traducciones: 'list', templates: 'list', agenda: 'list', meals: 'list', nutri: 'list', foods: 'list', molestias: 'list',
+  aprende: 'single', investigaciones: 'list',
 };
 const S = { mode: 'loading', user: null, data: {}, loaded: {}, canWrite: true, live: [], liveLoaded: false };
 Object.keys(COLS).forEach(c => { S.data[c] = COLS[c] === 'single' ? null : []; });
@@ -65,16 +66,18 @@ function engineData() {
 
 /* ---------- Estado de interfaz ---------- */
 const TABS = [{ id: 'hoy', n: 'Hoy', icon: 'home' }, { id: 'entreno', n: 'Entreno', icon: 'dumb' }, { id: 'comida', n: 'Comida', icon: 'fork' }, { id: 'progreso', n: 'Progreso', icon: 'chart' }, { id: 'perfil', n: 'Perfil', icon: 'user' }];
-const PAGES = ['coach'];
+const PAGES = ['coach', 'aprende'];
 const UI = {
   view: 'hoy', hoyDate: null, weekOffset: 0, enTab: 'semana', exTab: 'banco', histLimit: 21,
   bank: { q: '', zone: '', phaseOk: true, limit: 30 }, lib: { q: '', muscle: '', limit: 40 }, pick: { q: '', tab: 'recientes' },
   coach: { turns: [], busy: false, draft: '' }, breath: null, ed: null, menuVar: {},
+  apr: { tab: 'datos', filter: 'todos', q: '', pending: null },
+  inv: { q: '', privado: false, busy: false, step: 0, error: '', showPriv: false, n: 0, lastId: null },
 };
 function currentView() { const h = (location.hash || '').replace('#', ''); return TABS.some(t => t.id === h) || PAGES.includes(h) ? h : 'hoy'; }
 function buildNav() { $('#nav').innerHTML = TABS.map(t => '<a href="#' + t.id + '" data-nav="' + t.id + '" aria-label="' + t.n + '">' + ic(t.icon) + '<span>' + t.n + '</span></a>').join(''); }
 function markNav() {
-  const v = UI.view === 'coach' ? 'hoy' : UI.view;
+  const v = PAGES.includes(UI.view) ? 'hoy' : UI.view;
   $$('#nav a').forEach(a => { const on = a.getAttribute('data-nav') === v; a.classList.toggle('on', on); if (on) a.setAttribute('aria-current', 'page'); else a.removeAttribute('aria-current'); });
 }
 

@@ -98,6 +98,14 @@ function localAdapter() {
       await new Promise(r => setTimeout(r, 700));
       if (schema && schema.properties && schema.properties.pasos) return { resumen: 'Ejercicio de prueba (modo local).', pasos: ['Colócate en posición.', 'Baja controlado en 3 s.', 'Vuelve sin rebote.', 'Respira y repite.'], claves: ['Cadera extendida', 'Rango sin dolor'], errores: ['Ir rápido', 'Flexionar la cadera'], seguridad: 'Para si el dolor pasa de 2/10.', busqueda: 'reverse nordic' };
       if (schema && schema.properties && schema.properties.items) return { items: image ? [{ n: 'Huevo revuelto', g: 150, p: 19, c: 2, f: 16, kcal: 230, conf: 'alta' }, { n: 'Mandioca hervida', g: 200, p: 2.4, c: 64, f: 0.6, kcal: 270, conf: 'media' }, { n: 'Banana', g: 120, p: 1.3, c: 27.6, f: 0.4, kcal: 107, conf: 'alta' }] : [{ n: 'Huevo', g: 150, p: 19, c: 2, f: 16, kcal: 233, conf: 'alta' }], hora: '', nota: 'Valores de prueba del modo local.' };
+      if (schema && schema.properties && schema.properties.consultas) return { tema: 'Sueño y sprint', consultas: ['sleep AND sprint', 'sleep extension AND athletes', 'sleep deprivation AND performance'], poblacion: 'athletes', resultado: 'sprint' };
+      if (schema && schema.properties && schema.properties.respuesta) return {
+        respuesta: 'Respuesta de prueba (modo local): dormir poco empeora el sprint y dormir más lo mejora.', veredicto: 'beneficia', nivel: 'A',
+        hallazgos: [{ texto: 'Dormir poco empeoró el sprint en un metaanálisis.', ids: ['E1'] }, { texto: 'Dormir más mejoró el tiempo de reacción.', ids: ['E2', 'E9'] }, { texto: 'Hallazgo sin estudio válido.', ids: ['E9'] }],
+        mecanismo: 'El sueño consolida la recuperación nerviosa.', aplicacion: ['Dormir 9 h en semanas de carga.'], limites: ['Estudios de prueba.'], mitos: [],
+        estudios: [{ id: 'E1', n: 600, poblacion: 'Deportistas', deportistas: true, resultado: 'Menos sprint con poco sueño.', direccion: 'perjuicio' }, { id: 'E2', n: 40, poblacion: 'Futbolistas', deportistas: true, resultado: 'Mejor reacción.', direccion: 'beneficio' }, { id: 'E9', n: 9999, resultado: 'Inventado.', direccion: 'beneficio' }],
+        preguntas: ['¿Y la siesta?'],
+      };
       return { n: 'Ejercicio traducido', ins: 'Paso 1\nPaso 2' };
     },
     async stream({ onText }) { const t = 'Respuesta de prueba del coach en modo local. Hoy: cancha a las 17:30, come la merienda a las 16:15.'; let s = ''; for (const w of t.split(' ')) { s += (s ? ' ' : '') + w; onText && onText(s); await new Promise(r => setTimeout(r, 30)); } return s; },

@@ -1,0 +1,427 @@
+[
+  {
+    "id": "nordico-isquios",
+    "cat": "prevencion",
+    "titular": "El Nórdico reduce a la mitad las lesiones de isquiotibiales",
+    "cifra": "−51 %",
+    "cifraLbl": "lesiones de isquios",
+    "resumen": "Un metaanálisis de 15 estudios con 8459 deportistas encontró que los programas que incluyen el Nórdico bajan un 51 % las lesiones de isquiotibiales. En fútbol, un ensayo con 942 jugadores redujo un 59 % las lesiones nuevas y un 86 % las recaídas.",
+    "mecanismo": "El Nórdico carga el isquio en contracción excéntrica en rango largo, justo como trabaja al frenar la pierna al final del sprint. Aumenta la fuerza excéntrica y alarga los fascículos del bíceps femoral.",
+    "nivel": "A",
+    "estudios": [
+      { "cita": "van Dyk N, Behan FP, Whiteley R · Br J Sports Med 2019", "titulo": "Including the Nordic hamstring exercise in injury prevention programmes halves the rate of hamstring injuries: a systematic review and meta-analysis of 8459 athletes", "diseno": "Metaanálisis", "n": 8459, "poblacion": "Deportistas de equipo" },
+      { "cita": "Petersen J y col. · Am J Sports Med 2011", "titulo": "Preventive effect of eccentric training on acute hamstring injuries in men's soccer: a cluster-randomized controlled trial", "diseno": "Ensayo aleatorizado", "n": 942, "poblacion": "Futbolistas daneses (50 equipos)" }
+    ],
+    "aplicar": ["1-2 veces por semana todo el año, no solo en pretemporada.", "2-3 series de 4-6 repeticiones, bajando en 3-5 s sin doblar la cadera.", "Si no llegas abajo, usa banda o frena con las manos: la clave es la bajada lenta.", "Nunca el día antes de un partido o una prueba."],
+    "contexto": ["gimnasio", "isquios", "lesion"],
+    "accion": { "tipo": "ejercicio", "id": "nordic" }
+  },
+  {
+    "id": "copenhagen-ingle",
+    "cat": "prevencion",
+    "titular": "El Copenhagen baja un 41 % los problemas de ingle en futbolistas",
+    "cifra": "−41 %",
+    "cifraLbl": "problemas de ingle",
+    "resumen": "En un ensayo con 652 futbolistas de 35 equipos, los que hicieron un programa corto de Copenhagen durante la temporada tuvieron un 41 % menos de problemas de ingle que los que no lo hicieron.",
+    "mecanismo": "Fortalece los aductores en contracción excéntrica e isométrica, la zona que más sufre al patear, cambiar de dirección y frenar.",
+    "nivel": "B",
+    "estudios": [
+      { "cita": "Harøy J y col. · Br J Sports Med 2019", "titulo": "The Adductor Strengthening Programme prevents groin problems among male football players: a cluster-randomised controlled trial", "diseno": "Ensayo aleatorizado", "n": 652, "poblacion": "Futbolistas varones (35 equipos)" }
+    ],
+    "aplicar": ["Pretemporada: 3 veces por semana. Temporada: 1 vez.", "Empieza con palanca corta (rodilla apoyada) y pasa a palanca larga cuando 3 × 15 s salgan sin dolor.", "Con molestia en el aductor, el plan te deja solo la versión isométrica."],
+    "contexto": ["gimnasio", "aductor", "prevencion"],
+    "accion": { "tipo": "ejercicio", "id": "copenhagen" }
+  },
+  {
+    "id": "fifa-11plus",
+    "cat": "prevencion",
+    "titular": "Calentar con el FIFA 11+ reduce las lesiones un 39 %",
+    "cifra": "−39 %",
+    "cifraLbl": "lesiones totales",
+    "resumen": "Un metaanálisis de los programas FIFA encontró que el 11+ (carrera, fuerza, saltos y equilibrio en 20 min) bajó un 39 % la tasa de lesiones. La versión anterior, el FIFA 11, no mostró efecto.",
+    "mecanismo": "Combina activación, fuerza excéntrica de isquios, control de rodilla al aterrizar y equilibrio. Funciona solo si se hace al menos 2 veces por semana.",
+    "nivel": "A",
+    "estudios": [
+      { "cita": "Thorborg K y col. · Br J Sports Med 2017", "titulo": "Effect of specific exercise-based football injury prevention programmes on the overall injury rate in football: a systematic review and meta-analysis of the FIFA 11 and 11+ programmes", "diseno": "Metaanálisis", "n": null, "poblacion": "Fútbol amateur y semiprofesional (6 ensayos)" }
+    ],
+    "aplicar": ["Úsalo como calentamiento de cancha al menos 2 días por semana.", "No saltes la parte de fuerza y equilibrio: es la que previene.", "Con molestia activa, la app recorta lo que carga la zona."],
+    "contexto": ["cancha", "prevencion"]
+  },
+  {
+    "id": "fuerza-vs-estirar",
+    "cat": "prevencion",
+    "titular": "La fuerza reduce las lesiones a menos de un tercio; estirar no las previene",
+    "cifra": "÷3",
+    "cifraLbl": "lesiones con fuerza",
+    "resumen": "Un metaanálisis de 25 ensayos con 26 610 personas comparó métodos de prevención: el entrenamiento de fuerza bajó las lesiones a menos de un tercio, la propiocepción las bajó casi a la mitad y estirar no tuvo efecto.",
+    "mecanismo": "Un músculo y un tendón más fuertes toleran más carga antes de romperse. El estiramiento cambia poco la capacidad de soportar fuerza.",
+    "nivel": "A",
+    "estudios": [
+      { "cita": "Lauersen JB, Bertelsen DM, Andersen LB · Br J Sports Med 2014", "titulo": "The effectiveness of exercise interventions to prevent sports injuries: a systematic review and meta-analysis of randomised controlled trials", "diseno": "Metaanálisis", "n": 26610, "poblacion": "Deportistas (25 ensayos)" }
+    ],
+    "aplicar": ["Prioriza las sesiones de fuerza aunque la semana se complique.", "Estira si te ayuda a moverte mejor, pero no lo cuentes como prevención.", "Mantén al menos una sesión de fuerza por semana en temporada."],
+    "contexto": ["gimnasio", "prevencion"]
+  },
+  {
+    "id": "propiocepcion-tobillo",
+    "cat": "prevencion",
+    "titular": "Equilibrio y propiocepción reducen las lesiones casi a la mitad",
+    "cifra": "−45 %",
+    "cifraLbl": "lesiones",
+    "resumen": "En el mismo metaanálisis de 25 ensayos, el entrenamiento propioceptivo (equilibrio sobre una pierna, superficies inestables, aterrizajes) bajó las lesiones alrededor de un 45 %, sobre todo esguinces de tobillo.",
+    "mecanismo": "Mejora la rapidez con que los músculos corrigen la posición del tobillo y la rodilla cuando el pie cae mal.",
+    "nivel": "A",
+    "estudios": [
+      { "cita": "Lauersen JB, Bertelsen DM, Andersen LB · Br J Sports Med 2014", "titulo": "The effectiveness of exercise interventions to prevent sports injuries: a systematic review and meta-analysis of randomised controlled trials", "diseno": "Metaanálisis", "n": 26610, "poblacion": "Deportistas (25 ensayos)" }
+    ],
+    "aplicar": ["5 min de equilibrio a una pierna en el calentamiento: ojos abiertos, luego con pase de balón.", "Aterriza los saltos sin ruido, rodilla alineada con el pie.", "Si ya tuviste un esguince, hazlo todos los días de cancha."],
+    "contexto": ["cancha", "prevencion"]
+  },
+  {
+    "id": "lesion-previa",
+    "cat": "prevencion",
+    "titular": "El mayor factor de riesgo de una lesión es haberla tenido",
+    "cifra": "2-3×",
+    "cifraLbl": "riesgo de repetir",
+    "resumen": "En la liga sueca de élite, los jugadores con una lesión previa de isquio, ingle o rodilla tuvieron de 2 a 3 veces más riesgo de volver a lesionarse en el mismo sitio la temporada siguiente.",
+    "mecanismo": "Tras una lesión quedan déficits de fuerza, de longitud del músculo y de tejido cicatricial. Si la rehabilitación termina cuando deja de doler, y no cuando la fuerza vuelve, la zona sigue débil.",
+    "nivel": "C",
+    "estudios": [
+      { "cita": "Hägglund M, Waldén M, Ekstrand J · Br J Sports Med 2006", "titulo": "Previous injury as a risk factor for injury in elite football: a prospective study over two consecutive seasons", "diseno": "Cohorte prospectiva", "n": null, "poblacion": "12 equipos de élite de Suecia" }
+    ],
+    "aplicar": ["Termina cada fase de la rehabilitación por criterios (fuerza y tests), no por fecha.", "Después del alta, mantén 1-2 ejercicios específicos de la zona todo el año.", "Compara la pierna lesionada con la sana: apunta a más del 90 %."],
+    "contexto": ["lesion", "prevencion"]
+  },
+  {
+    "id": "picos-de-carga",
+    "cat": "prevencion",
+    "titular": "Los saltos bruscos de carga, no la carga alta, se asocian a más lesiones",
+    "cifra": "> 1,5×",
+    "cifraLbl": "semana vs. promedio",
+    "resumen": "Los estudios en deportes de equipo asociaron las semanas con mucha más carga que el promedio de las últimas cuatro con más lesiones, mientras que una carga alta y estable fue protectora. El cociente exacto (agudo:crónico) está cuestionado, pero evitar saltos bruscos es un consenso.",
+    "mecanismo": "Los tejidos se adaptan a la carga que reciben con regularidad. Un salto repentino supera esa capacidad antes de que el cuerpo se adapte.",
+    "nivel": "C",
+    "estudios": [
+      { "cita": "Gabbett TJ · Br J Sports Med 2016", "titulo": "The training-injury prevention paradox: should athletes be training smarter and harder?", "diseno": "Revisión", "n": null, "poblacion": "Deportes de equipo" },
+      { "cita": "Impellizzeri FM y col. · Int J Sports Physiol Perform 2020", "titulo": "Acute:Chronic Workload Ratio: Conceptual Issues and Fundamental Pitfalls", "diseno": "Revisión crítica", "n": null, "poblacion": "Metodología" }
+    ],
+    "aplicar": ["Sube la carga de forma escalonada: el motor ya limita a 3 días intensos por semana.", "Después de unos días sin entrenar, no recuperes todo de golpe.", "Registra cada sesión: sin registro no hay forma de ver los saltos."],
+    "contexto": ["intenso", "prevencion"]
+  },
+  {
+    "id": "fasciculos-isquio",
+    "cat": "prevencion",
+    "titular": "Fascículos cortos y poca fuerza excéntrica multiplican por 4 el riesgo de isquio",
+    "cifra": "4×",
+    "cifraLbl": "riesgo de lesión",
+    "resumen": "En 152 futbolistas de élite, los que tenían fascículos del bíceps femoral de menos de 10,56 cm tuvieron 4,1 veces más riesgo de lesionarse el isquio, y los que tenían menos de 337 N de fuerza en el Nórdico, 4,4 veces más.",
+    "mecanismo": "Un músculo con fascículos más largos tolera mejor el estiramiento con carga del final del sprint. El trabajo excéntrico, como el Nórdico, alarga los fascículos.",
+    "nivel": "C",
+    "estudios": [
+      { "cita": "Timmins RG y col. · Br J Sports Med 2016", "titulo": "Short biceps femoris fascicles and eccentric knee flexor weakness increase the risk of hamstring injury in elite football (soccer): a prospective cohort study", "diseno": "Cohorte prospectiva", "n": 152, "poblacion": "Futbolistas de élite (8 equipos)" }
+    ],
+    "aplicar": ["Trabajo excéntrico de isquio todas las semanas (Nórdico, peso muerto rumano).", "Incluye ejercicios en rango largo, con la cadera flexionada.", "No lo dejes en temporada: los fascículos vuelven a acortarse en pocas semanas sin estímulo."],
+    "contexto": ["gimnasio", "isquios"],
+    "accion": { "tipo": "ejercicio", "id": "nordic" }
+  },
+  {
+    "id": "recto-femoral-mecanismo",
+    "cat": "prevencion",
+    "titular": "El recto femoral se lesiona sobre todo al patear y al acelerar",
+    "cifra": "2 gestos",
+    "cifraLbl": "patear y acelerar",
+    "resumen": "Las revisiones sobre lesiones del recto femoral en fútbol coinciden: la mayoría ocurre en la fase de carga del golpeo (cadera extendida y rodilla flexionada) y en las aceleraciones. Por eso la vuelta al golpeo y al sprint debe ser progresiva.",
+    "mecanismo": "El recto femoral cruza la cadera y la rodilla. Al armar el golpeo se estira en las dos articulaciones a la vez y luego se contrae con fuerza máxima.",
+    "nivel": "C",
+    "estudios": [
+      { "cita": "Mendiguchia J y col. · Br J Sports Med 2013", "titulo": "Rectus femoris muscle injuries in football: a clinically relevant review of mechanisms of injury, risk factors and preventive strategies", "diseno": "Revisión", "n": null, "poblacion": "Fútbol" }
+    ],
+    "aplicar": ["Respeta la escalera de golpeo (K) y de sprint (S): cada nivel limpio dos veces.", "Isometría en rango largo antes de patear fuerte.", "Si duele ≥ 3 al patear o al día siguiente, el plan baja un nivel: no lo fuerces."],
+    "contexto": ["lesion", "cancha"]
+  },
+  {
+    "id": "lesiones-final-tiempo",
+    "cat": "prevencion",
+    "titular": "Las lesiones aumentan a medida que avanza cada tiempo del partido",
+    "cifra": "7 temporadas",
+    "cifraLbl": "23 equipos de élite",
+    "resumen": "El estudio de lesiones de la UEFA siguió a 23 equipos de élite durante 7 temporadas: la tasa de lesiones en partido fue casi 7 veces la de entrenamiento y subió con el paso de los minutos en el primer y en el segundo tiempo.",
+    "mecanismo": "La fatiga reduce la fuerza, la coordinación y el control del aterrizaje. Con la fatiga, el músculo absorbe peor las cargas del sprint y del golpeo.",
+    "nivel": "C",
+    "estudios": [
+      { "cita": "Ekstrand J, Hägglund M, Waldén M · Br J Sports Med 2011", "titulo": "Injury incidence and injury patterns in professional football: the UEFA injury study", "diseno": "Cohorte prospectiva", "n": null, "poblacion": "23 equipos de élite europeos" }
+    ],
+    "aplicar": ["Entrena la resistencia a esfuerzos repetidos (RT) para llegar fresco al final.", "En la vuelta tras lesión, minutos progresivos: no 90 de golpe.", "Si una molestia aparece en el segundo tiempo, sal antes de forzar."],
+    "contexto": ["cancha", "precompetencia"]
+  },
+  {
+    "id": "sueno-extension-rendimiento",
+    "cat": "sueno",
+    "titular": "Dormir más mejoró el sprint y la precisión de tiro en 5-7 semanas",
+    "cifra": "+9 %",
+    "cifraLbl": "precisión de tiro",
+    "resumen": "Once basquetbolistas de Stanford buscaron dormir 10 h por noche durante 5-7 semanas: su sprint bajó de 16,2 a 15,5 s y los tiros libres y de tres puntos mejoraron alrededor de un 9 %. Fueron pocos y sin grupo control.",
+    "mecanismo": "El sueño profundo libera hormona de crecimiento y consolida el aprendizaje motor. Con deuda de sueño bajan la velocidad de reacción y la precisión.",
+    "nivel": "C",
+    "estudios": [
+      { "cita": "Mah CD y col. · Sleep 2011", "titulo": "The effects of sleep extension on the athletic performance of collegiate basketball players", "diseno": "Estudio de intervención sin control", "n": 11, "poblacion": "Basquetbolistas universitarios" }
+    ],
+    "aplicar": ["Apunta a 9 h en la cama en semanas de carga alta.", "Misma hora para acostarte y levantarte, también el fin de semana.", "Si la noche fue corta, la siesta recupera parte."],
+    "contexto": ["sueno-bajo", "precompetencia"]
+  },
+  {
+    "id": "sueno-lesiones",
+    "cat": "sueno",
+    "titular": "Dormir menos de 8 h se asoció a 1,7 veces más lesiones",
+    "cifra": "1,7×",
+    "cifraLbl": "riesgo de lesión",
+    "resumen": "En 112 deportistas jóvenes, los que dormían menos de 8 h por noche tuvieron 1,7 veces más probabilidad de lesionarse. Es un estudio observacional: muestra asociación, no prueba la causa.",
+    "mecanismo": "La falta de sueño reduce la recuperación del tejido, el tiempo de reacción y la atención, y aumenta la percepción de esfuerzo.",
+    "nivel": "C",
+    "estudios": [
+      { "cita": "Milewski MD y col. · J Pediatr Orthop 2014", "titulo": "Chronic lack of sleep is associated with increased sports injuries in adolescent athletes", "diseno": "Observacional", "n": 112, "poblacion": "Deportistas adolescentes" }
+    ],
+    "aplicar": ["8 h dormidas como mínimo; 9 en semanas duras.", "Registra la hora en que te dormiste y te levantaste en el check-in: el plan ajusta el día.", "Con menos de 6 h, el motor quita una serie de los accesorios."],
+    "contexto": ["sueno-bajo", "prevencion"]
+  },
+  {
+    "id": "deportistas-duermen-peor",
+    "cat": "sueno",
+    "titular": "Los deportistas pasan más tiempo en la cama, pero duermen peor de lo que creen",
+    "cifra": "47",
+    "cifraLbl": "deportistas medidos",
+    "resumen": "Con relojes de actividad, 47 deportistas de élite pasaron más tiempo en la cama que personas no deportistas, pero tardaron más en dormirse y tuvieron menor eficiencia de sueño. Tiempo en la cama no es tiempo dormido.",
+    "mecanismo": "Entrenar tarde, la cafeína, la tensión antes de competir y las pantallas retrasan el inicio del sueño y lo fragmentan.",
+    "nivel": "C",
+    "estudios": [
+      { "cita": "Leeder J y col. · J Sports Sci 2012", "titulo": "Sleep duration and quality in elite athletes measured using wristwatch actigraphy", "diseno": "Observacional", "n": 67, "poblacion": "47 deportistas de élite y 20 controles" }
+    ],
+    "aplicar": ["Cuenta las horas desde que te duermes, no desde que te acuestas.", "Si tardas más de 20-30 min en dormirte, revisa cafeína, pantallas y hora de la cena.", "Usa el check-in para ver tu tendencia real de la semana."],
+    "contexto": ["sueno-bajo"]
+  },
+  {
+    "id": "sueno-perdida-aguda",
+    "cat": "sueno",
+    "titular": "Despertarse antes de tiempo perjudica más que acostarse tarde",
+    "cifra": "77",
+    "cifraLbl": "estudios analizados",
+    "resumen": "Un metaanálisis de 77 estudios encontró que una noche de sueño corto empeora la fuerza, la potencia, la resistencia y las habilidades. El efecto fue mayor cuando se cortó el final del sueño (despertarse temprano) y en el rendimiento de la tarde.",
+    "mecanismo": "El final de la noche concentra más sueño REM. Además, cuanto más tiempo pasas despierto, más se nota el déficit.",
+    "nivel": "A",
+    "estudios": [
+      { "cita": "Craven J y col. · Sports Med 2022", "titulo": "Effects of acute sleep loss on physical performance: a systematic and meta-analytical review", "diseno": "Metaanálisis", "n": null, "poblacion": "77 estudios" }
+    ],
+    "aplicar": ["Si te acostaste tarde, no pongas el despertador antes: corre el gimnasio.", "Antes de una prueba por la tarde, protege la noche anterior y la siesta.", "El check-in mueve el plan de la mañana si te levantaste más tarde."],
+    "contexto": ["sueno-bajo", "precompetencia"]
+  },
+  {
+    "id": "siesta",
+    "cat": "sueno",
+    "titular": "Una siesta mejora el rendimiento físico y mental; las más largas, más",
+    "cifra": "18",
+    "cifraLbl": "estudios revisados",
+    "resumen": "Una revisión de 18 estudios encontró que la siesta mejora el rendimiento físico y cognitivo en personas activas. Las oportunidades de siesta más largas (90 min) dieron mejores resultados que las cortas.",
+    "mecanismo": "La siesta reduce la presión de sueño acumulada. Si es larga, completa un ciclo y evita despertar en sueño profundo.",
+    "nivel": "B",
+    "estudios": [
+      { "cita": "Souabni M y col. · Sports Med 2021", "titulo": "Benefits of Daytime Napping Opportunity on Physical and Cognitive Performances in Physically Active Participants: A Systematic Review", "diseno": "Revisión sistemática", "n": null, "poblacion": "Personas físicamente activas (18 estudios)" }
+    ],
+    "aplicar": ["Siesta después del almuerzo y antes de las 15:00.", "Si tienes 20-30 min, úsalos; si dormiste poco, más larga.", "Deja al menos 30 min entre despertar y entrenar para quitarte el sopor."],
+    "contexto": ["sueno-bajo", "descanso"]
+  },
+  {
+    "id": "cafeina-6h",
+    "cat": "sueno",
+    "titular": "Cafeína 6 h antes de dormir quita más de 1 hora de sueño",
+    "cifra": "−1 h",
+    "cifraLbl": "de sueño medido",
+    "resumen": "En 12 personas, 400 mg de cafeína tomados 6 h antes de acostarse redujeron el sueño medido en más de una hora. Lo curioso: los participantes no lo notaron en su percepción.",
+    "mecanismo": "La cafeína bloquea la adenosina, la señal química del cansancio. Su vida media es de unas 5 h, así que la mitad sigue activa a la hora de dormir.",
+    "nivel": "C",
+    "estudios": [
+      { "cita": "Drake C y col. · J Clin Sleep Med 2013", "titulo": "Caffeine effects on sleep taken 0, 3, or 6 hours before going to bed", "diseno": "Ensayo cruzado con placebo", "n": 12, "poblacion": "Adultos sanos" }
+    ],
+    "aplicar": ["Café solo después del almuerzo y nunca después de las 14:00.", "El mate y el tereré también tienen cafeína: cuéntalos.", "Si entrenas tarde y necesitas cafeína, que sea poca."],
+    "contexto": ["sueno-bajo"]
+  },
+  {
+    "id": "pantallas-noche",
+    "cat": "sueno",
+    "titular": "Leer en pantalla antes de dormir retrasa el sueño y el reloj biológico",
+    "cifra": "12",
+    "cifraLbl": "personas, 2 semanas",
+    "resumen": "Leer en una tableta antes de dormir, comparado con un libro de papel, suprimió la melatonina, retrasó el reloj biológico, alargó el tiempo para dormirse y dejó menos alerta a la mañana siguiente.",
+    "mecanismo": "La luz azul de las pantallas le dice al cerebro que es de día y frena la melatonina, la hormona que prepara el sueño.",
+    "nivel": "C",
+    "estudios": [
+      { "cita": "Chang AM y col. · PNAS 2015", "titulo": "Evening use of light-emitting eReaders negatively affects sleep, circadian timing, and next-morning alertness", "diseno": "Ensayo cruzado", "n": 12, "poblacion": "Adultos jóvenes" }
+    ],
+    "aplicar": ["Última hora antes de dormir sin teléfono: es tu bloque de recuperación.", "Si usas pantalla, brillo al mínimo y modo nocturno.", "Luz tenue en la habitación desde la cena."],
+    "contexto": ["sueno-bajo", "descanso"]
+  },
+  {
+    "id": "horario-regular",
+    "cat": "sueno",
+    "titular": "Un horario de sueño irregular empeora el rendimiento aunque duermas las mismas horas",
+    "cifra": "61",
+    "cifraLbl": "estudiantes, 30 días",
+    "resumen": "En 61 universitarios seguidos durante un mes, los de horario irregular tuvieron peor rendimiento y un reloj biológico retrasado, aunque durmieran una cantidad parecida. No eran deportistas.",
+    "mecanismo": "Cambiar la hora de dormir y despertar desfasa el reloj interno, como un pequeño jet lag cada semana.",
+    "nivel": "C",
+    "estudios": [
+      { "cita": "Phillips AJK y col. · Sci Rep 2017", "titulo": "Irregular sleep/wake patterns are associated with poorer academic performance and delayed circadian and sleep/wake timing", "diseno": "Observacional", "n": 61, "poblacion": "Universitarios" }
+    ],
+    "aplicar": ["Hora fija para levantarte, también sábado y domingo.", "Si te acuestas tarde, recupera con siesta, no durmiendo hasta el mediodía.", "La agenda de la app parte de tu hora fija de despertar."],
+    "contexto": ["sueno-bajo", "descanso"]
+  },
+  {
+    "id": "banco-de-sueno",
+    "cat": "sueno",
+    "titular": "Dormir de más antes de una noche corta protege el rendimiento",
+    "cifra": "6 noches",
+    "cifraLbl": "de 10 h en la cama",
+    "resumen": "Catorce adultos que pasaron 6 noches con 10 h en la cama mantuvieron mejor la atención y acumularon menos presión de sueño durante una noche sin dormir y en la recuperación posterior.",
+    "mecanismo": "Llegar sin deuda de sueño da margen: la pérdida de una noche pesa menos si no hay déficit previo.",
+    "nivel": "C",
+    "estudios": [
+      { "cita": "Arnal PJ y col. · Sleep 2015", "titulo": "Benefits of sleep extension on sustained attention and sleep pressure before and during total sleep deprivation and recovery", "diseno": "Ensayo cruzado", "n": 14, "poblacion": "Adultos sanos" }
+    ],
+    "aplicar": ["La semana de una prueba o un viaje, duerme 9-10 h las noches previas.", "La noche antes de la prueba suele ser mala por nervios: la que cuenta es la anterior.", "Prioriza el sueño sobre la última sesión extra."],
+    "contexto": ["precompetencia"]
+  },
+  {
+    "id": "ducha-caliente",
+    "cat": "sueno",
+    "titular": "Una ducha caliente 1-2 h antes de dormir acorta el tiempo para dormirse",
+    "cifra": "−10 min",
+    "cifraLbl": "para dormirte",
+    "resumen": "Un metaanálisis de 13 estudios encontró que un baño o ducha a 40-42,5 °C entre 1 y 2 h antes de acostarse acortó en unos 10 min el tiempo para dormirse y mejoró la calidad del sueño. El momento ideal fue unos 90 min antes.",
+    "mecanismo": "El calor lleva sangre a las manos y los pies; después el cuerpo pierde calor más rápido y la temperatura central baja, la señal natural para dormir.",
+    "nivel": "B",
+    "estudios": [
+      { "cita": "Haghayegh S y col. · Sleep Med Rev 2019", "titulo": "Before-bedtime passive body heating by warm shower or bath to improve sleep: A systematic review and meta-analysis", "diseno": "Metaanálisis", "n": null, "poblacion": "13 estudios" }
+    ],
+    "aplicar": ["Ducha tibia-caliente unos 90 min antes de tu hora de dormir.", "Después, habitación fresca y oscura.", "Si entrenaste tarde, la ducha post-cancha cumple esta función."],
+    "contexto": ["sueno-bajo", "descanso"]
+  },
+  {
+    "id": "agua-fria-post-pesas",
+    "cat": "recuperacion",
+    "titular": "El baño de hielo justo después de las pesas frena las ganancias de músculo y fuerza",
+    "cifra": "12 sem",
+    "cifraLbl": "de entrenamiento",
+    "resumen": "En un estudio de 12 semanas, quienes se metían en agua fría (10 °C, 10 min) después de cada sesión de fuerza ganaron menos músculo y menos fuerza que quienes hacían recuperación activa.",
+    "mecanismo": "El frío reduce el flujo de sangre y las señales que activan la síntesis de proteína y las células satélite justo cuando el músculo debe adaptarse.",
+    "nivel": "B",
+    "estudios": [
+      { "cita": "Roberts LA y col. · J Physiol 2015", "titulo": "Post-exercise cold water immersion attenuates acute anabolic signalling and long-term adaptations in muscle to strength training", "diseno": "Ensayo aleatorizado", "n": 21, "poblacion": "Varones físicamente activos" }
+    ],
+    "aplicar": ["En bloques de fuerza, nada de hielo después del gimnasio.", "El agua fría tiene sentido tras partidos o pruebas, cuando lo urgente es recuperar.", "Si haces las dos cosas el mismo día, que el frío sea después de la cancha."],
+    "contexto": ["gimnasio", "intenso"]
+  },
+  {
+    "id": "agua-fria-dolor",
+    "cat": "recuperacion",
+    "titular": "El agua fría reduce un poco el dolor muscular: 11-15 °C durante 11-15 min",
+    "cifra": "11-15",
+    "cifraLbl": "°C y minutos",
+    "resumen": "Un metaanálisis de 9 ensayos encontró que la inmersión en agua fría alivia el dolor muscular algo más que el reposo, con el mejor resultado entre 11 y 15 °C durante 11 a 15 min. El efecto es pequeño.",
+    "mecanismo": "El frío baja la temperatura del músculo, la inflamación local y la sensación de dolor.",
+    "nivel": "B",
+    "estudios": [
+      { "cita": "Machado AF y col. · Sports Med 2016", "titulo": "Can Water Temperature and Immersion Time Influence the Effect of Cold Water Immersion on Muscle Soreness? A Systematic Review and Meta-Analysis", "diseno": "Metaanálisis", "n": null, "poblacion": "9 ensayos" }
+    ],
+    "aplicar": ["Úsalo después de partidos, pruebas o días muy intensos de cancha.", "Agua fría de canilla con hielo; 11-15 min hasta la cintura.", "No después de las pesas en bloques de fuerza."],
+    "contexto": ["intenso", "precompetencia"]
+  },
+  {
+    "id": "masaje",
+    "cat": "recuperacion",
+    "titular": "El masaje es la técnica que más reduce el dolor muscular y la fatiga percibida",
+    "cifra": "99",
+    "cifraLbl": "estudios comparados",
+    "resumen": "Un metaanálisis que comparó técnicas de recuperación en 99 estudios encontró que el masaje fue la más eficaz para reducir el dolor muscular de aparición tardía y la sensación de fatiga. También funcionaron, en menor medida, otras técnicas como la compresión.",
+    "mecanismo": "Mejora la sensación de recuperación y puede reducir marcadores de inflamación. Su efecto sobre el rendimiento del día siguiente es menos claro.",
+    "nivel": "A",
+    "estudios": [
+      { "cita": "Dupuy O y col. · Front Physiol 2018", "titulo": "An Evidence-Based Approach for Choosing Post-exercise Recovery Techniques to Reduce Markers of Muscle Damage, Soreness, Fatigue, and Inflammation: A Systematic Review With Meta-Analysis", "diseno": "Metaanálisis", "n": null, "poblacion": "99 estudios" }
+    ],
+    "aplicar": ["Después de días intensos, 10-15 min de automasaje en piernas.", "Si tienes acceso a un masajista, úsalo tras partidos.", "No sustituye al sueño ni a la comida: los complementa."],
+    "contexto": ["intenso", "molestia", "descanso"]
+  },
+  {
+    "id": "compresion",
+    "cat": "recuperacion",
+    "titular": "Las prendas de compresión aceleran algo la recuperación de fuerza y dolor",
+    "cifra": "12",
+    "cifraLbl": "estudios",
+    "resumen": "Un metaanálisis de 12 estudios encontró que usar prendas de compresión después de un ejercicio que daña el músculo redujo el dolor y ayudó a recuperar antes la fuerza y la potencia. El efecto fue moderado.",
+    "mecanismo": "La presión externa limita la hinchazón y puede mejorar el retorno de sangre.",
+    "nivel": "B",
+    "estudios": [
+      { "cita": "Hill J y col. · Br J Sports Med 2014", "titulo": "Compression garments and recovery from exercise-induced muscle damage: a meta-analysis", "diseno": "Metaanálisis", "n": null, "poblacion": "12 estudios" }
+    ],
+    "aplicar": ["Medias o calzas de compresión unas horas después de días intensos.", "Útil en viajes largos tras un partido.", "No hace falta dormir con ellas."],
+    "contexto": ["intenso", "descanso"]
+  },
+  {
+    "id": "rodillo",
+    "cat": "recuperacion",
+    "titular": "El rodillo ayuda poco: algo de flexibilidad y un poco menos de dolor",
+    "cifra": "21",
+    "cifraLbl": "estudios",
+    "resumen": "Un metaanálisis de 21 estudios encontró efectos pequeños: antes de entrenar, mejora levemente el sprint y la flexibilidad; después, reduce un poco el dolor muscular. No cambia mucho el rendimiento.",
+    "mecanismo": "Actúa sobre todo en la sensación (menos rigidez y dolor), más que en el tejido.",
+    "nivel": "B",
+    "estudios": [
+      { "cita": "Wiewelhove T y col. · Front Physiol 2019", "titulo": "A Meta-Analysis of the Effects of Foam Rolling on Performance and Recovery", "diseno": "Metaanálisis", "n": null, "poblacion": "21 estudios" }
+    ],
+    "aplicar": ["Úsalo si te hace sentir mejor, 1-2 min por zona.", "No reemplaza el calentamiento activo ni la fuerza.", "Sin rodillo en casa: el estiramiento con banda cumple la misma función de movilidad."],
+    "contexto": ["descanso", "molestia"]
+  },
+  {
+    "id": "ibuprofeno-adaptacion",
+    "cat": "recuperacion",
+    "titular": "Dosis altas de ibuprofeno a diario redujeron a la mitad la ganancia de músculo",
+    "cifra": "3,7 vs 7,5 %",
+    "cifraLbl": "crecimiento del cuádriceps",
+    "resumen": "En 8 semanas de entrenamiento, quienes tomaron 1200 mg de ibuprofeno al día aumentaron el volumen del cuádriceps un 3,7 %, frente a un 7,5 % del grupo con una dosis mínima de aspirina. La fuerza también subió menos en una de las piernas.",
+    "mecanismo": "Los antiinflamatorios bloquean prostaglandinas que forman parte de la señal de adaptación y reparación del músculo.",
+    "nivel": "B",
+    "estudios": [
+      { "cita": "Lilja M y col. · Acta Physiol 2018", "titulo": "High doses of anti-inflammatory drugs compromise muscle strength and hypertrophic adaptations to resistance training in young adults", "diseno": "Ensayo aleatorizado", "n": 31, "poblacion": "Adultos jóvenes sanos" }
+    ],
+    "aplicar": ["No uses antiinflamatorios de rutina para entrenar o recuperar.", "Solo por indicación médica y por el tiempo indicado.", "Para el dolor muscular normal: sueño, comida y carga ajustada."],
+    "contexto": ["molestia", "lesion"]
+  },
+  {
+    "id": "recuperacion-72h",
+    "cat": "recuperacion",
+    "titular": "Después de un partido, algunos marcadores tardan hasta 72 h en normalizarse",
+    "cifra": "72 h",
+    "cifraLbl": "recuperación completa",
+    "resumen": "Las revisiones sobre recuperación en fútbol muestran que la fuerza, el sprint y los marcadores de daño muscular pueden tardar entre 48 y 72 h en volver a la normalidad después de un partido.",
+    "mecanismo": "Los sprints, frenadas y duelos producen microdaño muscular, gastan el glucógeno y cansan el sistema nervioso. Cada cosa se recupera a su ritmo.",
+    "nivel": "C",
+    "estudios": [
+      { "cita": "Nédélec M y col. · Sports Med 2012", "titulo": "Recovery in soccer: part I - post-match fatigue and time course of recovery", "diseno": "Revisión", "n": null, "poblacion": "Fútbol" }
+    ],
+    "aplicar": ["Nada intenso las 48 h posteriores a un partido o prueba.", "El día siguiente: movilidad, trote suave o descanso.", "Carbohidratos y proteína altos ese día para recargar."],
+    "contexto": ["precompetencia", "descanso"]
+  },
+  {
+    "id": "vuelta-a-la-calma",
+    "cat": "recuperacion",
+    "titular": "La vuelta a la calma no evita el dolor muscular del día siguiente",
+    "cifra": "0",
+    "cifraLbl": "efecto en agujetas",
+    "resumen": "Una revisión sobre la vuelta a la calma encontró que el trote suave al terminar no reduce el dolor muscular ni mejora el rendimiento del día siguiente. Sí sirve para bajar pulsaciones y cerrar la sesión con calma.",
+    "mecanismo": "El dolor del día siguiente viene del microdaño del ejercicio excéntrico, no de restos de ácido láctico que haya que \"lavar\".",
+    "nivel": "C",
+    "estudios": [
+      { "cita": "Van Hooren B, Peake JM · Sports Med 2018", "titulo": "Do We Need a Cool-Down After Exercise? A Narrative Review of the Psychophysiological Effects and the Effects on Performance, Injuries and the Long-Term Adaptive Response", "diseno": "Revisión", "n": null, "poblacion": "Deportistas" }
+    ],
+    "aplicar": ["Haz vuelta a la calma si te gusta, 5-10 min bastan.", "Si vas corto de tiempo, prioriza comer y dormir.", "Para el dolor del día siguiente: carga progresiva, no trucos al final."],
+    "contexto": ["cancha"]
+  }
+]

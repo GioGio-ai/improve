@@ -30,6 +30,9 @@ await step('checkin', async () => {
   await click('[data-act="ck-scale"][data-name="rfPain"][data-v="0"]');
   await shot('checkin');
   await click('[data-act="ck-save"]');
+  // Con dolor muscular alto, el check-in abre una vez el mapa para marcar dónde: se cierra para seguir
+  await page.waitForTimeout(500);
+  if (await page.locator('.sheet .bmap.m-select').count()) { await shot('checkin-mapa'); await click('.sheet [data-act="close"]'); }
   await shot('hoy-tras-checkin');
 });
 await step('dia-pasado', async () => {
@@ -96,7 +99,14 @@ await step('test-en-vivo', async () => {
 await step('mover-dia', async () => {
   await page.evaluate(() => { location.hash = '#hoy'; });
   await page.waitForTimeout(300);
-  await click('[data-act="hoy-day"][data-date="2026-10-30"]');
+  // Primer día futuro de esta semana con gimnasio (la prueba ya no depende de una fecha fija)
+  const days = await page.locator('.week .wd:not(.past):not(.today)').evaluateAll(els => els.map(e => e.getAttribute('data-date')));
+  let found = false;
+  for (const dt of days) {
+    await click('[data-act="hoy-day"][data-date="' + dt + '"]');
+    if (await page.locator('.tl-blk[data-key="gym"] .main').count()) { found = true; break; }
+  }
+  if (!found) { console.log('mover-dia: sin día futuro con gimnasio en esta semana (se omite)'); return; }
   await click('.tl-blk[data-key="gym"] .main');
   await click('.sheet [data-act="session"]');
   await shot('sesion-viernes');

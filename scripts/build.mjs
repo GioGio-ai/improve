@@ -20,6 +20,12 @@ const files = fs.readdirSync(appDir).filter(f => f.endsWith('.js')).sort();
 let code = "/* Generado por scripts/build.mjs: no editar */\n";
 for (const f of files) code += '\n/* ---- ' + f + ' ---- */\n' + fs.readFileSync(path.join(appDir, f), 'utf8');
 const version = (code.match(/const VERSION = '([^']+)'/) || [])[1] || '0';
+// Datos de la sección Aprende: src/data/datos-*.json → un JSON con hash (carga diferida, precache del SW)
+const dataDir = path.join(SRC, 'data');
+const datos = fs.existsSync(dataDir) ? fs.readdirSync(dataDir).filter(f => /^datos-.*\.json$/.test(f)).sort().flatMap(f => JSON.parse(fs.readFileSync(path.join(dataDir, f), 'utf8'))) : [];
+const datosJson = JSON.stringify(datos);
+const datosName = 'datos-' + hash(datosJson) + '.json';
+code += "\nconst DATOS_URL = 'assets/" + datosName + "';\n";
 code += '\nexport { bootApp, LOGO_SVG, VERSION };\n';
 fs.mkdirSync(GEN, { recursive: true });
 fs.writeFileSync(path.join(GEN, 'app.gen.js'), code);
@@ -38,6 +44,7 @@ const res = await build({
 const js = res.outputFiles[0].contents;
 const jsName = 'app-' + hash(js) + '.js';
 fs.writeFileSync(path.join(OUT, 'assets', jsName), js);
+fs.writeFileSync(path.join(OUT, 'assets', datosName), datosJson);
 
 // 4) CSS
 const cssSrc = fs.readdirSync(path.join(SRC, 'styles')).filter(f => f.endsWith('.css')).sort().map(f => fs.readFileSync(path.join(SRC, 'styles', f), 'utf8')).join('\n');
@@ -60,9 +67,9 @@ if (fs.existsSync(libSrc)) for (const f of fs.readdirSync(libSrc)) { const dst =
 const html = fs.readFileSync(path.join(SRC, 'static', 'index.html'), 'utf8').replace('{{CSS}}', cssName).replace('{{JS}}', jsName);
 fs.writeFileSync(path.join(OUT, 'index.html'), html);
 cp(path.join(SRC, 'static', 'manifest.webmanifest'), path.join(OUT, 'manifest.webmanifest'));
-const pre = ['./', './index.html', './manifest.webmanifest', './assets/' + jsName, './assets/' + cssName, './fonts/geist-latin-wght-normal.woff2', './fonts/geist-mono-latin-wght-normal.woff2', './fonts/barlow-condensed-latin-600-normal.woff2', './fonts/barlow-condensed-latin-700-normal.woff2', './icons/icon.svg', './icons/icon-192.png', './icons/apple-touch-icon.png'];
+const pre = ['./', './index.html', './manifest.webmanifest', './assets/' + jsName, './assets/' + cssName, './assets/' + datosName, './fonts/geist-latin-wght-normal.woff2', './fonts/geist-mono-latin-wght-normal.woff2', './fonts/barlow-condensed-latin-600-normal.woff2', './fonts/barlow-condensed-latin-700-normal.woff2', './icons/icon.svg', './icons/icon-192.png', './icons/apple-touch-icon.png'];
 const swVer = version + '-' + hash(js + css).slice(0, 6);
 fs.writeFileSync(path.join(OUT, 'sw.js'), fs.readFileSync(path.join(SRC, 'static', 'sw.js'), 'utf8').replace('{{VERSION}}', swVer).replace('{{PRECACHE}}', JSON.stringify(pre)));
 
 const kb = (n) => (n / 1024).toFixed(1) + ' KB';
-console.log('IMPROVE ' + swVer + ' → docs/  js ' + kb(js.length) + ' · css ' + kb(css.length) + ' · ' + files.length + ' módulos');
+console.log('IMPROVE ' + swVer + ' → docs/  js ' + kb(js.length) + ' · css ' + kb(css.length) + ' · datos ' + datos.length + ' (' + kb(datosJson.length) + ') · ' + files.length + ' módulos');

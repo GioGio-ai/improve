@@ -13,7 +13,7 @@ function viewHoy(st, today) {
   const ci = checkinFor(today), adv = readinessAdvice(ci);
   const d = parseYmd(today);
   let h = '<header class="topbar"><div class="grow"><div class="eyebrow">' + capFirst(DOW_LONG[weekday(today)]) + ' ' + d.getDate() + ' ' + MONTHS[d.getMonth()] + '</div><h1 class="h1">Hola, ' + esc((prof.name || 'atleta').split(' ')[0]) + '</h1></div>' +
-    '<a class="iconbtn glow" href="#coach" aria-label="Coach con IA">' + ic('spark') + '</a><a class="avatar" href="#perfil" aria-label="Perfil">' + avatarImg() + '</a></header>';
+    '<a class="iconbtn" href="#aprende" aria-label="Aprende: datos e investigación">' + ic('book') + '</a><a class="iconbtn glow" href="#coach" aria-label="Coach con IA">' + ic('spark') + '</a><a class="avatar" href="#perfil" aria-label="Perfil">' + avatarImg() + '</a></header>';
   h += statusChips(st, today);
   h += trainingBanner();
   h += pendingPainPrompts(st, today);
@@ -24,6 +24,7 @@ function viewHoy(st, today) {
   h += isToday ? nextHero(day, ag, today) : dayHero(day, date, today);
   const notes = (day.notes || []).filter(n => n && !(isToday && /^Molestia en /.test(n)));
   if (notes.length) h += '<div class="stack-sm">' + notes.map(n => note(/Dolor|Estado/.test(n) ? 'warn' : /Previsto/.test(n) ? 'blue' : 'info', esc(n))).join('') + '</div>';
+  if (isToday) h += datoHoyCard(today);
   h += agendaCard(ag, day, date, today);
   h += nutritionStrip(date, ag);
   return h;
