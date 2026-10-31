@@ -101,14 +101,14 @@ function pubmedLink(e) { return 'https://pubmed.ncbi.nlm.nih.gov/?term=' + encod
 function datoHoyCard(today) {
   if (!DAT.list) {
     if (!DAT.error) loadDatos().catch(() => {});
-    return DAT.error ? '' : '<section class="card dato-card" aria-busy="true" aria-label="Dato del día"><div class="skel line sk-d1"></div><div class="skel sk-d2"></div><div class="skel line sk-d3"></div><div class="skel line sk-d4"></div></section>';
+    return DAT.error ? '' : '<section class="dato-card panel" aria-busy="true" aria-label="Dato del día"><div class="skel line sk-d1"></div><div class="skel sk-d2"></div><div class="skel line sk-d3"></div><div class="skel line sk-d4"></div></section>';
   }
   const d = datoDelDia(today); if (!d) return '';
   const c = DATO_CATS[d.cat] || {}, A = aprendeDoc(), saved = A.guardados.includes(d.id);
-  return '<section class="card dato-card k-' + (c.tone || 'blue') + '" aria-label="Dato del día">' +
-    '<div class="dato-top">' + catTile(d.cat, true) + '<span class="grow"><span class="micro">Dato del día</span><span class="dato-cat">' + esc(c.n || '') + '</span></span>' + nivelHtml(d.nivel, true) + '</div>' +
-    '<button class="dato-main" data-act="dato-open" data-id="' + esc(d.id) + '"><span class="dato-num">' + esc(d.cifra) + '</span><span class="dato-lbl">' + esc(d.cifraLbl) + '</span><span class="dato-t">' + esc(d.titular) + '</span></button>' +
-    '<div class="dato-foot">' + mitoChip(d) + '<button class="linkbtn" data-act="dato-open" data-id="' + esc(d.id) + '">Más información' + ic('chev') + '</button>' +
+  return '<section class="dato-card panel k-' + (c.tone || 'blue') + '" aria-label="Dato del día">' +
+    '<div class="dato-top"><span class="kicker grow"><span class="d"></span>Dato del día · ' + esc(c.n || '') + '</span>' + nivelHtml(d.nivel, true) + '</div>' +
+    '<button class="dato-main" data-act="dato-open" data-id="' + esc(d.id) + '"><span class="dato-num">' + esc(d.cifra) + '</span><span class="dato-t">' + esc(d.titular) + '</span></button>' +
+    '<div class="dato-foot">' + mitoChip(d) + '<button class="linkbtn" data-act="dato-open" data-id="' + esc(d.id) + '">Leer más' + ic('chev') + '</button>' +
     '<button class="iconbtn sm plain" data-act="dato-save" data-id="' + esc(d.id) + '" aria-pressed="' + saved + '" aria-label="' + (saved ? 'Quitar de guardados' : 'Guardar') + '">' + ic(saved ? 'bookmarkOn' : 'bookmark') + '</button></div></section>';
 }
 

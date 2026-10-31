@@ -1,7 +1,7 @@
 /* ============================================================
-   IMPROVE — tokens de diseño v4 «Calma»
-   Neutro oscuro; la profundidad sale de la luminancia (cada nivel un poco más claro),
-   bordes de 1 px casi invisibles y una sombra ambiental suave.
+   IMPROVE — tokens de diseño v4 · minimal editorial
+   Tipografía grande, casi sin tarjetas, separadores finos y mucho aire.
+   La jerarquía la da el tamaño del texto, no las cajas.
    El color es señal, nunca decoración:
    azul = plan y acción · lima = hecho y logros · ámbar = carga e intensidad
    rojo = solo dolor · violeta = sueño y recuperación
@@ -40,27 +40,28 @@
 :root {
   color-scheme: dark;
 
-  /* ---- Superficies ---- */
-  --bg: #0A0B0F;
-  --surface-1: #111318;
-  --surface-2: #171A21;
-  --surface-3: #1E222B;
-  --surface-4: #272C37;
+  /* ---- Superficies: oscuro con un punto de índigo (no negro puro) ---- */
+  --bg: #0B0C15;
+  --surface-1: #121421;
+  --surface-2: #181B2A;
+  --surface-3: #1F2335;
+  --surface-4: #282D42;
   --line: rgba(255, 255, 255, 0.06);
   --line-2: rgba(255, 255, 255, 0.1);
   --line-3: rgba(255, 255, 255, 0.16);
   --line-sel: rgba(255, 255, 255, 0.44);
+  --hair: rgba(255, 255, 255, 0.09);
   /* Rellenos para controles que viven sobre cualquier superficie: un paso más claro */
   --fill-1: rgba(255, 255, 255, 0.035);
   --fill-2: rgba(255, 255, 255, 0.06);
   --fill-3: rgba(255, 255, 255, 0.1);
   --scrim: rgba(0, 0, 0, 0.6);
-  --tabbar-bg: rgba(10, 11, 15, 0.86);
+  --tabbar-bg: rgba(11, 12, 21, 0.86);
 
   /* ---- Texto ---- */
-  --fg: #EDEEF2;
-  --fg-2: #A9AEBB;
-  --fg-3: #8B91A0;
+  --fg: #F3F4F8;
+  --fg-2: #BEC3D0;
+  --fg-3: #959BAB;
   --fg-4: #545A67;
   --on-blue: #FFFFFF;
   --on-accent: #0A0B0F;
@@ -112,6 +113,13 @@
   --cyan-soft: rgba(76, 201, 240, 0.12);
   --cyan-line: rgba(76, 201, 240, 0.34);
 
+  /* ---- Degradados modernos: auroras por contexto, acción, texto y líneas ---- */
+  --grad-primary: linear-gradient(135deg, #3A6CF6 0%, #5A4FE6 100%);
+  --grad-lime: linear-gradient(135deg, #D8FB72 0%, #ADE73E 100%);
+  --grad-line: linear-gradient(90deg, rgba(255, 255, 255, 0), rgba(255, 255, 255, 0.11) 18%, rgba(255, 255, 255, 0.11) 82%, rgba(255, 255, 255, 0));
+  --glow-primary: 0 10px 28px -10px rgba(74, 98, 255, 0.75);
+  --glow-lime: 0 10px 28px -12px rgba(190, 242, 90, 0.6);
+
   /* ---- Espaciado (base 4) ---- */
   --s-1: 4px;
   --s-2: 8px;
@@ -122,18 +130,21 @@
   --s-8: 32px;
   --s-10: 40px;
 
-  /* ---- Tipografía: 6 tamaños, 3 pesos ---- */
+  /* ---- Tipografía: escala editorial (texto 12-22 · títulos 34 · portada 44 · cifras 64), 3 pesos ---- */
   --fs-1: 12px;
   --fs-2: 13px;
   --fs-3: 15px;
   --fs-4: 17px;
   --fs-5: 22px;
-  --fs-6: clamp(28px, 8vw, 32px);
+  --fs-6: clamp(34px, 10vw, 40px);
+  --fs-7: clamp(44px, 13.4vw, 54px);
+  --fs-8: 72px;
   --fw-1: 400;
   --fw-2: 560;
   --fw-3: 660;
   --tr-title: -0.025em;
   --tr-tight: -0.035em;
+  --tr-display: -0.045em;
   --tr-label: 0.06em;
 
   /* ---- Radios (internos = externo − padding) ---- */
@@ -161,7 +172,7 @@
   --safe-b: env(safe-area-inset-bottom, 0px);
   --safe-l: env(safe-area-inset-left, 0px);
   --safe-r: env(safe-area-inset-right, 0px);
-  --gutter: 16px;
+  --gutter: 20px;
   --tabbar-h: 58px;
 
   --font: 'Geist Variable', 'Geist', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
@@ -191,4 +202,4 @@
   --t: var(--dur-2);
   --t-slow: var(--dur-3);
 }
-@media (min-width: 400px) { :root { --gutter: 20px; } }
+@media (min-width: 400px) { :root { --gutter: 24px; } }
