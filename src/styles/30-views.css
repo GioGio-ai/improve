@@ -351,3 +351,13 @@ body.locked #view, body.locked #nav { display: none; }
 .mol-each { margin-top: 2px; }
 .mol-each .in { gap: 12px; }
 .btn.mol-cta { color: var(--load-ink); border-color: var(--load-line); background: linear-gradient(180deg, rgba(255, 176, 32, 0.22), rgba(255, 109, 31, 0.08)); }
+
+/* ---------- Entreno ---------- */
+.weeknav { display: flex; align-items: center; gap: var(--s-1); min-width: 0; }
+.weeknav .grow { display: grid; gap: 2px; order: 0; }
+.weeknav .iconbtn:first-child { order: 1; }
+.weeknav .iconbtn:last-child { order: 2; }
+.day-t { display: inline-flex; align-items: center; gap: 10px; min-height: 44px; text-align: left; font-size: var(--fs-5); font-weight: var(--fw-3); letter-spacing: var(--tr-title); color: var(--fg); }
+.day-sec.is-today .day-t { color: var(--blue-ink); }
+.dot-today { width: 8px; height: 8px; border-radius: 50%; background: var(--blue); box-shadow: 0 0 12px var(--blue); flex: none; }
+.kicker.month { margin-top: var(--s-2); }

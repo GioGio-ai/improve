@@ -3,7 +3,7 @@
    ============================================================ */
 function viewEntreno(st, today) {
   if (!S.data.profile) return onboarding();
-  let h = '<div class="page-head"><h1 class="h1 grow">Entreno</h1><button class="iconbtn" data-act="new-log" data-date="' + today + '" aria-label="Registrar sesión">' + ic('plus') + '</button></div>';
+  let h = '<div class="aura" aria-hidden="true"></div><div class="page-head"><h1 class="h1 grow">Entreno</h1><button class="iconbtn" data-act="new-log" data-date="' + today + '" aria-label="Registrar sesión">' + ic('plus') + '</button></div>';
   h += trainingBanner();
   h += '<div class="seg blue" role="tablist">' + [['semana', 'Semana'], ['historial', 'Historial'], ['ejercicios', 'Ejercicios']].map(([k, l]) => '<button type="button" role="tab" aria-selected="' + (UI.enTab === k) + '" class="' + (UI.enTab === k ? 'on' : '') + '" data-act="en-tab" data-v="' + k + '">' + l + '</button>').join('') + '</div>';
   if (UI.enTab === 'historial') return h + historyPanel(st, today);
@@ -16,23 +16,23 @@ function weekPanel(st, today) {
   const done = logsWeek.filter(s => s.done !== false).length;
   const load = logsWeek.reduce((a, s) => a + sessionLoad(s), 0);
   const intense = days.filter(d => d.intense).length;
-  let h = '<div class="row nowrap"><button class="iconbtn sm" data-act="week" data-d="-1" aria-label="Semana anterior">' + ic('chevL') + '</button><div class="grow center"><div class="sub">' + (UI.weekOffset === 0 ? 'Esta semana' : UI.weekOffset < 0 ? (UI.weekOffset === -1 ? 'Semana pasada' : 'Hace ' + -UI.weekOffset + ' semanas') : (UI.weekOffset === 1 ? 'Próxima semana' : 'En ' + UI.weekOffset + ' semanas')) + '</div><div class="h3 num">' + fmtDate(ws) + ' – ' + fmtDate(we) + '</div></div><button class="iconbtn sm" data-act="week" data-d="1" aria-label="Semana siguiente">' + ic('chev') + '</button></div>';
-  h += '<div class="stats"><div class="stat ' + (intense > 3 ? 'pain' : 'load') + '"><span class="v">' + intense + '<small>/3</small></span><span class="k">Días intensos</span></div><div class="stat lime"><span class="v">' + done + '</span><span class="k">Sesiones hechas</span></div><div class="stat load"><span class="v">' + (load || '—') + '</span><span class="k">Carga</span></div></div>';
+  let h = '<div class="weeknav"><button class="iconbtn sm" data-act="week" data-d="-1" aria-label="Semana anterior">' + ic('chevL') + '</button><div class="grow"><div class="kicker">' + (UI.weekOffset === 0 ? 'Esta semana' : UI.weekOffset < 0 ? (UI.weekOffset === -1 ? 'Semana pasada' : 'Hace ' + -UI.weekOffset + ' semanas') : (UI.weekOffset === 1 ? 'Próxima semana' : 'En ' + UI.weekOffset + ' semanas')) + '</div><div class="h2 tnum">' + fmtDate(ws) + ' – ' + fmtDate(we) + '</div></div><button class="iconbtn sm" data-act="week" data-d="1" aria-label="Semana siguiente">' + ic('chev') + '</button></div>';
+  h += '<div class="stats panel"><div class="stat ' + (intense > 3 ? 'pain' : 'load') + '"><span class="v">' + intense + '<small>/3</small></span><span class="k">Intensos</span></div><div class="stat lime"><span class="v">' + done + '</span><span class="k">Hechas</span></div><div class="stat blue"><span class="v">' + (load || '—') + '</span><span class="k">Carga</span></div></div>';
   if (intense > 3) h += note('warn', 'Más de 3 días intensos para el recto femoral. Mueve una sesión.');
   h += '<div class="stack-sm">';
   for (const d of days) {
     const isToday = d.date === today;
     const blocks = dayBlocks(d);
     const extra = logsFor(d.date).filter(l => !d.sessions.some(s => s.type === l.type));
-    h += '<section class="card tight' + (isToday ? ' t-blue' : '') + '"><div class="stack-sm"><div class="row between nowrap"><button class="h3" data-act="day" data-date="' + d.date + '" style="text-align:left;min-height:32px">' + esc(capFirst(fmtDateLong(d.date))) + '</button><span class="row nowrap" style="gap:6px">' +
+    h += '<section class="card tight day-sec' + (isToday ? ' is-today' : '') + '"><div class="stack-sm"><div class="row between nowrap"><button class="day-t" data-act="day" data-date="' + d.date + '">' + (isToday ? '<span class="dot-today"></span>' : '') + esc(capFirst(fmtDateLong(d.date))) + '</button><span class="row nowrap tight">' +
       (d.md ? chip(d.md, '') : '') + (d.projectedPhase ? chip(PHASES[d.phase].n + ' previsto', 'blue') : '') + (d.intense ? chip('Intenso', 'load', 'flame') : '') + '</span></div>';
-    (d.notes || []).filter(n => !/^Golpeo K\d extra|^Sprint S\d extra/.test(n)).forEach(n => { h += '<div class="sub">' + ic('info') + ' ' + esc(n) + '</div>'; });
+    (d.notes || []).filter(n => !/^Golpeo K\d extra|^Sprint S\d extra/.test(n)).forEach(n => { h += note('', esc(n)); });
     if (!blocks.length && !extra.length) h += '<div class="sub">Descanso</div>';
     for (const b of blocks) for (const s of b.sessions) {
       const log = findLog(d.date, s.type);
-      h += '<button class="blk' + (log && log.done !== false ? ' done' : '') + '" data-act="session" data-date="' + d.date + '" data-type="' + s.type + '" style="min-height:56px"><span class="c' + (s.intense ? ' load' : log && log.done !== false ? ' lime' : '') + '">' + ic(s.icon || 'dumb') + '</span><div class="grow"><div class="t">' + esc(log && log.modified && log.title ? log.title : s.title) + '</div><div class="s">' + esc(log ? logLine(log) : d.past ? 'Sin registrar' : (b.key === 'gym' ? 'Gimnasio' : b.key === 'campo' ? 'Cancha' : b.key === 'recup' ? 'Noche' : '') + ' · ' + blockSub(s)) + '</div></div>' + statusMark(log) + '</button>';
+      h += '<button class="blk' + (log && log.done !== false ? ' done' : '') + '" data-act="session" data-date="' + d.date + '" data-type="' + s.type + '"><span class="c' + (s.intense ? ' load' : log && log.done !== false ? ' lime' : '') + '">' + ic(s.icon || 'dumb') + '</span><div class="grow"><div class="t">' + esc(log && log.modified && log.title ? log.title : s.title) + '</div><div class="s">' + esc(log ? logLine(log) : d.past ? 'Sin registrar' : (b.key === 'gym' ? 'Gimnasio' : b.key === 'campo' ? 'Cancha' : b.key === 'recup' ? 'Noche' : '') + ' · ' + blockSub(s)) + '</div></div>' + statusMark(log) + '</button>';
     }
-    h += extra.map(l => '<button class="blk done" data-act="edit-log" data-id="' + esc(l.id) + '" style="min-height:56px"><span class="c lime">' + ic(sessIcon(l.type)) + '</span><div class="grow"><div class="t">' + esc(l.title || (STYPES[l.type] || STYPES.libre).n) + '</div><div class="s">' + esc(logLine(l)) + '</div></div>' + statusMark(l) + '</button>').join('');
+    h += extra.map(l => '<button class="blk done" data-act="edit-log" data-id="' + esc(l.id) + '"><span class="c lime">' + ic(sessIcon(l.type)) + '</span><div class="grow"><div class="t">' + esc(l.title || (STYPES[l.type] || STYPES.libre).n) + '</div><div class="s">' + esc(logLine(l)) + '</div></div>' + statusMark(l) + '</button>').join('');
     h += '</div></section>';
   }
   h += '</div>';
@@ -50,9 +50,9 @@ function roadCard(st, today) {
   if (st.phase < 5) rows.push({ pt: 'goal', t: 'F5 · listo para pruebas', w: proj.phases[5] ? fmtDate(proj.phases[5]) : 'más de 10 semanas', d: proj.phases[5] || '9999', cls: proj.phases[5] && goal ? (proj.phases[5] <= goal ? 'ok' : 'late') : '' });
   if (goal) rows.push({ pt: 'goal', t: 'Tu objetivo', w: fmtDate(goal), d: goal + 'z', cls: '' });
   rows.sort((a, b) => (a.d < b.d ? -1 : a.d > b.d ? 1 : 0));
-  return '<section class="card t-lime"><div class="stack"><div class="row between"><span class="h3">Camino a las pruebas</span>' + (proj.phases[5] && goal ? chip(proj.phases[5] <= goal ? 'A tiempo' : 'Ajustado', proj.phases[5] <= goal ? 'lime' : 'warn') : '') + '</div>' +
+  return '<section class="panel k-lime"><div class="stack"><div class="ed-head"><span class="kicker">Camino a las pruebas</span>' + (proj.phases[5] && goal ? chip(proj.phases[5] <= goal ? 'A tiempo' : 'Ajustado', proj.phases[5] <= goal ? 'lime' : 'warn') : '') + '</div>' +
     '<ul class="road">' + rows.map(r => '<li><span class="pt ' + r.pt + '"></span><span class="small">' + esc(r.t) + '</span><span class="when ' + r.cls + '">' + esc(r.w) + '</span></li>').join('') + '</ul>' +
-    '<p class="sub">Si cada sesión sale limpia (dolor ≤ 2 durante y 0 al día siguiente) y apruebas los tests. Las fases cambian en Progreso al cumplir los criterios.</p></div></section>';
+    '<p class="sub">Si cada sesión sale limpia y apruebas los tests.</p></div></section>';
 }
 function historyPanel(st, today) {
   const sessions = (S.data.sessions || []).filter(s => !s.deleted);
@@ -61,19 +61,19 @@ function historyPanel(st, today) {
   if (!shown.length) return '<div class="empty"><b>Todavía no hay sesiones.</b><span class="small">Lo que entrenes queda acá, día por día.</span></div>';
   let h = '';
   const loads = weeklyLoads(st.sessions, today, 4);
-  h += '<section class="card tight"><div class="stack-sm"><div class="row between"><span class="h3">Carga semanal</span><span class="sub">min × esfuerzo</span></div>' + barChart(loads.map(l => ({ label: fmtDate(l.start), value: l.load })), { cur: loads.length - 1, label: 'Carga semanal' }) + '</div></section>';
+  h += '<section class="panel"><div class="stack-sm"><div class="ed-head"><span class="kicker">Carga semanal</span><span class="meta">min × esfuerzo</span></div>' + barChart(loads.map(l => ({ label: fmtDate(l.start), value: l.load })), { cur: loads.length - 1, label: 'Carga semanal' }) + '</div></section>';
   let month = '';
   for (const date of shown) {
     const m = MONTHS[parseYmd(date).getMonth()];
-    if (m !== month) { month = m; h += '<div class="micro" style="margin-top:6px">' + capFirst(['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'][parseYmd(date).getMonth()]) + '</div>'; }
+    if (m !== month) { month = m; h += '<div class="kicker month">' + capFirst(['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'][parseYmd(date).getMonth()]) + '</div>'; }
     const logs = sessions.filter(s => s.date === date).sort(byDate);
     const ci = checkinFor(date);
     const load = logs.reduce((a, s) => a + sessionLoad(s), 0);
     const intense = logs.some(isIntenseLog);
     const painMax = Math.max(0, ...logs.map(l => { const k = l.kick || l.spr; return k ? Math.max(num(k.pd) || 0, num(k.pn) || 0) : 0; }), ci ? num(ci.rfPain) || 0 : 0);
-    h += '<section class="card tight"><div class="stack-sm"><button class="row between nowrap" data-act="day" data-date="' + date + '" style="width:100%;min-height:36px"><span class="h3">' + esc(capFirst(fmtDateLong(date))) + '</span><span class="row nowrap" style="gap:6px">' +
+    h += '<section class="card tight day-sec"><div class="stack-sm"><button class="row between nowrap day-t" data-act="day" data-date="' + date + '"><span>' + esc(capFirst(fmtDateLong(date))) + '</span><span class="row nowrap tight">' +
       (ci && num(ci.sleepH) !== null ? chip(fmtNum(ci.sleepH) + ' h', sleepTone(ci.sleepH) === 'load' ? 'warn' : 'sleep', 'moon') : '') + (load ? chip(String(load), intense ? 'load' : '', 'flame') : '') + (painMax >= 3 ? chip('dolor ' + painMax, 'pain') : '') + ic('chev') + '</span></button>' +
-      (logs.length ? logs.map(l => '<button class="blk' + (l.done !== false ? ' done' : '') + '" data-act="session" data-date="' + l.date + '" data-type="' + l.type + '" style="min-height:56px"><span class="c' + (l.done === false ? ' pain' : isIntenseLog(l) ? ' load' : ' lime') + '">' + ic(sessIcon(l.type)) + '</span><div class="grow"><div class="t">' + esc(l.title || (STYPES[l.type] || STYPES.libre).n) + '</div><div class="s">' + esc(logLine(l)) + '</div>' + (l.ball && (l.ball.drills || []).length ? '<div class="s fg3 num">' + esc(l.ball.drills.slice(0, 4).map(d => (BALL_DRILL_INDEX[d.id] || d).n.split(' · ')[0].replace('Definición con zurda', 'Zurda') + ' ' + ballValTxt(d)).join(' · ')) + '</div>' : '') + '</div>' + statusMark(l) + '</button>').join('') : '<div class="sub">Sin entrenamiento registrado.</div>') +
+      (logs.length ? logs.map(l => '<button class="blk' + (l.done !== false ? ' done' : '') + '" data-act="session" data-date="' + l.date + '" data-type="' + l.type + '"><span class="c' + (l.done === false ? ' mute' : isIntenseLog(l) ? ' load' : ' lime') + '">' + ic(sessIcon(l.type)) + '</span><div class="grow"><div class="t">' + esc(l.title || (STYPES[l.type] || STYPES.libre).n) + '</div><div class="s">' + esc(logLine(l)) + '</div>' + (l.ball && (l.ball.drills || []).length ? '<div class="s fg3 num">' + esc(l.ball.drills.slice(0, 4).map(d => (BALL_DRILL_INDEX[d.id] || d).n.split(' · ')[0].replace('Definición con zurda', 'Zurda') + ' ' + ballValTxt(d)).join(' · ')) + '</div>' : '') + '</div>' + statusMark(l) + '</button>').join('') : '<div class="sub">Sin entrenamiento registrado.</div>') +
       '</div></section>';
   }
   if (dates.length > UI.histLimit) h += '<button class="btn block ghost" data-act="hist-more">Ver más días</button>';
@@ -96,7 +96,7 @@ function bankPanel(st) {
   h += '<div class="scroll-x">' + (st.injuryActive ? '<button class="pill' + (B.phaseOk ? ' on' : '') + '" data-act="bank-phase">Permitidos en ' + PHASES[st.phase].n + '</button>' : '') +
     zones.map(z => '<button class="pill' + (B.zone === z ? ' on' : '') + '" data-act="bank-zone" data-v="' + z + '">' + esc(LABELS.z[z]) + '</button>').join('') + '</div>';
   h += '<div class="sub">' + plural(list.length, 'ejercicio', 'ejercicios') + '</div>';
-  h += '<div class="exlist">' + list.slice(0, B.limit).map(e => '<button class="exrow" data-act="ex" data-id="' + esc(e.id) + '">' + thumbHtml(e) + '<div style="min-width:0"><div class="t">' + esc(e.n) + '</div><div class="s">' + esc([LABELS.pat[e.pat], (e.z || []).slice(0, 2).map(z => LABELS.z[z]).filter(Boolean).join(', ')].filter(Boolean).join(' · ')) + '</div></div><span class="f">F' + (e.f || 1) + '+</span></button>').join('') + '</div>';
+  h += '<div class="exlist">' + list.slice(0, B.limit).map(e => '<button class="exrow" data-act="ex" data-id="' + esc(e.id) + '">' + thumbHtml(e) + '<div class="mw0"><div class="t">' + esc(e.n) + '</div><div class="s">' + esc([LABELS.pat[e.pat], (e.z || []).slice(0, 2).map(z => LABELS.z[z]).filter(Boolean).join(', ')].filter(Boolean).join(' · ')) + '</div></div><span class="f">F' + (e.f || 1) + '+</span></button>').join('') + '</div>';
   if (list.length > B.limit) h += '<button class="btn block ghost" data-act="bank-more">Ver más</button>';
   return h;
 }
@@ -104,7 +104,7 @@ function bankPanel(st) {
 function ballPanel(st) {
   const L = effLevels(st);
   const why = (d) => (d.minPhase || 1) > st.phase ? 'Se abre en ' + PHASES[d.minPhase].n : d.kRight && L.k < d.kRight ? 'Desde K' + d.kRight + ' (derecha)' : d.sMin && L.s < d.sMin ? 'Desde S' + d.sMin : '';
-  let h = note('blue', 'Derecha: dominio, control y pase con interior desde ya. El empeine fuerte va solo en el golpeo (escalera K). Voleas y centros con la derecha desde K7. Cabeceo de fuerza alta: máximo ' + BALL_HEADER_CAP + ' por semana.');
+  let h = note('blue', 'Derecha: interior y control desde ya; empeine fuerte solo en el golpeo. Voleas y centros con la derecha desde K7. Cabeceo fuerte: máx. ' + BALL_HEADER_CAP + ' por semana.');
   h += '<div class="stack-sm">' + BALL_DRILLS.map(d => {
     const w = why(d), pies = d.perFoot ? ['der', 'izq'] : [null];
     const recs = pies.map(p => { const b = ballBest(st.sessions, d.id, p); return b ? (p ? (p === 'der' ? 'Der ' : 'Izq ') : '') + fmtNum(b.val) : null; }).filter(Boolean);
@@ -118,7 +118,7 @@ function libraryPanel() {
   const L = UI.lib;
   if (!LIB.data) {
     loadLib().then(() => scheduleRender()).catch(() => { LIB.error = true; scheduleRender(); });
-    return LIB.error ? '<div class="empty"><b>No se pudo cargar la biblioteca.</b><span class="small">Vuelve a abrir la app con conexión.</span></div>' : '<div class="stack-sm">' + [0, 1, 2, 3, 4].map(() => '<div class="skel" style="height:68px"></div>').join('') + '</div>';
+    return LIB.error ? '<div class="empty"><b>No se pudo cargar la biblioteca.</b><span class="small">Vuelve a abrir la app con conexión.</span></div>' : '<div class="stack-sm">' + [0, 1, 2, 3, 4].map(() => '<div class="skel sk-row"></div>').join('') + '</div>';
   }
   const tr = {}; (S.data.traducciones || []).forEach(t => { tr[t.id] = t; });
   const q = normTxt(L.q);
@@ -126,7 +126,7 @@ function libraryPanel() {
   let h = '<div class="field"><label class="sr" for="lib-q">Buscar</label><input class="input" id="lib-q" type="search" inputmode="search" enterkeyhint="search" data-input="lib-q" placeholder="Nombre en inglés o músculo" value="' + esc(L.q) + '" autocomplete="off"></div>';
   h += '<div class="scroll-x">' + ['quadriceps', 'hamstrings', 'glutes', 'adductors', 'calves', 'abdominals', 'chest', 'lats', 'shoulders'].map(m => '<button class="pill' + (L.muscle === m ? ' on' : '') + '" data-act="lib-muscle" data-v="' + m + '">' + esc(LIB_ES.muscles[m]) + '</button>').join('') + '</div>';
   h += '<div class="sub">' + plural(list.length, 'ejercicio', 'ejercicios') + ' · Free Exercise DB (dominio público)</div>';
-  h += '<div class="exlist">' + list.slice(0, L.limit).map(x => '<button class="exrow" data-act="lib-ex" data-id="' + esc(x.id) + '"><div class="thumb" data-thumb="' + esc(x.id) + '">' + esc(x.n.slice(0, 2).toUpperCase()) + '</div><div style="min-width:0"><div class="t">' + esc(tr[x.id] ? tr[x.id].n : x.n) + '</div><div class="s">' + esc([LIB_ES.category[x.c], (x.pm || []).map(m => LIB_ES.muscles[m]).join(', ')].filter(Boolean).join(' · ')) + '</div></div><span></span></button>').join('') + '</div>';
+  h += '<div class="exlist">' + list.slice(0, L.limit).map(x => '<button class="exrow" data-act="lib-ex" data-id="' + esc(x.id) + '"><div class="thumb" data-thumb="' + esc(x.id) + '">' + esc(x.n.slice(0, 2).toUpperCase()) + '</div><div class="mw0"><div class="t">' + esc(tr[x.id] ? tr[x.id].n : x.n) + '</div><div class="s">' + esc([LIB_ES.category[x.c], (x.pm || []).map(m => LIB_ES.muscles[m]).join(', ')].filter(Boolean).join(' · ')) + '</div></div><span></span></button>').join('') + '</div>';
   if (list.length > L.limit) h += '<button class="btn block ghost" data-act="lib-more">Ver más</button>';
   return h;
 }
