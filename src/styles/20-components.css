@@ -264,6 +264,7 @@ body.training .tabbar, body.locked .tabbar { transform: translateY(100%); opacit
 .banner.lime > .ic:first-child { color: var(--lime); }
 .banner.load > .ic:first-child { color: var(--amber); }
 .banner.food > .ic:first-child { color: var(--teal); }
+.banner .h3 { font-size: var(--fs-3); }
 .banner.live { flex-wrap: wrap; align-items: flex-start; row-gap: var(--s-4); }
 .banner.live > .ic { margin-top: 2px; }
 .banner.live .grow { min-width: 0; flex: 1 1 0; display: grid; gap: 2px; }
