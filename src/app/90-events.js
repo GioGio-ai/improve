@@ -3,6 +3,7 @@
    ============================================================ */
 const RENDERERS = { hoy: viewHoy, entreno: viewEntreno, comida: viewComida, progreso: viewProgreso, perfil: viewPerfil, coach: viewCoach };
 function afterRender() {
+  markNavBadge();
   hydrateThumbs($('#view'));
   hydrateMealImgs($('#view'));
   hydrateMedia($('#view'));
@@ -50,17 +51,25 @@ document.addEventListener('click', (e) => {
     /* ---- molestias ---- */
     case 'mol-new': { const s0 = TR.open ? curStep() : null; openMolestia({ from: g('from') || (TR.open ? 'train' : 'hoy'), during: s0 ? s0.kind : null }); return; }
     case 'mol-open': openMolDetail(g('id')); return;
-    case 'mol-view': UI.mol.view = g('v'); refreshSheet(true); return;
-    case 'mol-zone': UI.mol.zona = g('z'); UI.mol.lado = g('s'); haptic(10); refreshSheet(true); return;
-    case 'mol-side': UI.mol.lado = g('v'); refreshSheet(true); return;
-    case 'mol-tipo': UI.mol.tipo = g('v'); refreshSheet(true); return;
-    case 'mol-lvl': UI.mol.nivel = Number(g('v')); refreshSheet(true); return;
+    case 'mol-view': if (UI.mol) { UI.mol.view = g('v'); refreshSheet(true); } return;
+    case 'mol-zone': molTapZone(g('z'), g('s')); return;
+    case 'mol-pick': if (UI.mol) { UI.mol.active = g('k'); const z = g('k').split(':')[0]; UI.mol.view = ZONE_VIEW[z] || UI.mol.view; refreshSheet(true); } return;
+    case 'mol-rm': if (UI.mol) { molRemove(UI.mol, g('k')); refreshSheet(true); } return;
+    case 'mol-ambos': if (UI.mol) { UI.mol.ambos = !UI.mol.ambos; refreshSheet(true); } return;
+    case 'mol-preset': molPresetLegs(); return;
+    case 'mol-all': molApplyAll(); return;
+    case 'mol-side': molSetSide(g('v')); return;
+    case 'mol-tipo': molSetActive({ tipo: g('v') }); return;
+    case 'mol-lvl': molSetActive({ nivel: Number(g('v')) }); return;
     case 'mol-save': saveMolestia(); return;
+    case 'mol-undo-save': molUndoSave(); return;
+    case 'mol-list': openMolList(); return;
     case 'mol-follow': molFollow(g('id'), g('v')); return;
+    case 'mol-follow-all': molFollowMany((g('ids') || '').split(',').filter(Boolean), g('v')); return;
     case 'mol-adj': openMolAdj(g('date') || today); return;
     case 'mol-adj-hide': { const d = g('date') || today; molAdjMark(d, molAdjKey(dayPlan(d), d), true); haptic(8); scheduleRender(); return; }
-    case 'mol-undo':molSetNoAdjust(g('id'), g('date') || today, true); $('#toast').hidden = true; refreshSheet(true); return;
-    case 'mol-redo': molSetNoAdjust(g('id'), g('date') || today, false); refreshSheet(true); return;
+    case 'mol-undo': molSetNoAdjust(g('ids') || g('id'), g('date') || today, true); refreshSheet(true); return;
+    case 'mol-redo': molSetNoAdjust(g('ids') || g('id'), g('date') || today, false); refreshSheet(true); return;
     case 'mol-del': openConfirm('Borrar molestia', 'Se borra el registro y el plan deja de ajustarse por ella.', 'do-mol-del', { id: g('id') }, true); return;
     case 'do-mol-del': remove('molestias', g('id')).then(() => toast('Molestia borrada.')); closeAllSheets(); return;
     case 'ck-step': { const v = UI.checkinDraft; v.sleepH = clamp((num(v.sleepH) || 9) + Number(g('d')) * 0.25, 3, 13); refreshSheet(true); return; }
@@ -257,6 +266,10 @@ document.addEventListener('click', (e) => {
     case 'meal-fix-open': UI.meal.fixOpen = !UI.meal.fixOpen; refreshSheet(true); if (UI.meal.fixOpen) setTimeout(() => { const t = $('#meal-fix'); if (t) t.focus(); }, 60); return;
     case 'meal-fix-go': mealFixGo(); return;
     case 'meal-ate': eatSuggested(g('date'), g('key')); return;
+    case 'meal-skip': skipMeal(g('date'), g('key')); return;
+    case 'pend-opts': openPendOpts(g('date'), g('key')); return;
+    case 'pend-all': openPendAll(); return;
+    case 'pend-dismiss': pendDismissYesterday(); return;
     case 'meal-undo': remove('meals', g('id')).then(() => toast('Registro deshecho.', 'info')); return;
     case 'meal-edit': editMeal(g('id')); return;
     case 'meal-del': { const id = g('id'); remove('meals', id); remove('mealimg', id).catch(() => {}); UI.meal = null; closeAllSheets(); toast('Comida borrada.', 'info'); return; }
@@ -300,7 +313,7 @@ function handleBind(el, isChange) {
     case 'wt-step': UI.wt.kg = parseNum(v); return;
     case 'cx': UI.cx[name] = v; return;
     case 'coach-q': UI.coach.draft = v; return;
-    case 'mol-z': if (UI.mol) { UI.mol.zona = v || null; if (v) { UI.mol.view = ZONE_VIEW[v] || UI.mol.view; if (!UI.mol.lado) UI.mol.lado = ST.side || 'd'; } if (isChange) refreshSheet(true); } return;
+    case 'mol-z': if (UI.mol && v && isChange) { UI.mol.view = ZONE_VIEW[v] || UI.mol.view; molAdd(UI.mol, v, (ST && ST.side) || 'd'); el.value = ''; refreshSheet(true); } return;
     case 'mol-nota': if (UI.mol) UI.mol.nota = v; return;
     case 'ag-time': if (isChange && /^\d{1,2}:\d{2}$/.test(v)) { agendaSet(el.getAttribute('data-date'), el.getAttribute('data-key'), { start: hm(v) }).then(() => toast('Hora cambiada a ' + v + '.')); } return;
     case 'sched': if (isChange && /^\d{1,2}:\d{2}$/.test(v)) setSchedule(name, v); return;

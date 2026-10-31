@@ -33,16 +33,16 @@ function painColor(tipo, nivel) {
   const a = (0.35 + clamp(num(nivel) || 1, 1, 10) / 10 * 0.6).toFixed(2);
   return tipo === 'dolor' ? 'rgba(232,50,79,' + a + ')' : 'rgba(255,150,40,' + a + ')';
 }
-/* o: { view: front|back, mode: select|heat|pain, values: { 'zona' | 'zona:lado' → color }, selected: 'zona:lado', act } */
+/* o: { view: front|back, mode: select|heat|pain, values: { 'zona' | 'zona:lado' → color }, selected: 'zona:lado' | ['zona:lado', …], active: 'zona:lado', act } */
 function bodyMapSvg(o) {
   o = o || {};
-  const view = o.view || 'front', vals = o.values || {}, sel = o.selected || '';
+  const view = o.view || 'front', vals = o.values || {}, selSet = new Set(Array.isArray(o.selected) ? o.selected : o.selected ? [o.selected] : []);
   let h = '<svg class="bmap ' + view + (o.mode ? ' m-' + o.mode : '') + '" viewBox="0 0 100 212" role="img" aria-label="Mapa del cuerpo, ' + (view === 'front' ? 'frente' : 'espalda') + '">';
   for (const [z, sd, pts] of BODY_POLY[view]) {
     if (!z) { h += '<polygon class="hd" points="' + pts + '"/>'; continue; }
-    const key = z + ':' + sd, fill = vals[key] || vals[z] || null, on = sel === key;
+    const key = z + ':' + sd, fill = vals[key] || vals[z] || null, on = selSet.has(key), act = on && o.active === key;
     const lab = zoneName(z, sd);
-    if (o.mode === 'select') h += '<polygon class="z' + (on ? ' on' : '') + (fill ? ' f' : '') + '" points="' + pts + '"' + (fill ? ' style="fill:' + fill + '"' : '') + ' data-act="' + (o.act || 'bm-zone') + '" data-z="' + z + '" data-s="' + sd + '" role="button" tabindex="0" aria-label="' + esc(lab) + '" aria-pressed="' + on + '"><title>' + esc(lab) + '</title></polygon>';
+    if (o.mode === 'select') h += '<polygon class="z' + (on ? ' on' : '') + (act ? ' act' : '') + (fill ? ' f' : '') + '" points="' + pts + '"' + (fill ? ' style="fill:' + fill + '"' : '') + ' data-act="' + (o.act || 'bm-zone') + '" data-z="' + z + '" data-s="' + sd + '" role="button" tabindex="0" aria-label="' + esc(lab) + '" aria-pressed="' + on + '"><title>' + esc(lab) + '</title></polygon>';
     else h += '<polygon class="z' + (fill ? ' f' : '') + '" points="' + pts + '"' + (fill ? ' style="fill:' + fill + '"' : '') + '><title>' + esc(lab) + '</title></polygon>';
   }
   return h + '</svg>';

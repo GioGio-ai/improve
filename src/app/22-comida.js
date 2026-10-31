@@ -43,9 +43,9 @@ function suppTile(date, key, label, on, tone) {
   return '<button class="tile ' + (on ? tone : '') + '" data-act="supp" data-date="' + date + '" data-key="' + key + '" aria-pressed="' + !!on + '" style="min-height:84px"><span class="c">' + ic(on ? 'check' : 'pill') + '</span><span class="k" style="color:var(--fg)">' + esc(label) + '</span><span class="k">' + (on ? 'Hecho' : key === 'creatine' ? 'Cuando la tengas' : 'Antes de cargar el RF') + '</span></button>';
 }
 function mealSlotCard(date, m) {
-  const logged = mealDone(m.slot, date);
+  const logged = mealDone(m.slot, date), eaten = logged.filter(x => !x.skipped), skipped = logged.length > 0 && !eaten.length;
   const menu = mealMenuFor(date, m);
-  let h = '<section class="card tight' + (logged.length ? ' t-food' : '') + '"><div class="meal"><div class="mh"><span class="tm">' + fmtHM(m.start) + '</span><button class="grow" data-act="ag-open" data-date="' + date + '" data-key="' + m.key + '" style="text-align:left"><div class="h3">' + esc(m.title) + (m.optional ? ' <span class="sub">· opcional</span>' : '') + '</div><div class="sub">' + (logged.length ? 'Registrado' : esc(menu.name)) + '</div></button>' + (logged.length ? '<span class="st0 done">' + ic('check') + '</span>' : '') + '</div>';
+  let h = '<section class="card tight' + (eaten.length ? ' t-food' : '') + (skipped ? ' skipped' : '') + '"><div class="meal"><div class="mh"><span class="tm">' + fmtHM(m.start) + '</span><button class="grow" data-act="ag-open" data-date="' + date + '" data-key="' + m.key + '" style="text-align:left"><div class="h3">' + esc(m.title) + (m.optional ? ' <span class="sub">· opcional</span>' : '') + '</div><div class="sub">' + (skipped ? 'No la comiste' : logged.length ? 'Registrado' : esc(menu.name)) + '</div></button>' + (eaten.length ? '<span class="st0 done">' + ic('check') + '</span>' : skipped ? '<span class="st0">' + ic('x') + '</span>' : '') + '</div>';
   if (logged.length) h += logged.map(x => mealRowHtml(x, true)).join('');
   else {
     h += '<div class="items">' + menu.items.map(i => '<div class="it"><span>' + esc(i.n) + '</span><span class="q">' + esc(fmtQty(i)) + '</span></div>').join('') + '</div>' +
@@ -56,6 +56,7 @@ function mealSlotCard(date, m) {
   return h + '</div></section>';
 }
 function mealRowHtml(m, inner) {
+  if (m.skipped) return '<div class="blk skipped"><span class="c mute">' + ic('x') + '</span><div class="grow"><div class="t">' + esc(m.title || SLOT_N[m.slot] || 'Comida') + ' · <span class="num">' + esc(m.time || '') + '</span></div><div class="s">No la comiste</div></div><button class="btn xs" data-act="meal-undo" data-id="' + esc(m.id) + '">' + ic('undo') + 'Deshacer</button></div>';
   const t = sumItems(m.items || []);
   return '<button class="' + (inner ? 'blk' : 'blk') + '" data-act="meal-edit" data-id="' + esc(m.id) + '" style="align-items:flex-start">' + (m.hasImg ? '<span class="photo-thumb" data-mealimg="' + esc(m.id) + '" style="display:block"></span>' : '<span class="c food">' + ic(m.source === 'foto' ? 'camera' : 'fork') + '</span>') +
     '<div class="grow"><div class="t">' + esc(m.title || SLOT_N[m.slot] || 'Comida') + ' · <span class="num">' + esc(m.time || '') + '</span></div><div class="s">' + esc((m.items || []).map(i => i.n).slice(0, 4).join(', ') + ((m.items || []).length > 4 ? '…' : '')) + '</div>' +
@@ -90,7 +91,7 @@ function mealSheetHtml(date, key) {
   const ag = agendaFor(date), m = ag.items.find(x => x.key === key);
   if (!m) return sheetHead('Comida');
   const logged = mealDone(m.slot, date), menu = mealMenuFor(date, m);
-  const tg = slotTargets(ag, nutritionTargets(ST.weight || 88, ag.kind, ag))[key] || {};
+  const tg = slotTargets(ag, nutritionTargets(ST.weight || 88, ag.kind, ag), skippedKeys(date, ag))[key] || {};
   let h = sheetHead(m.title, capFirst(fmtDateLong(date)) + ' · ' + fmtHM(m.start)) + '<div class="sheet-body">';
   ag.warnings.filter(w => w.key === key).forEach(w => { h += note('warn', esc(w.text)); });
   h += '<div class="stats"><div class="stat food"><span class="v">' + (tg.p || '—') + '<small>g</small></span><span class="k">Proteína objetivo</span></div><div class="stat"><span class="v c-carb">' + (tg.c || '—') + '<small>g</small></span><span class="k">Carbohidratos</span></div><div class="stat"><span class="v c-fat">' + (tg.f || '—') + '<small>g</small></span><span class="k">Grasas</span></div></div>';
@@ -100,7 +101,8 @@ function mealSheetHtml(date, key) {
     '<div class="mtot"><span class="p">' + menu.totals.p + ' g prot</span><span class="c">' + menu.totals.c + ' g carb</span><span class="f">' + menu.totals.f + ' g grasa</span><span class="k">' + menu.totals.kcal + ' kcal</span></div>' + (menu.tip ? '<div class="sub">' + esc(menu.tip) + '</div>' : '') + '</div></div>';
   if (m.why) h += note('food', esc(m.why));
   h += '<div class="grid2"><button class="btn lime" data-act="meal-ate" data-date="' + date + '" data-key="' + key + '">' + ic('check') + 'Comí esto</button><button class="btn" data-act="meal-photo" data-date="' + date + '" data-slot="' + m.slot + '">' + ic('camera') + 'Foto</button></div>' +
-    '<div class="grid2"><button class="btn sm" data-act="meal-text" data-date="' + date + '" data-slot="' + m.slot + '">' + ic('pen') + 'Escribir</button><button class="btn sm" data-act="meal-gallery" data-date="' + date + '" data-slot="' + m.slot + '">' + ic('image') + 'Galería</button></div>';
+    '<div class="grid2"><button class="btn sm" data-act="meal-text" data-date="' + date + '" data-slot="' + m.slot + '">' + ic('pen') + 'Escribir</button><button class="btn sm" data-act="meal-gallery" data-date="' + date + '" data-slot="' + m.slot + '">' + ic('image') + 'Galería</button></div>' +
+    (!logged.length && !m.optional ? '<button class="btn sm ghost block" data-act="meal-skip" data-date="' + date + '" data-key="' + key + '">' + ic('x') + 'No la comí</button>' : '');
   h += '<div class="field"><span class="lab">Hora</span>' + timeAdjustHtml(date, m) + '</div>';
   return h + '</div>';
 }
@@ -110,18 +112,33 @@ function slotForTime(date, hhmm) {
   for (const m of meals) { const d = Math.abs(m.start - t); if (d < bd) { bd = d; best = m; } }
   return best && bd <= 75 ? best.slot : 'extra';
 }
+/* Hora con la que se guarda una comida: la actual si se registra cerca de su horario;
+   la planificada si se registra tarde (o es de otro día), para no perder la hora real. */
+function mealLogTime(date, it) {
+  const now = nowMin();
+  if (date === todayStr() && (!it || (now >= it.start - 60 && now <= it.end + 45))) return fmtHM(now);
+  return it ? fmtHM(it.start) : '12:30';
+}
 function eatSuggested(date, key) {
   const m = agendaFor(date).items.find(x => x.key === key); if (!m) return;
   const menu = mealMenuFor(date, m);
   const id = uid('m');
-  const time = date === todayStr() ? fmtHM(Math.min(nowMin(), m.end + 60)) : fmtHM(m.start);
+  const time = mealLogTime(date, m);
   put('meals', id, { date, time, slot: m.slot, title: m.title, items: menu.items.map(i => Object.assign({}, i, { src: 'sugerido' })), source: 'sugerido', name: menu.name }).then(() => toast(m.title + ' registrado · ' + menu.totals.p + ' g de proteína.', 'ok', { label: 'Deshacer', act: 'meal-undo', data: { id } }));
+  closeAllSheets();
+}
+/* «No comí»: queda registrada como saltada; su parte del día pasa a las demás comidas */
+function skipMeal(date, key) {
+  const m = agendaFor(date).items.find(x => x.key === key); if (!m) return;
+  const id = uid('m');
+  put('meals', id, { date, time: fmtHM(m.start), slot: m.slot, title: m.title, items: [], skipped: true, source: 'saltada' }).then(() => toast(m.title + ': no la comiste.', 'info', { label: 'Deshacer', act: 'meal-undo', data: { id } }));
   closeAllSheets();
 }
 
 /* ---------- Registro: foto, texto, buscador ---------- */
 function mealDraftNew(date, slot, source) {
-  const time = date === todayStr() ? fmtHM(nowMin()) : '12:30';
+  const it = slot ? agendaFor(date).items.find(x => x.kind === 'meal' && x.slot === slot) : null;
+  const time = mealLogTime(date, it);
   UI.meal = { id: null, date, slot: slot || slotForTime(date, time), time, items: [], img: null, source: source || 'manual', note: '', busy: false, error: '', photoTime: false };
 }
 function pickPhoto(date, slot, gallery) {

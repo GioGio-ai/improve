@@ -35,6 +35,7 @@ function blockSheetHtml(date, key) {
   const b = it.block, today = todayStr(), past = date < today, dn = blockDone(b, date);
   let h = sheetHead(it.title + ' · ' + b.short, capFirst(fmtDateLong(date)) + ' · ' + fmtHM(it.start) + '–' + fmtHM(it.end) + (b.intense ? ' · <span class="c-load">intenso</span>' : '')) + '<div class="sheet-body">';
   ag.warnings.filter(w => w.key === key).forEach(w => { h += note('warn', esc(w.text)); });
+  if (it.kind === 'recup' && date === today) { const left = pendingItems(today).filter(p => p.it.key !== key); if (left.length) h += '<button class="mini-alert blue" data-act="pend-all" style="width:100%"><span class="mini-main">' + ic('info') + '<span class="grow"><span class="t">Antes de dormir: ' + plural(left.length, 'registro pendiente', 'registros pendientes') + '</span><span class="s">' + esc(left.map(pendTitle).join(' · ')) + '</span></span>' + ic('chev') + '</span></button>'; }
   h += '<div class="stack-sm">' + b.sessions.map(s => { const log = findLog(date, s.type); return '<button class="blk' + (log && log.done !== false ? ' done' : '') + '" data-act="session" data-date="' + date + '" data-type="' + s.type + '"><span class="c' + (s.intense ? ' load' : '') + '">' + ic(s.icon || 'dumb') + '</span><div class="grow"><div class="t">' + esc(log && log.modified && log.title ? log.title : s.title) + '</div><div class="s">' + esc(log ? logLine(log) : blockSub(s)) + '</div>' + (!log && s.field && s.field.kind === 'balon' ? '<div class="s fg3">' + esc(s.field.drills.map(d => d.n).join(' · ')) + '</div>' : '') + '</div>' + statusMark(log) + '</button>'; }).join('') + '</div>';
   if (b.warmup) h += '<details><summary>' + ic('flame') + 'Calentamiento · ' + b.warmup.min + ' min</summary><div class="in">' + b.warmup.items.map(w => '<div class="lrow"><span class="fg2">' + esc(w.n) + '</span><span class="sub num">' + esc(w.d || '') + '</span></div>').join('') + '</div></details>';
   if (!past || date === today) h += '<div class="field"><span class="lab">¿Dónde?</span><div class="pills">' + PLACES.map(pl => '<button type="button" class="pill' + (b.place === pl ? ' on' : '') + '" data-act="blk-place" data-date="' + date + '" data-key="' + key + '" data-v="' + pl + '" aria-pressed="' + (b.place === pl) + '">' + PLACE_NAMES[pl] + '</button>').join('') + '</div></div>';
@@ -233,7 +234,9 @@ function checkinHtml() {
     '<div class="field"><span class="lab">Sueño de anoche</span><div class="sleep-times">' + tin('bedTime', 'Me dormí', 'moon') + tin('wakeTime', 'Me levanté', 'sunrise') + '</div><div class="sleep-sum" id="ck-sum" aria-live="polite">' + ckSleepSum(v) + '</div></div>' +
     five('sleepQ', 'Calidad del sueño', 'Mala', 'Excelente', 'sleep') + five('fatigue', 'Energía', 'Agotado', 'Fresco') + five('soreness', 'Dolor muscular general', 'Mucho', 'Nada') + five('stress', 'Estrés', 'Muy alto', 'Bajo') +
     '<div class="field"><span class="lab">Dolor en el recto femoral en reposo</span>' + scaleHtml('rfPain', v.rfPain, { pain: true, act: 'ck-scale', l: '0 nada', r: '10 máximo' }) + '<span class="hint">Dolor, no cansancio ni carga muscular.</span></div>' +
-    '<button class="btn block ghost" data-act="mol-new" data-from="checkin">' + ic('plus') + '¿Alguna otra molestia? Marcar en el mapa</button>' +
+    (num(v.soreness) !== null && num(v.soreness) <= 2
+      ? '<button class="btn block mol-cta" data-act="mol-new" data-from="checkin">' + ic('plus') + '¿Dónde lo sientes? Marca todas las zonas</button>'
+      : '<button class="btn block ghost" data-act="mol-new" data-from="checkin">' + ic('plus') + '¿Alguna otra molestia? Marcar en el mapa</button>') +
     '<div class="sheet-foot"><button class="btn primary lg" data-act="ck-save">Guardar</button></div></div>';
 }
 function saveCheckin() {
@@ -246,10 +249,15 @@ function saveCheckin() {
     const ag = agendaFor(date), gym = ag.items.find(x => x.key === 'gym');
     const moved = gym && gym.lateShift && !blockDone(gym.block, date).all;
     const clash = moved && rsHoyCard(ag, date) !== '';
+    // Dolor muscular alto y nada marcado hoy: abre el mapa una vez para ubicarlo
+    if (num(v.soreness) !== null && num(v.soreness) <= 2 && !molMarkedOn(date) && ckMolAsked() !== date) { ckMolAsked(date); setTimeout(() => openMolestia({ from: 'checkin', prompt: 'Dolor muscular alto: marca dónde lo sientes' }), 260); }
     toast(num(v.rfPain) >= 3 ? 'Guardado. Hoy nada intenso para el recto femoral.' : clash ? 'Guardado. Te levantaste tarde: reorganiza el gimnasio arriba.' : moved ? 'Guardado. El gimnasio pasa a las ' + fmtHM(gym.start) + '.' : sleepH < 6 ? 'Guardado. Sueño corto: una serie menos en accesorios y siesta.' : sc < 50 ? 'Guardado. Hoy una serie menos en accesorios.' : 'Check-in guardado.', num(v.rfPain) >= 3 || sc < 50 || sleepH < 6 || moved ? 'warn' : 'ok');
   });
   closeSheet();
 }
+
+function molMarkedOn(date) { return molList().some(m => m.fecha === date || (m.updates || []).some(u => u.fecha === date)); }
+function ckMolAsked(set) { try { if (set) localStorage.setItem('improve:ck-mol', set); return localStorage.getItem('improve:ck-mol') || ''; } catch (e) { return ''; } }
 
 /* ---------- Hecha tal cual / No la hice ---------- */
 function openQuickDone(date, types, est) {

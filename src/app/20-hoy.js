@@ -19,7 +19,6 @@ function viewHoy(st, today) {
   h += pendingPainPrompts(st, today);
   if (isToday) h += molHoyHtml(day, today);
   if (isToday) h += rsHoyCard(ag, today);
-  if (isToday) h += pastBlockPrompts(ag, today);
   h += readinessCard(ci, adv);
   h += weekStrip(today, date);
   h += isToday ? nextHero(day, ag, today) : dayHero(day, date, today);
@@ -58,22 +57,127 @@ function pendingPainPrompts(st, today) {
       scaleHtml('pn', null, { pain: true, act: 'pn', data: ' data-id="' + esc(s.id) + '"', l: '0 nada', r: '≥ 3 baja de nivel' }) + '<p class="sub">Esta respuesta decide si subes de nivel.</p></div></section>';
   }).join('');
 }
-/* Bloque de hoy que ya pasó su horario y nadie registró: pregunta en vez de desaparecer solo */
-function pastBlockPrompts(ag, today) {
-  const now = nowMin();
-  const items = ag.items.filter(x => (x.kind === 'train' || x.kind === 'recup') && x.end < now - 30 && !blockDone(x.block, today).all);
-  return items.map(it => {
-    const b = it.block, pend = b.sessions.find(s => !findLog(today, s.type));
-    if (!pend) return '';
-    const pendTypes = b.sessions.filter(s => !findLog(today, s.type)).map(s => s.type).join(',');
-    return '<section class="card t-blue tight"><div class="stack-sm"><div class="micro" style="color:var(--blue-ink)">Sin registrar</div><div class="h3">¿Hiciste ' + esc(it.title.toLowerCase()) + ' · ' + esc(b.short) + '?</div>' +
-      '<div class="grid3"><button class="btn sm" data-act="block-done" data-date="' + today + '" data-key="' + it.key + '">' + ic('check') + 'Tal cual</button>' +
-      '<button class="btn sm" data-act="did-other" data-date="' + today + '" data-type="' + pend.type + '">' + ic('edit') + 'Lo que hice</button>' +
-      '<button class="btn sm ghost" data-act="resched" data-date="' + today + '" data-types="' + esc(pendTypes) + '">' + ic('x') + 'No la hice</button></div></div></section>';
-  }).join('');
+/* ---------- Pendientes: lo que ya pasó y nadie registró ----------
+   Comidas a los 15 min de su final y entrenos a los 30 min. Lo de ayer se pide hasta el mediodía.
+   Nada desaparece solo: queda en la figura de inicio hasta registrarlo, marcar «No comí» o «No la hice». */
+const PEND_GRACE = { meal: 15, train: 30 };
+const PEND_YESTERDAY_UNTIL = 12 * 60;
+const MEAL_ART = { desayuno: 'el desayuno', post: 'el post entreno', colacion: 'la media mañana', almuerzo: 'el almuerzo', merienda: 'la merienda', cena: 'la cena' };
+function blockSkipped(block, date) { return block.sessions.every(s => { const l = findLog(date, s.type); return !!l && l.done === false; }); }
+function pendingFor(date, cutoff) {
+  const ag = agendaFor(date), out = [];
+  for (const it of ag.items) {
+    if (it.marker || it.optional) continue;
+    if (it.kind === 'meal') {
+      if (it.end + PEND_GRACE.meal > cutoff || mealDone(it.slot, date).length) continue;
+      const anchor = it.anchor ? ag.items.find(x => x.key === it.anchor) : null;
+      if (anchor && anchor.block && blockSkipped(anchor.block, date)) continue;
+      out.push({ date, it, kind: 'meal' });
+    } else if (it.kind === 'train' || it.kind === 'recup') {
+      if (it.end + PEND_GRACE.train > cutoff) continue;
+      const pend = it.block.sessions.filter(s => !findLog(date, s.type));
+      if (pend.length) out.push({ date, it, kind: 'train', pend });
+    }
+  }
+  return out;
+}
+/* Primero lo de hoy; lo de ayer después (hasta el mediodía, salvo que se descarte) */
+function pendingItems(today, now) {
+  if (!S.data.profile || !ST) return [];
+  now = now === undefined ? nowMin() : now;
+  const yd = addDays(today, -1);
+  const y = now < PEND_YESTERDAY_UNTIL && pendDismissed() !== yd ? pendingFor(yd, 1e9) : [];
+  return pendingFor(today, now).concat(y);
+}
+function pendDismissed() { try { return localStorage.getItem('improve:pend-ayer') || ''; } catch (e) { return ''; } }
+function pendDismissYesterday() { try { localStorage.setItem('improve:pend-ayer', addDays(todayStr(), -1)); } catch (e) { /* sin almacenamiento */ } closeAllSheets(); scheduleRender(); toast('Lo de ayer ya no se pide.', 'info'); }
+function pendTitle(p) { return p.kind === 'meal' ? p.it.title : p.it.title + ' · ' + p.it.block.short; }
+function pendQuestion(p) { return p.kind === 'meal' ? '¿Comiste ' + (MEAL_ART[p.it.slot] || p.it.title.toLowerCase()) + '?' : '¿Hiciste ' + p.it.title.toLowerCase() + ' · ' + p.it.block.short + '?'; }
+function pendWhen(p, today, now) {
+  if (p.date !== today) return 'Ayer · ' + fmtHM(p.it.start);
+  const m = Math.max(0, now - p.it.start);
+  return fmtHM(p.it.start) + (m < 60 ? ' · hace ' + m + ' min' : m < 10 * 60 ? ' · hace ' + Math.floor(m / 60) + ' h' : '');
+}
+/* Acción rápida de cada pendiente: comí lo sugerido / hecha tal cual */
+function pendQuickBtn(p, cls) {
+  return p.kind === 'meal'
+    ? '<button class="btn sm ' + cls + '" data-act="meal-ate" data-date="' + p.date + '" data-key="' + p.it.key + '">' + ic('check') + 'Comí esto</button>'
+    : '<button class="btn sm ' + cls + '" data-act="block-done" data-date="' + p.date + '" data-key="' + p.it.key + '">' + ic('check') + 'Tal cual</button>';
+}
+function pendRowHtml(p, today, now) {
+  return '<div class="pend-row"><button class="pend-main" data-act="pend-opts" data-date="' + p.date + '" data-key="' + p.it.key + '" aria-label="' + esc(pendTitle(p) + ', ' + pendWhen(p, today, now) + ', más opciones') + '">' +
+    '<span class="c ' + (p.kind === 'meal' ? 'food' : 'blue') + '">' + ic(p.kind === 'meal' ? 'fork' : sessIcon(p.it.block.sessions[0].type)) + '</span>' +
+    '<span class="grow"><span class="t">' + esc(pendTitle(p)) + '</span><span class="s">' + esc(pendWhen(p, today, now)) + '</span></span>' + ic('chev') + '</button>' +
+    pendQuickBtn(p, 'white') + '</div>';
+}
+const PEND_MAX_IN_HERO = 3;
+function pendingPanel(pend, today, now, noHead) {
+  if (!pend.length) return '';
+  const shown = pend.slice(0, PEND_MAX_IN_HERO);
+  return '<div class="pend" role="group" aria-label="Sin registrar">' + (noHead ? '' : '<div class="pend-h"><span class="dot"></span>Sin registrar · ' + pend.length + '</div>') +
+    shown.map(p => pendRowHtml(p, today, now)).join('') +
+    (pend.length > shown.length ? '<button class="linkbtn pend-more" data-act="pend-all">Ver los ' + pend.length + ' pendientes' + ic('chev') + '</button>' : '') + '</div>';
+}
+/* Figura de inicio cuando lo único que queda son pendientes */
+function pendingHero(pend, today, now) {
+  if (pend.length === 1) {
+    const p = pend[0];
+    return '<section class="hero k-pend"><span class="tag"><span class="d"></span>Sin registrar · ' + esc(pendWhen(p, today, now)) + '</span><div class="t">' + esc(pendQuestion(p)) + '</div>' +
+      '<div class="meta"><span>Regístralo para que el plan y la comida se ajusten.</span></div>' +
+      '<div class="cta">' + pendQuickBtn(p, 'white lg').replace('btn sm', 'btn') + '<button class="btn glass lg" data-act="pend-opts" data-date="' + p.date + '" data-key="' + p.it.key + '">' + ic('more') + 'Otras opciones</button></div></section>';
+  }
+  return '<section class="hero k-pend"><span class="tag"><span class="d"></span>Sin registrar</span><div class="t">Te faltan ' + pend.length + ' registros</div>' +
+    '<div class="meta"><span>Lo que no registras no cuenta para el plan ni para la comida.</span></div>' + pendingPanel(pend, today, now, true) + '</section>';
+}
+/* Hoja con todas las opciones de un pendiente */
+function openPendOpts(date, key) { openSheet({ id: 'pend-' + date + '-' + key, render: () => pendOptsHtml(date, key) }); }
+function pendOptRow(act, attrs, icon, tone, title, sub) {
+  return '<button class="blk" data-act="' + act + '" ' + attrs + '><span class="c ' + (tone || '') + '">' + ic(icon) + '</span><div class="grow"><div class="t">' + esc(title) + '</div>' + (sub ? '<div class="s">' + esc(sub) + '</div>' : '') + '</div>' + ic('chev') + '</button>';
+}
+function pendOptsHtml(date, key) {
+  const it = agendaFor(date).items.find(x => x.key === key);
+  if (!it) return sheetHead('Registrar') + '<div class="sheet-body"><p class="sub">Este bloque ya no está en la agenda.</p></div>';
+  const today = todayStr(), p = pendingItems(today).find(x => x.date === date && x.it.key === key);
+  const head = sheetHead(it.kind === 'meal' ? it.title : it.title + ' · ' + it.block.short, (date === today ? 'Hoy' : capFirst(fmtDateLong(date))) + ' · ' + fmtHM(it.start) + '–' + fmtHM(it.end));
+  if (!p) return head + '<div class="sheet-body">' + note('good', 'Ya está registrado.') + '<button class="btn block" data-act="close">Listo</button></div>';
+  const d = 'data-date="' + date + '"';
+  let h = head + '<div class="sheet-body"><div class="stack-sm">';
+  if (it.kind === 'meal') {
+    const menu = mealMenuFor(date, it);
+    h += pendOptRow('meal-ate', d + ' data-key="' + key + '"', 'check', 'lime', 'Comí lo sugerido', menu.name + ' · ' + menu.totals.p + ' g de proteína') +
+      pendOptRow('meal-photo', d + ' data-slot="' + it.slot + '"', 'camera', '', 'Registrar con foto', 'Se guarda a la hora planificada; puedes cambiarla') +
+      pendOptRow('meal-text', d + ' data-slot="' + it.slot + '"', 'pen', '', 'Escribir lo que comí', 'Ej.: 3 huevos, mandioca y jugo') +
+      pendOptRow('meal-skip', d + ' data-key="' + key + '"', 'x', 'mute', 'No la comí', 'Su parte del día pasa a las otras comidas');
+  } else {
+    const types = p.pend.map(s => s.type);
+    h += pendOptRow('block-done', d + ' data-key="' + key + '"', 'check', 'lime', 'Hecha tal cual', 'Minutos y esfuerzo en un paso') +
+      pendOptRow('did-other', d + ' data-type="' + types[0] + '"', 'edit', '', 'Registrar lo que hice', 'Ejercicios, series y cambios') +
+      pendOptRow('resched', d + ' data-types="' + esc(types.join(',')) + '"', 'x', 'mute', 'No la hice', 'Elige si se reprograma o se pierde') +
+      pendOptRow('ag-open', d + ' data-key="' + key + '"', 'list', '', 'Ver el bloque', it.block.sessions.map(s => s.title).join(' · '));
+  }
+  return h + '</div></div>';
+}
+/* Número de pendientes en la pestaña Hoy */
+function markNavBadge() {
+  const a = $('#nav a[data-nav="hoy"]'); if (!a) return;
+  const n = pendingItems(todayStr()).length;
+  let b = a.querySelector('.badge');
+  if (!n) { if (b) b.remove(); a.setAttribute('aria-label', 'Hoy'); return; }
+  if (!b) { b = document.createElement('i'); b.className = 'badge'; b.setAttribute('aria-hidden', 'true'); a.appendChild(b); }
+  b.textContent = n > 9 ? '9+' : String(n);
+  a.setAttribute('aria-label', 'Hoy, ' + plural(n, 'registro pendiente', 'registros pendientes'));
+}
+function openPendAll() { openSheet({ id: 'pend-all', render: pendAllHtml }); }
+function pendAllHtml() {
+  const today = todayStr(), now = nowMin(), pend = pendingItems(today, now);
+  let h = sheetHead('Sin registrar', pend.length ? plural(pend.length, 'pendiente', 'pendientes') : 'Todo al día') + '<div class="sheet-body">';
+  if (!pend.length) return h + note('good', 'No queda nada por registrar.') + '<button class="btn block" data-act="close">Listo</button></div>';
+  const yN = pend.filter(p => p.date !== today).length;
+  return h + '<div class="pend in-sheet">' + pend.map(p => pendRowHtml(p, today, now)).join('') + '</div>' +
+    (yN ? '<button class="btn sm ghost block" data-act="pend-dismiss">' + ic('x') + 'No registrar lo de ayer (' + yN + ')</button>' : '') + '</div>';
 }
 function readinessCard(ci, adv) {
-  if (!ci) return '<button class="card t-blue tight" data-act="checkin" style="text-align:left;width:100%"><div class="row nowrap"><div class="tile c" style="width:44px;height:44px;border-radius:14px;display:grid;place-items:center;background:var(--blue-soft);color:var(--blue-ink)">' + ic('sunrise') + '</div><div class="grow"><div class="h3">¿Cómo amaneciste?</div><div class="sub">Sueño, energía y dolor · 30 s. Ajusta el plan de hoy.</div></div>' + ic('chev') + '</div></button>';
+  if (!ci) return '<button class="card t-blue tight" data-act="checkin" style="text-align:left;width:100%"><div class="row nowrap"><div class="tile c" style="width:44px;height:44px;min-height:44px;padding:0;flex:none;border-radius:14px;display:grid;place-items:center;background:var(--blue-soft);color:var(--blue-ink)">' + ic('sunrise') + '</div><div class="grow"><div class="h3">¿Cómo amaneciste?</div><div class="sub">Sueño, energía y dolor · 30 s. Ajusta el plan de hoy.</div></div>' + ic('chev') + '</div></button>';
   const sc = adv.score, tone = readinessTone(sc), grad = tone === 'lime' ? 'lg-lime' : tone === 'load' ? 'lg-load' : 'lg-blue';
   const pain = num(ci.rfPain), sleepH = num(ci.sleepH);
   const label = sc >= 70 ? 'Listo para cargar' : sc >= 50 ? 'Estado normal' : 'Estado bajo';
@@ -100,7 +204,7 @@ function blockDone(block, date) {
 }
 function mealDone(slot, date) { return mealsFor(date).filter(m => m.slot === slot); }
 function nextHero(day, ag, today) {
-  const now = nowMin();
+  const now = nowMin(), pend = pendingItems(today, now), panel = pendingPanel(pend, today, now);
   const cand = ag.items.filter(x => !x.marker && x.kind !== 'nap' && x.end > now - 30);
   const nTrain = cand.find(it => (it.kind === 'train' || it.kind === 'recup') && !blockDone(it.block, today).all) || null;
   const nMeal = cand.find(it => it.kind === 'meal' && !it.optional && !mealDone(it.slot, today).length && it.end > now - 15) || null;
@@ -109,6 +213,7 @@ function nextHero(day, ag, today) {
     if (nTrain.start - now <= 90 || nTrain.start <= nMeal.start) { nx = nTrain; side = nMeal; } else { nx = nMeal; side = nTrain; }
   } else nx = nTrain || nMeal;
   if (!nx) {
+    if (pend.length) return pendingHero(pend, today, now);
     const trainings = ag.items.filter(x => x.kind === 'train' || x.kind === 'recup');
     const allDone = trainings.length && trainings.every(t => blockDone(t.block, today).all);
     if (!trainings.length) return '<section class="hero k-rest">' + photoImg('f4') + '<span class="tag"><span class="d rest"></span>Hoy · descanso</span><div class="t">Recupera</div><div class="meta"><span>' + ic('moon') + 'Sueño de 9 h o más</span><span>' + ic('leaf') + 'Paseo y movilidad suave</span></div><div class="cta"><button class="btn white" data-act="guide" data-g="respiracion">' + ic('wind') + 'Respiración 5 min</button></div></section>';
@@ -121,7 +226,7 @@ function nextHero(day, ag, today) {
     const menu = mealMenuFor(today, nx);
     return '<section class="hero" style="background:linear-gradient(160deg,#159c84 0%,#0d5a52 50%,#062421 100%)"><span class="tag"><span class="d" style="background:var(--teal)"></span>' + when + ' · ' + t + '</span><div class="t">' + esc(nx.title) + '</div>' +
       '<div class="meta"><span>' + esc(menu.name) + '</span><span class="num">' + menu.totals.p + ' g prot · ' + menu.totals.c + ' g carb</span></div>' +
-      '<div class="cta"><button class="btn white" data-act="ag-open" data-date="' + today + '" data-key="' + nx.key + '">' + ic('camera') + 'Registrar</button><button class="btn glass" data-act="meal-ate" data-date="' + today + '" data-key="' + nx.key + '">' + ic('check') + 'Comí esto</button></div></section>';
+      '<div class="cta"><button class="btn white" data-act="ag-open" data-date="' + today + '" data-key="' + nx.key + '">' + ic('camera') + 'Registrar</button><button class="btn glass" data-act="meal-ate" data-date="' + today + '" data-key="' + nx.key + '">' + ic('check') + 'Comí esto</button></div>' + panel + '</section>';
   }
   const b = nx.block, main = b.sessions.find(s => STRENGTH_TYPES.includes(s.type)) || b.sessions.find(s => s.intense) || b.sessions[0];
   const dn = blockDone(b, today);
@@ -130,7 +235,7 @@ function nextHero(day, ag, today) {
     '<span class="tag"><span class="d' + (b.intense ? ' load' : '') + '"></span>' + when + ' · ' + t + (b.intense ? ' · intenso' : '') + '</span>' +
     '<div class="t">' + esc(nx.title) + ' · ' + esc(b.short) + '</div>' +
     '<div class="meta"><span>' + ic('clock') + '≈ ' + fmtDur(nx.dur) + '</span><span>' + ic('layers') + plural(steps, 'paso', 'pasos') + '</span>' + (dn.some ? '<span>' + ic('check') + 'En parte hecho</span>' : '') + ballHeroLine(b) + '</div>' +
-    '<div class="cta"><button class="btn white lg" data-act="start-block" data-date="' + today + '" data-key="' + b.key + '">' + ic('play') + (dn.some ? 'Seguir' : 'Empezar') + '</button><button class="btn glass lg" data-act="ag-open" data-date="' + today + '" data-key="' + nx.key + '" aria-label="Ver detalle">' + ic('list') + '</button></div></section>' + sideRow;
+    '<div class="cta"><button class="btn white lg" data-act="start-block" data-date="' + today + '" data-key="' + b.key + '">' + ic('play') + (dn.some ? 'Seguir' : 'Empezar') + '</button><button class="btn glass lg" data-act="ag-open" data-date="' + today + '" data-key="' + nx.key + '" aria-label="Ver detalle">' + ic('list') + '</button></div>' + panel + '</section>' + sideRow;
 }
 function ballHeroLine(b) {
   const bs = b.sessions.find(s => s.field && s.field.kind === 'balon' && s.field.drills.length);
@@ -190,23 +295,34 @@ function timelineHtml(ag, date, today) {
         '<span class="grip" data-drag="' + it.key + '" data-date="' + date + '" role="button" aria-label="Mover ' + esc(it.title) + '">' + ic('grip') + '</span></span></div>';
       continue;
     }
-    let done = false, sub = it.sub || '';
-    if (it.kind === 'train' || it.kind === 'recup') { const d = blockDone(it.block, date); done = d.all; sub = it.block.short + ' · ' + fmtDur(it.dur) + (d.some && !d.all ? ' · en parte' : ''); }
-    else if (it.kind === 'meal') { const ms = mealDone(it.slot, date); done = ms.length > 0; if (done) { const t = sumItems([].concat(...ms.map(m => m.items || []))); sub = 'Registrado · ' + t.p + ' g prot · ' + t.kcal + ' kcal'; } else sub = mealMenuFor(date, it).name; }
+    let done = false, skipped = false, sub = it.sub || '';
+    if (it.kind === 'train' || it.kind === 'recup') { const d = blockDone(it.block, date); done = d.all; skipped = done && blockSkipped(it.block, date); sub = skipped ? 'No la hiciste' : it.block.short + ' · ' + fmtDur(it.dur) + (d.some && !d.all ? ' · en parte' : ''); if (skipped) done = false; }
+    else if (it.kind === 'meal') {
+      const ms = mealDone(it.slot, date), eaten = ms.filter(m => !m.skipped);
+      skipped = ms.length > 0 && !eaten.length; done = eaten.length > 0;
+      if (done) { const t = sumItems([].concat(...eaten.map(m => m.items || []))); sub = 'Registrado · ' + t.p + ' g prot · ' + t.kcal + ' kcal'; } else sub = skipped ? 'No la comiste' : mealMenuFor(date, it).name;
+    }
     const compact = l.hgt < 54;
     const isNow = now !== null && now >= it.start && now < it.end;
-    const cls = 'tl-blk k-' + it.kind + (it.intense ? ' int' : '') + (it.optional ? ' optional' : '') + (done ? ' done' : '') + (warnKeys.has(it.key) ? ' warn' : '') + (compact ? ' compact' : '') + (isNow ? ' now-on' : '');
+    const late = now !== null && !done && !skipped && !it.optional && !it.marker && it.kind !== 'nap' && now > it.end + (it.kind === 'meal' ? PEND_GRACE.meal : PEND_GRACE.train);
+    if (late) sub = 'Sin registrar · ' + sub;
+    const cls = 'tl-blk k-' + it.kind + (it.intense ? ' int' : '') + (it.optional ? ' optional' : '') + (done ? ' done' : '') + (skipped ? ' skipped' : '') + (late ? ' late' : '') + (warnKeys.has(it.key) ? ' warn' : '') + (compact ? ' compact' : '') + (isNow ? ' now-on' : '');
     h += '<div class="' + cls + '" data-key="' + it.key + '" style="top:' + l.top + 'px;height:' + l.hgt + 'px">' +
       '<button class="main" data-act="ag-open" data-date="' + date + '" data-key="' + it.key + '" aria-label="' + esc(it.title + ', ' + fmtHM(it.start) + ' a ' + fmtHM(it.end) + (sub ? ', ' + sub : '') + (done ? ', hecho' : '')) + '"><span class="tm">' + fmtHM(it.start) + (compact ? '' : '–' + fmtHM(it.end)) + '</span><span class="ti">' + esc(it.title) + (compact && sub ? '<span class="su-in"> · ' + esc(sub) + '</span>' : '') + '</span>' + (sub && !compact ? '<span class="su">' + esc(sub) + '</span>' : '') + '</button>' +
-      '<div class="side">' + (done ? '<span class="ok" aria-label="Hecho">' + ic('check') + '</span>' : '') + (it.movable ? '<span class="grip" data-drag="' + it.key + '" data-date="' + date + '" role="button" tabindex="0" aria-label="Mover ' + esc(it.title) + '">' + ic('grip') + '</span>' : '') + '</div></div>';
+      '<div class="side">' + (done ? '<span class="ok" aria-label="Hecho">' + ic('check') + '</span>' : skipped ? '<span class="ok skip" aria-label="No hecho">' + ic('x') + '</span>' : '') + (it.movable ? '<span class="grip" data-drag="' + it.key + '" data-date="' + date + '" role="button" tabindex="0" aria-label="Mover ' + esc(it.title) + '">' + ic('grip') + '</span>' : '') + '</div></div>';
   }
   if (now !== null && now >= r0 && now <= r1) h += '<div class="tl-now" style="top:' + ((now - r0) * PX_MIN) + 'px"><span>' + fmtHM(now) + '</span></div>';
   return h + '</div>';
 }
+/* Comidas marcadas «No comí» en un día: su parte se reparte entre las demás */
+function skippedKeys(date, ag) {
+  const ms = mealsFor(date); if (!ms.some(m => m.skipped)) return null;
+  return new Set(ag.items.filter(x => x.kind === 'meal' && ms.some(m => m.slot === x.slot && m.skipped) && !ms.some(m => m.slot === x.slot && !m.skipped)).map(x => x.key));
+}
 function mealMenuFor(date, it) {
   const ag = agendaFor(date);
   const T = nutritionTargets(ST.weight || 88, ag.kind, ag);
-  const tg = slotTargets(ag, T)[it.key] || { p: 35, c: 80, f: 15 };
+  const tg = slotTargets(ag, T, skippedKeys(date, ag))[it.key] || { p: 35, c: 80, f: 15 };
   return buildMenu(it.slot, tg, date, UI.menuVar[date + ':' + it.key] || 0);
 }
 function nutritionStrip(date, ag) {

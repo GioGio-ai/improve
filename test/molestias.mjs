@@ -76,6 +76,34 @@ const baseTypes = base.day.sessions.map(s => s.type);
   const ins = molestiaInsights(st, today);
   ok(ins.length === 1 && /Copenhagen/.test(ins[0].tip) && /zurda/.test(ins[0].tip), 'patrón aductor: ' + JSON.stringify(ins));
 }
+// 9b) Patrón por días: una sola molestia confirmada con «¿Sigue?» dos días más cuenta 3 días
+{
+  const st = plan([mol({ fecha: addDays(today, -2), zona: 'isquio', lado: 'i', tipo: 'cargado', nivel: 4, updates: [{ fecha: addDays(today, -1), estado: 'igual', nivel: 4 }, { fecha: today, estado: 'igual', nivel: 4 }] })], B).st;
+  const ins = molestiaInsights(st, today);
+  ok(ins.length === 1 && ins[0].n === 3, 'patrón por días: ' + JSON.stringify(ins.map(x => x.n)));
+}
+// 9c) Isquios en los dos lados: un ejercicio bilateral pierde UNA serie (no dos) y sale una sola nota de zona
+{
+  const p = plan([mol({ zona: 'isquio', lado: 'd', tipo: 'cargado', nivel: 5 }), mol({ zona: 'isquio', lado: 'i', tipo: 'cargado', nivel: 5 })], B);
+  const bs = base.day.sessions.flatMap(s => loads(s, ['isquios'])).filter(b => b.spec && b.spec.s > 1);
+  const ms = p.day.sessions.flatMap(s => s.items || []);
+  bs.forEach(b => { const m = ms.find(x => x.id === b.id) || ms.find(x => x.mol && b.slot && x.slot === b.slot); if (m) ok(m.spec.s === b.spec.s - 1, 'isquios ×2: ' + b.id + ' ' + b.spec.s + '→' + m.spec.s); });
+  const notes = (p.day.molAdj || []).filter(a => !a.fatiga);
+  ok(notes.length === 1 && /ambos lados/.test(notes[0].text) && (notes[0].ids || []).length === 2, 'isquios ×2: notas ' + JSON.stringify(notes.map(a => a.text)));
+}
+// 9d) Fatiga general: isquios y gemelos en las dos piernas → aviso, sprint ≤ S2 y una serie menos en accesorios
+{
+  const four = ['isquio', 'pantorrilla'].flatMap(z => ['d', 'i'].map(l => mol({ zona: z, lado: l, tipo: 'cargado', nivel: 4 })));
+  const p = plan(four, B);
+  const fat = (p.day.molAdj || []).find(a => a.fatiga);
+  ok(!!fat && fat.ids.length === 4, 'fatiga general sin aviso: ' + JSON.stringify((p.day.molAdj || []).map(a => a.text)));
+  const spr = p.day.sessions.find(x => x.type === 'sprint');
+  if (spr) ok(spr.level <= 2, 'fatiga general: sprint S' + spr.level);
+  const acc = p.day.sessions.flatMap(s => s.items || []).filter(it => it.cutFat);
+  const any = base.day.sessions.flatMap(s => s.items || []).some(it => it.prio >= 2 && it.spec && it.spec.s > 2);
+  if (any) ok(acc.length > 0, 'fatiga general: ningún accesorio con una serie menos');
+  ok(!p.day.sessions.flatMap(s => s.items || []).some(it => it.cutFat && it.cutState), 'fatiga general: doble recorte con el estado');
+}
 // 10) Proyección intacta sin molestias
 { const p = plan([], {}); const pr = E.project(p.st, today); ok(pr.phases[4] || pr.phases[5], 'proyección vacía'); }
 
@@ -142,7 +170,72 @@ try {
   await card.scrollIntoViewIfNeeded();
   await shot('progreso-molestias');
   ok(await card.locator('.bmap').count() === 2, 'Progreso sin mapa de molestias');
+  // 12) Varias zonas a la vez: ambos lados, aplicar a todas y un solo guardado
+  await page.evaluate(() => { location.hash = '#hoy'; });
+  await page.waitForTimeout(500);
+  const before = Object.keys(await db()).length;
+  await click('[data-act="mol-new"]');
+  await page.waitForSelector('.bmap.m-select');
+  await click('[data-act="mol-view"][data-v="back"]');
+  await click('[data-act="mol-ambos"]');
+  await page.locator('polygon[data-act="mol-zone"][data-z="pantorrilla"][data-s="d"]').first().dispatchEvent('click');
+  await page.waitForTimeout(150);
+  await click('[data-act="mol-lvl"][data-v="5"]');
+  await page.locator('polygon[data-act="mol-zone"][data-z="gluteo"][data-s="d"]').first().dispatchEvent('click');
+  await page.waitForTimeout(150);
+  ok(await page.locator('.mol-row').count() === 4, 'ambos lados: filas = ' + await page.locator('.mol-row').count());
+  await click('[data-act="mol-lvl"][data-v="6"]');
+  await click('[data-act="mol-all"]');
+  await shot('varias-zonas');
+  ok(/Guardar 4/.test(await page.locator('[data-act="mol-save"]').innerText()), 'botón sin «Guardar 4»');
+  ok(/Fatiga en varias zonas/.test(await page.locator('.sheet').innerText()), 'vista previa sin fatiga general');
+  await click('[data-act="mol-save"]');
+  await page.waitForTimeout(600);
+  const after = await db();
+  // La pantorrilla izquierda ya estaba activa (la de ayer): se actualiza; las otras tres se crean con un grupo común
+  const grp = Object.values(after).filter(m => m.fecha === today && ['pantorrilla', 'gluteo'].includes(m.zona));
+  ok(grp.length === 3 && grp.every(m => m.nivel === 6 && m.tipo === 'cargado') && new Set(grp.map(m => m.grupo)).size === 1, 'guardado múltiple: ' + JSON.stringify(grp.map(m => [m.zona, m.lado, m.nivel, m.grupo])));
+  const ayer = after['mol-ayer'];
+  ok(ayer && ayer.updates.some(u => u.fecha === today && u.nivel === 6), 'la activa de ayer no se actualizó: ' + JSON.stringify(ayer && ayer.updates));
+  ok(Object.keys(after).length === before + 3, 'se duplicó una zona activa: ' + (Object.keys(after).length - before));
+  // Volver a marcar una zona activa la actualiza (no la duplica)
+  await click('[data-act="mol-new"]');
+  await page.waitForSelector('.bmap.m-select');
+  await click('[data-act="mol-view"][data-v="back"]');
+  await page.locator('polygon[data-act="mol-zone"][data-z="pantorrilla"][data-s="i"]').first().dispatchEvent('click');
+  await page.waitForTimeout(150);
+  ok(/se actualiza/.test(await page.locator('.mol-row').first().innerText()), 'zona activa sin «se actualiza»');
+  await click('[data-act="mol-lvl"][data-v="8"]');
+  await click('[data-act="mol-save"]');
+  await page.waitForTimeout(600);
+  const pi = Object.values(await db()).filter(m => m.zona === 'pantorrilla' && m.lado === 'i');
+  ok(pi.length === 1 && pi[0].updates.some(u => u.fecha === today && u.nivel === 8 && u.estado === 'peor'), 'actualizar zona activa: ' + JSON.stringify(pi));
+  // Deshacer el último guardado
+  const undoBtn = page.locator('#toast [data-act="mol-undo-save"]');
+  if (await undoBtn.count()) { await undoBtn.click(); await page.waitForTimeout(500); const pu = Object.values(await db()).find(m => m.zona === 'pantorrilla' && m.lado === 'i'); ok(pu && !pu.updates.some(u => u.nivel === 8) && pu.updates.some(u => u.nivel === 6), 'deshacer guardado no restauró: ' + JSON.stringify(pu && pu.updates)); }
+  else fails.push('sin «Deshacer» tras guardar');
+  ok(await page.locator('.topbar ~ .scroll-x [data-act="mol-list"]').count() >= 1, 'sin chip unido de los dos lados');
+  await shot('hoy-varias');
 } catch (e) { fails.push('PASO: ' + e.message.split('\n')[0]); await shot('ERROR'); }
+// 13) «¿Siguen?» agrupado para varias molestias de ayer
+try {
+  const st2 = JSON.parse(JSON.stringify(store));
+  st2.molestias = { 'm-a': { fecha: addDays(today, -1), hora: '20:00', zona: 'isquio', lado: 'd', tipo: 'cargado', nivel: 5, resuelta: false, updates: [], nota: '' }, 'm-b': { fecha: addDays(today, -1), hora: '20:00', zona: 'isquio', lado: 'i', tipo: 'cargado', nivel: 5, resuelta: false, updates: [], nota: '' } };
+  const ctx2 = await browser.newContext({ viewport: { width: 390, height: 844 }, deviceScaleFactor: 2, isMobile: true, hasTouch: true, locale: 'es-PY', timezoneId: 'America/Asuncion' });
+  await ctx2.addInitScript((s) => { localStorage.setItem('improve-local-v1', s); }, JSON.stringify(st2));
+  const p2 = await ctx2.newPage();
+  p2.on('pageerror', e => errors.push('pageerror: ' + e.message));
+  await p2.goto('http://127.0.0.1:8765/?local=1#hoy');
+  await p2.waitForSelector('.topbar', { timeout: 15000 });
+  await p2.waitForTimeout(500);
+  ok(await p2.locator('[data-act="mol-follow-all"]').count() === 3, 'sin «¿Siguen?» agrupado');
+  await p2.screenshot({ path: outDir + '/siguen.png' });
+  await p2.locator('[data-act="mol-follow-all"][data-v="igual"]').click();
+  await p2.waitForTimeout(500);
+  const m2 = await p2.evaluate(() => JSON.parse(localStorage.getItem('improve-local-v1')).molestias);
+  ok(['m-a', 'm-b'].every(id => m2[id].updates.some(u => u.estado === 'igual')), '«Todas igual» no guardó');
+  await ctx2.close();
+} catch (e) { fails.push('SIGUEN: ' + e.message.split('\n')[0]); }
 await browser.close();
 const all2 = fails.concat(errors);
 console.log('molestias · fallos:', all2.length); all2.forEach(f => console.log(' ', f));

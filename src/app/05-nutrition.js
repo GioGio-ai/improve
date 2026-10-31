@@ -121,8 +121,8 @@ const SLOT_SHARE = {
   desayuno: { p: 1, c: 1.0, f: 0.9 }, post: { p: 0.8, c: 0.8, f: 0.3 }, colacion: { p: 0.6, c: 0.7, f: 0.5 },
   almuerzo: { p: 1.1, c: 1.3, f: 1.3 }, merienda: { p: 0.7, c: 0.9, f: 0.5 }, cena: { p: 1.1, c: 1.1, f: 1.2 }, nocturna: { p: 0.7, c: 0.2, f: 0.6 },
 };
-function slotTargets(ag, T) {
-  const meals = ag.items.filter(x => x.kind === 'meal');
+function slotTargets(ag, T, skip) {
+  const meals = ag.items.filter(x => x.kind === 'meal' && !(skip && skip.has(x.key)));
   const sum = (k) => meals.reduce((a, m) => a + (SLOT_SHARE[m.slot] ? SLOT_SHARE[m.slot][k] : 0.8), 0) || 1;
   const sp = sum('p'), sc = sum('c'), sf = sum('f');
   const out = {};
