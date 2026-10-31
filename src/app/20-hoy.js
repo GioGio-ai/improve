@@ -102,14 +102,14 @@ function pendWhen(p, today, now) {
 /* Acción rápida de cada pendiente: comí lo sugerido / hecha tal cual */
 function pendQuickBtn(p, cls) {
   return p.kind === 'meal'
-    ? '<button class="btn sm ' + cls + '" data-act="meal-ate" data-date="' + p.date + '" data-key="' + p.it.key + '">' + ic('check') + 'Comí esto</button>'
-    : '<button class="btn sm ' + cls + '" data-act="block-done" data-date="' + p.date + '" data-key="' + p.it.key + '">' + ic('check') + 'Tal cual</button>';
+    ? '<button class="btn sm ' + cls + '" data-act="meal-ate" data-date="' + p.date + '" data-key="' + p.it.key + '">' + ic('check', 'ok') + 'Comí esto</button>'
+    : '<button class="btn sm ' + cls + '" data-act="block-done" data-date="' + p.date + '" data-key="' + p.it.key + '">' + ic('check', 'ok') + 'Tal cual</button>';
 }
 function pendRowHtml(p, today, now) {
   return '<div class="pend-row"><button class="pend-main" data-act="pend-opts" data-date="' + p.date + '" data-key="' + p.it.key + '" aria-label="' + esc(pendTitle(p) + ', ' + pendWhen(p, today, now) + ', más opciones') + '">' +
     '<span class="c ' + (p.kind === 'meal' ? 'food' : 'blue') + '">' + ic(p.kind === 'meal' ? 'fork' : sessIcon(p.it.block.sessions[0].type)) + '</span>' +
     '<span class="grow"><span class="t">' + esc(pendTitle(p)) + '</span><span class="s">' + esc(pendWhen(p, today, now)) + '</span></span>' + ic('chev') + '</button>' +
-    pendQuickBtn(p, 'white') + '</div>';
+    pendQuickBtn(p, 'pend-ok') + '</div>';
 }
 const PEND_MAX_IN_HERO = 3;
 function pendingPanel(pend, today, now, noHead) {
@@ -221,11 +221,11 @@ function nextHero(day, ag, today) {
     return '<section class="hero k-done"><span class="tag"><span class="d done"></span>Hoy</span><div class="t">' + (allDone ? 'Día completo' : 'Sin pendientes ahora') + '</div><div class="meta"><span>' + ic('check') + plural(logsFor(today).filter(l => l.done !== false).length, 'sesión registrada', 'sesiones registradas') + '</span></div><div class="cta"><button class="btn white" data-act="day" data-date="' + today + '">Revisar el día' + ic('chev') + '</button></div></section>';
   }
   const when = now >= nx.start && now < nx.end ? 'Ahora' : now >= nx.end ? 'Pendiente' : 'Siguiente';
-  const sideRow = side && side.kind === 'meal' ? '<button class="banner" style="background:linear-gradient(135deg,rgba(47,214,181,.24),rgba(47,214,181,.06));border-color:var(--teal-line)" data-act="ag-open" data-date="' + today + '" data-key="' + side.key + '">' + ic('fork') + '<div class="grow"><div class="h3">' + esc(side.title) + ' · ' + fmtHM(side.start) + '</div><div class="sub">' + (now >= side.end ? 'Pendiente de registrar' : esc(mealMenuFor(today, side).name)) + '</div></div>' + ic('chev') + '</button>' : '';
+  const sideRow = side && side.kind === 'meal' ? '<button class="banner food" data-act="ag-open" data-date="' + today + '" data-key="' + side.key + '">' + ic('fork') + '<div class="grow"><div class="h3">' + esc(side.title) + ' · ' + fmtHM(side.start) + '</div><div class="sub">' + (now >= side.end ? 'Pendiente de registrar' : esc(mealMenuFor(today, side).name)) + '</div></div>' + ic('chev') + '</button>' : '';
   const t = fmtHM(nx.start) + '–' + fmtHM(nx.end);
   if (nx.kind === 'meal') {
     const menu = mealMenuFor(today, nx);
-    return '<section class="hero" style="background:linear-gradient(160deg,#159c84 0%,#0d5a52 50%,#062421 100%)"><span class="tag"><span class="d" style="background:var(--teal)"></span>' + when + ' · ' + t + '</span><div class="t">' + esc(nx.title) + '</div>' +
+    return '<section class="hero k-meal"><span class="tag"><span class="d food"></span>' + when + ' · ' + t + '</span><div class="t">' + esc(nx.title) + '</div>' +
       '<div class="meta"><span>' + esc(menu.name) + '</span><span class="num">' + menu.totals.p + ' g prot · ' + menu.totals.c + ' g carb</span></div>' +
       '<div class="cta"><button class="btn white" data-act="ag-open" data-date="' + today + '" data-key="' + nx.key + '">' + ic('camera') + 'Registrar</button><button class="btn glass" data-act="meal-ate" data-date="' + today + '" data-key="' + nx.key + '">' + ic('check') + 'Comí esto</button></div>' + panel + '</section>';
   }
