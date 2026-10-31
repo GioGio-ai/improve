@@ -51,7 +51,7 @@
 .hero .meta .ic { width: 16px; height: 16px; color: var(--fg-3); }
 .hero .cta { display: flex; gap: var(--s-2); margin-top: var(--s-1); }
 .hero .cta .btn { flex: 1; }
-.hero .cta .btn.sq { flex: 0 0 auto; }
+.hero .cta .btn.sq, .hero .cta .btn.auto { flex: 0 0 auto; }
 .btn.sq { width: 48px; padding: 0; }
 .btn.sq.lg { width: 56px; }
 
@@ -252,7 +252,7 @@ body.training .tabbar, body.locked .tabbar { transform: translateY(100%); opacit
 .toast { position: fixed; z-index: 90; left: 0; right: 0; margin: 0 auto; top: calc(var(--safe-t) + var(--s-3)); max-width: calc(100% - 32px); width: max-content;
   display: flex; align-items: center; gap: var(--s-3); min-height: 48px; padding: var(--s-1) var(--s-2) var(--s-1) var(--s-4); border-radius: var(--r-md); font-size: var(--fs-3); font-weight: var(--fw-2); color: var(--fg);
   background: var(--surface-3); border: 1px solid var(--line-2); box-shadow: var(--elev-2); animation: dropIn var(--dur-3) var(--ease-out); }
-.toast > span { padding: var(--s-2) 0; }
+.toast > span:not(.ic) { padding: var(--s-2) 0; }
 .toast .ic { color: var(--lime); }
 .toast button { position: relative; color: var(--blue-ink); font-weight: var(--fw-3); min-height: 40px; padding: 0 var(--s-3); border-radius: var(--r-sm); }
 .toast button::after { content: ''; position: absolute; inset: -2px 0; }

@@ -219,7 +219,7 @@ function molDetailHtml(id) {
   return h + '</div>';
 }
 function molFollowBtns(id) {
-  return '<div class="grid4 follow">' + [['mejor', 'Mejor', 'lime'], ['igual', 'Igual', ''], ['peor', 'Peor', 'load'], ['ya_no', 'Ya no', 'lime']].map(([k, l, t]) => '<button type="button" class="btn sm ' + t + '" data-act="mol-follow" data-id="' + esc(id) + '" data-v="' + k + '">' + l + '</button>').join('') + '</div>';
+  return '<div class="grid4 follow">' + [['mejor', 'Mejor', ''], ['igual', 'Igual', ''], ['peor', 'Peor', ''], ['ya_no', 'Ya no', '']].map(([k, l, t]) => '<button type="button" class="btn sm ' + t + '" data-act="mol-follow" data-id="' + esc(id) + '" data-v="' + k + '">' + l + '</button>').join('') + '</div>';
 }
 function molFollowDoc(id, estado, today) {
   const m = molList().find(x => x.id === id); if (!m) return null;
@@ -260,11 +260,11 @@ function molHoyHtml(day, today) {
   const act = molActiveToday();
   const ask = act.filter(m => m.fecha < today && !(m.last && m.last.fecha === today));
   let h = '';
-  if (ask.length === 1) { const m = ask[0]; h += '<section class="card t-load tight"><div class="stack-sm"><div class="micro" style="color:var(--amber)">Molestia · ' + fmtDate(m.fecha) + '</div><div class="h3">¿Sigue la molestia en ' + esc(zoneName(m.zona, m.lado).toLowerCase()) + '?</div>' + molFollowBtns(m.id) + '</div></section>'; }
+  if (ask.length === 1) { const m = ask[0]; h += '<section class="card t-load tight"><div class="stack-sm"><div class="micro">Molestia · ' + fmtDate(m.fecha) + '</div><div class="h3">¿Sigue la molestia en ' + esc(zoneName(m.zona, m.lado).toLowerCase()) + '?</div>' + molFollowBtns(m.id) + '</div></section>'; }
   else if (ask.length > 1) {
     const ids = esc(ask.map(m => m.id).join(','));
-    h += '<section class="card t-load tight"><div class="stack-sm"><div class="micro" style="color:var(--amber)">' + plural(ask.length, 'molestia', 'molestias') + '</div><div class="h3">¿Siguen las molestias?</div>' +
-      '<div class="grid3 follow">' + [['igual', 'Todas igual', ''], ['mejor', 'Todas mejor', 'lime'], ['ya_no', 'Ya no', 'lime']].map(([k, l, t]) => '<button type="button" class="btn sm ' + t + '" data-act="mol-follow-all" data-ids="' + ids + '" data-v="' + k + '">' + l + '</button>').join('') + '</div>' +
+    h += '<section class="card t-load tight"><div class="stack-sm"><div class="micro">' + plural(ask.length, 'molestia', 'molestias') + '</div><div class="h3">¿Siguen las molestias?</div>' +
+      '<div class="grid3 follow">' + [['igual', 'Todas igual', ''], ['mejor', 'Todas mejor', ''], ['ya_no', 'Ya no', '']].map(([k, l, t]) => '<button type="button" class="btn sm ' + t + '" data-act="mol-follow-all" data-ids="' + ids + '" data-v="' + k + '">' + l + '</button>').join('') + '</div>' +
       '<details class="mol-each"><summary>Una por una</summary><div class="in">' + ask.map(m => '<div class="stack-xs"><div class="small fg2">' + esc(zoneName(m.zona, m.lado) + ' · ' + m.tipo + ' ' + m.nivelAct + '/10') + '</div>' + molFollowBtns(m.id) + '</div>').join('') + '</div></details></div></section>';
   }
   h += molAdjLine(day, today);

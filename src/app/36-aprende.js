@@ -101,7 +101,7 @@ function pubmedLink(e) { return 'https://pubmed.ncbi.nlm.nih.gov/?term=' + encod
 function datoHoyCard(today) {
   if (!DAT.list) {
     if (!DAT.error) loadDatos().catch(() => {});
-    return DAT.error ? '' : '<section class="card dato-card" aria-busy="true" aria-label="Dato del día"><div class="skel line" style="width:46%"></div><div class="skel line" style="height:22px;width:94%;margin-top:14px"></div><div class="skel line" style="height:22px;width:72%;margin-top:8px"></div><div class="skel line" style="width:38%;margin-top:16px"></div></section>';
+    return DAT.error ? '' : '<section class="card dato-card" aria-busy="true" aria-label="Dato del día"><div class="skel line sk-d1"></div><div class="skel sk-d2"></div><div class="skel line sk-d3"></div><div class="skel line sk-d4"></div></section>';
   }
   const d = datoDelDia(today); if (!d) return '';
   const c = DATO_CATS[d.cat] || {}, A = aprendeDoc(), saved = A.guardados.includes(d.id);
