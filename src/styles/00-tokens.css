@@ -1,9 +1,12 @@
 /* ============================================================
-   IMPROVE — tokens de diseño
-   Color con significado:
-   azul = plan y acción · lima = completado y logros · ámbar/naranja = carga e intensidad
-   rojo = dolor (exclusivo) · violeta = sueño y recuperación
-   verde azulado = proteína / nutrición · dorado = carbohidratos · rosa = grasas · cian = hidratación
+   IMPROVE — tokens de diseño v4 «Calma»
+   Neutro oscuro; la profundidad sale de la luminancia (cada nivel un poco más claro),
+   bordes de 1 px casi invisibles y una sombra ambiental suave.
+   El color es señal, nunca decoración:
+   azul = plan y acción · lima = hecho y logros · ámbar = carga e intensidad
+   rojo = solo dolor · violeta = sueño y recuperación
+   verde agua = proteína · dorado = carbohidratos · rosa = grasas · cian = agua
+   Contraste verificado con scripts/contrast.mjs (texto ≥ 4,5:1; iconos y bordes ≥ 3:1).
    ============================================================ */
 @font-face {
   font-family: 'Geist Variable';
@@ -36,89 +39,156 @@
 
 :root {
   color-scheme: dark;
-  --bg: #04060d;
-  --bg-1: #070b17;
-  --bg-2: #0b1122;
-  --solid: #0d1430;
-  --solid-2: #121b3c;
-  --line: rgba(255, 255, 255, 0.075);
-  --line-2: rgba(255, 255, 255, 0.13);
-  --line-3: rgba(255, 255, 255, 0.2);
-  --fg: #eef2ff;
-  --fg-2: #bcc5df;
-  --fg-3: #8791b0;
-  --fg-4: #5f6a8a;
 
-  --blue: #4a85ff;
-  --blue-2: #2457f5;
-  --blue-ink: #aac4ff;
-  --blue-soft: rgba(74, 133, 255, 0.16);
-  --blue-line: rgba(120, 165, 255, 0.34);
+  /* ---- Superficies ---- */
+  --bg: #0A0B0F;
+  --surface-1: #111318;
+  --surface-2: #171A21;
+  --surface-3: #1E222B;
+  --surface-4: #272C37;
+  --line: rgba(255, 255, 255, 0.06);
+  --line-2: rgba(255, 255, 255, 0.1);
+  --line-3: rgba(255, 255, 255, 0.16);
+  --line-sel: rgba(255, 255, 255, 0.44);
+  /* Rellenos para controles que viven sobre cualquier superficie: un paso más claro */
+  --fill-1: rgba(255, 255, 255, 0.035);
+  --fill-2: rgba(255, 255, 255, 0.06);
+  --fill-3: rgba(255, 255, 255, 0.1);
+  --scrim: rgba(0, 0, 0, 0.6);
+  --tabbar-bg: rgba(10, 11, 15, 0.86);
 
-  --lime: #c8f250;
-  --lime-2: #98e02a;
-  --lime-ink: #e4ffa6;
-  --lime-soft: rgba(200, 242, 80, 0.13);
-  --lime-line: rgba(200, 242, 80, 0.36);
+  /* ---- Texto ---- */
+  --fg: #EDEEF2;
+  --fg-2: #A9AEBB;
+  --fg-3: #8B91A0;
+  --fg-4: #545A67;
+  --on-blue: #FFFFFF;
+  --on-accent: #0A0B0F;
 
-  --amber: #ffb020;
-  --orange: #ff6d1f;
-  --load-ink: #ffd394;
-  --load-soft: rgba(255, 150, 40, 0.15);
-  --load-line: rgba(255, 170, 70, 0.38);
+  /* ---- Color con significado: base · -ink (texto sobre oscuro) · -soft (fondo ≤ 14 %) · -line (borde) ---- */
+  --blue: #5B8CFF;
+  --blue-fill: #3466F0;
+  --blue-ink: #A9C2FF;
+  --blue-soft: rgba(91, 140, 255, 0.14);
+  --blue-line: rgba(91, 140, 255, 0.36);
 
-  --red: #ff4d6a;
-  --red-ink: #ffb8c4;
-  --red-soft: rgba(255, 77, 106, 0.15);
-  --red-line: rgba(255, 90, 120, 0.42);
+  --lime: #C6F35A;
+  --lime-ink: #DCF79A;
+  --lime-soft: rgba(198, 243, 90, 0.12);
+  --lime-line: rgba(198, 243, 90, 0.34);
 
-  --violet: #9d7dff;
-  --violet-ink: #d7cbff;
-  --violet-soft: rgba(157, 125, 255, 0.15);
-  --violet-line: rgba(170, 145, 255, 0.36);
+  --amber: #FFB23F;
+  --amber-ink: #FFD08A;
+  --amber-soft: rgba(255, 178, 63, 0.13);
+  --amber-line: rgba(255, 178, 63, 0.36);
+  --amber-tint: rgba(255, 178, 63, 0.05);
 
-  --teal: #2fd6b5;
-  --teal-ink: #a9f6e5;
-  --teal-soft: rgba(47, 214, 181, 0.14);
-  --teal-line: rgba(60, 220, 190, 0.36);
+  --red: #FF5C70;
+  --red-ink: #FFB2BC;
+  --red-soft: rgba(255, 92, 112, 0.13);
+  --red-line: rgba(255, 92, 112, 0.4);
+  --red-tint: rgba(255, 92, 112, 0.05);
 
-  --gold: #f5c451;
-  --gold-soft: rgba(245, 196, 81, 0.14);
-  --pink: #f6a6d6;
-  --pink-soft: rgba(246, 166, 214, 0.14);
-  --cyan: #3ccbf2;
-  --cyan-soft: rgba(60, 203, 242, 0.14);
+  --violet: #A48BFF;
+  --violet-ink: #D3C7FF;
+  --violet-soft: rgba(164, 139, 255, 0.14);
+  --violet-line: rgba(164, 139, 255, 0.36);
 
-  --r-xs: 10px;
-  --r-sm: 14px;
-  --r-md: 18px;
-  --r-lg: 24px;
-  --r-xl: 30px;
+  --teal: #3DD9B8;
+  --teal-ink: #A6EEDD;
+  --teal-soft: rgba(61, 217, 184, 0.12);
+  --teal-line: rgba(61, 217, 184, 0.34);
 
-  --ease: cubic-bezier(0.23, 1, 0.32, 1);
-  --ease-io: cubic-bezier(0.65, 0, 0.35, 1);
-  --t-fast: 160ms;
-  --t: 260ms;
-  --t-slow: 420ms;
+  --gold: #F2C55C;
+  --gold-ink: #F8DD9E;
+  --gold-soft: rgba(242, 197, 92, 0.12);
 
-  --shadow: 0 18px 40px -26px rgba(0, 0, 0, 0.85), 0 2px 10px -4px rgba(0, 0, 0, 0.45);
-  --shadow-lg: 0 30px 70px -30px rgba(0, 0, 0, 0.95), 0 6px 18px -8px rgba(0, 0, 0, 0.5);
-  --hl: inset 0 1px 0 rgba(255, 255, 255, 0.06);
-  --blur: saturate(160%) blur(20px);
+  --pink: #F2A7D3;
+  --pink-ink: #F8D0E7;
+  --pink-soft: rgba(242, 167, 211, 0.12);
 
-  --glass: linear-gradient(165deg, rgba(36, 48, 90, 0.52) 0%, rgba(16, 22, 44, 0.56) 100%);
-  --glass-2: linear-gradient(165deg, rgba(44, 58, 104, 0.6) 0%, rgba(20, 28, 54, 0.6) 100%);
+  --cyan: #4CC9F0;
+  --cyan-ink: #ABE6F8;
+  --cyan-soft: rgba(76, 201, 240, 0.12);
+  --cyan-line: rgba(76, 201, 240, 0.34);
 
+  /* ---- Espaciado (base 4) ---- */
+  --s-1: 4px;
+  --s-2: 8px;
+  --s-3: 12px;
+  --s-4: 16px;
+  --s-5: 20px;
+  --s-6: 24px;
+  --s-8: 32px;
+  --s-10: 40px;
+
+  /* ---- Tipografía: 6 tamaños, 3 pesos ---- */
+  --fs-1: 12px;
+  --fs-2: 13px;
+  --fs-3: 15px;
+  --fs-4: 17px;
+  --fs-5: 22px;
+  --fs-6: clamp(28px, 8vw, 32px);
+  --fw-1: 400;
+  --fw-2: 560;
+  --fw-3: 660;
+  --tr-title: -0.025em;
+  --tr-tight: -0.035em;
+  --tr-label: 0.06em;
+
+  /* ---- Radios (internos = externo − padding) ---- */
+  --r-xs: 8px;
+  --r-sm: 12px;
+  --r-md: 16px;
+  --r-lg: 22px;
+  --r-xl: 28px;
+  --r-pill: 999px;
+
+  /* ---- Elevación: 0 plano · 1 tarjeta · 2 hoja y aviso ---- */
+  --elev-0: none;
+  --elev-1: inset 0 1px 0 rgba(255, 255, 255, 0.025), 0 1px 2px rgba(0, 0, 0, 0.28), 0 10px 28px -18px rgba(0, 0, 0, 0.7);
+  --elev-2: inset 0 1px 0 rgba(255, 255, 255, 0.04), 0 4px 14px rgba(0, 0, 0, 0.3), 0 28px 64px -24px rgba(0, 0, 0, 0.8);
+
+  /* ---- Movimiento: solo transform y opacity ---- */
+  --dur-1: 120ms;
+  --dur-2: 200ms;
+  --dur-3: 320ms;
+  --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
+  --ease-sheet: cubic-bezier(0.32, 0.72, 0, 1);
+
+  /* ---- Layout ---- */
   --safe-t: env(safe-area-inset-top, 0px);
   --safe-b: env(safe-area-inset-bottom, 0px);
   --safe-l: env(safe-area-inset-left, 0px);
   --safe-r: env(safe-area-inset-right, 0px);
   --gutter: 16px;
-  --tabbar-h: 66px;
+  --tabbar-h: 58px;
 
   --font: 'Geist Variable', 'Geist', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
   --mono: 'Geist Mono Variable', ui-monospace, 'SF Mono', 'Roboto Mono', Menlo, monospace;
-  /* Cifras grandes del modo entrenamiento: reloj, descanso, contador */
+  /* Cifras grandes del modo entrenamiento y del dato del día */
   --num-display: 'Barlow Condensed', var(--font);
+
+  /* ---- Alias de v3 (no usar en código nuevo) ---- */
+  --bg-1: var(--surface-1);
+  --bg-2: var(--surface-2);
+  --solid: var(--surface-2);
+  --solid-2: var(--surface-3);
+  --blue-2: var(--blue-fill);
+  --orange: var(--amber);
+  --load-ink: var(--amber-ink);
+  --load-soft: var(--amber-soft);
+  --load-line: var(--amber-line);
+  --shadow: var(--elev-1);
+  --shadow-lg: var(--elev-2);
+  --hl: inset 0 1px 0 rgba(255, 255, 255, 0.04);
+  --glass: var(--surface-1);
+  --glass-2: var(--surface-2);
+  --blur: saturate(140%) blur(18px);
+  --ease: var(--ease-out);
+  --ease-io: cubic-bezier(0.65, 0, 0.35, 1);
+  --t-fast: var(--dur-1);
+  --t: var(--dur-2);
+  --t-slow: var(--dur-3);
 }
 @media (min-width: 400px) { :root { --gutter: 20px; } }
