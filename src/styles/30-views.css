@@ -178,6 +178,11 @@
 .conf.mid { background: var(--amber); } .conf.low { background: transparent; box-shadow: inset 0 0 0 1.5px var(--amber); }
 
 /* ---------- Progreso ---------- */
+.phase-hero { --g1: rgba(70, 110, 255, 0.38); --g2: rgba(255, 150, 60, 0.14); gap: var(--s-4); }
+.phase-hero .rail .lbl { color: var(--fg-2); }
+.crit-t { font-size: var(--fs-3); font-weight: var(--fw-2); color: var(--fg); }
+.stat .v.v-sm { font-size: var(--fs-4); line-height: 30px; }
+.credit { font-size: var(--fs-1); color: var(--fg-3); }
 .explain { display: grid; gap: 12px; }
 .explain .row-x { display: grid; grid-template-columns: 52px minmax(0, 1fr); gap: 14px; align-items: start; }
 .explain .badge { width: 52px; height: 52px; border-radius: 16px; display: grid; place-items: center; font: 760 20px/1 var(--mono); letter-spacing: -0.04em; }
@@ -190,9 +195,9 @@
 .road li { display: grid; grid-template-columns: 22px minmax(0, 1fr) auto; gap: 12px; align-items: center; padding: 9px 0; position: relative; }
 .road li::before { content: ''; position: absolute; left: 10px; top: 0; bottom: 0; width: 2px; background: rgba(255, 255, 255, 0.08); }
 .road li:first-child::before { top: 50%; } .road li:last-child::before { bottom: 50%; }
-.road .pt { position: relative; z-index: 1; width: 22px; height: 22px; border-radius: 50%; display: grid; place-items: center; background: var(--solid); border: 2px solid var(--line-3); }
-.road .pt.done { background: linear-gradient(180deg, #d9ff70, #98e02a); border-color: transparent; }
-.road .pt.cur { border-color: var(--blue); box-shadow: 0 0 0 4px rgba(74, 133, 255, 0.2); }
+.road .pt { position: relative; z-index: 1; width: 22px; height: 22px; border-radius: 50%; display: grid; place-items: center; background: var(--surface-1); border: 2px solid var(--line-3); }
+.road .pt.done { background: var(--grad-lime); border-color: transparent; }
+.road .pt.cur { border-color: var(--blue); box-shadow: 0 0 12px rgba(91, 140, 255, 0.6); }
 .road .pt.goal { border-color: var(--lime); }
 .road .when { font: 650 13px/1 var(--mono); color: var(--fg-2); }
 .road .when.late { color: var(--amber); } .road .when.ok { color: var(--lime); }

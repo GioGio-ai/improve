@@ -64,7 +64,12 @@ const GRAD_DEFS = '<svg class="defs" width="0" height="0" aria-hidden="true" foc
   '<linearGradient id="lg-gold" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#F6D27F"/><stop offset="1" stop-color="#F2C55C"/></linearGradient>' +
   '<linearGradient id="lg-red" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#FF7E8E"/><stop offset="1" stop-color="#FF5C70"/></linearGradient>' +
   '<linearGradient id="lg-white" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#FFFFFF"/><stop offset="1" stop-color="#C9D8FF"/></linearGradient>' +
-  '<linearGradient id="lg-area" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#5B8CFF" stop-opacity=".18"/><stop offset="1" stop-color="#5B8CFF" stop-opacity="0"/></linearGradient>' +
+  '<linearGradient id="lg-area" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#6A7CFF" stop-opacity=".3"/><stop offset="1" stop-color="#6A7CFF" stop-opacity="0"/></linearGradient>' +
+  '<linearGradient id="lg-line" gradientUnits="userSpaceOnUse" x1="56" y1="0" x2="620" y2="0"><stop offset="0" stop-color="#5B8CFF"/><stop offset="1" stop-color="#A48BFF"/></linearGradient>' +
+  '<linearGradient id="lg-bar-load" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#FFC56B"/><stop offset="1" stop-color="#FF8F3A" stop-opacity=".55"/></linearGradient>' +
+  '<linearGradient id="lg-bar-lime" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#E0FF8A"/><stop offset="1" stop-color="#8FD43A" stop-opacity=".55"/></linearGradient>' +
+  '<linearGradient id="lg-bar-sleep" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#C4B4FF"/><stop offset="1" stop-color="#6E55F0" stop-opacity=".55"/></linearGradient>' +
+  '<linearGradient id="lg-bar-prot" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#7BEBD3"/><stop offset="1" stop-color="#1FAE94" stop-opacity=".55"/></linearGradient>' +
   '</defs></svg>';
 function gradDefs() { return ''; }
 function lineChart(points, o) {
@@ -80,7 +85,7 @@ function lineChart(points, o) {
   if (o.ref !== undefined) s += '<line class="ref" x1="' + pl + '" x2="' + (W - pr) + '" y1="' + Y(o.ref) + '" y2="' + Y(o.ref) + '"/>';
   const pts = points.map((p, i) => X(i) + ',' + Y(p.y)).join(' ');
   if (points.length > 1) s += '<polygon class="area" fill="url(#lg-area)" points="' + X(0) + ',' + (H - pb) + ' ' + pts + ' ' + X(points.length - 1) + ',' + (H - pb) + '"/>';
-  s += '<polyline class="line" points="' + pts + '"/>';
+  s += '<polyline class="line" stroke="url(#lg-line)" points="' + pts + '"/>';
   points.forEach((p, i) => { s += '<circle class="dot" cx="' + X(i) + '" cy="' + Y(p.y) + '" r="6"/>'; if (i === 0 || i === points.length - 1 || points.length <= 4) s += '<text x="' + X(i) + '" y="' + (H - 8) + '" text-anchor="' + (i === 0 && points.length > 1 ? 'start' : i === points.length - 1 && points.length > 1 ? 'end' : 'middle') + '">' + fmtDate(p.x) + '</text>'; });
   const last = points[points.length - 1];
   s += '<text class="lab" x="' + X(points.length - 1) + '" y="' + (Y(last.y) - 16) + '" text-anchor="end">' + fmtNum(last.y) + (o.unit || '') + '</text>';
@@ -93,11 +98,11 @@ function barChart(data, o) {
   const step = Math.pow(10, Math.floor(Math.log10(max))), top = Math.ceil(max / step) * step, bw = (W - pl - pr) / data.length;
   const Y = (v) => pt + (1 - v / top) * (H - pt - pb);
   let s = '<div class="chart"><svg viewBox="0 0 ' + W + ' ' + H + '" role="img" aria-label="' + esc(o.label || 'Barras') + '">' + gradDefs();
-  [0, top / 2, top].forEach(t => { s += '<line class="grid" x1="' + pl + '" x2="' + (W - pr) + '" y1="' + Y(t) + '" y2="' + Y(t) + '"/><text x="' + (pl - 8) + '" y="' + (Y(t) + 4) + '" text-anchor="end">' + (o.fmt ? o.fmt(t) : Math.round(t)) + '</text>'; });
+  [0, top / 2, top].forEach(t => { s += '<line class="grid" x1="' + pl + '" x2="' + (W - pr) + '" y1="' + Y(t) + '" y2="' + Y(t) + '"/><text x="' + (pl - 8) + '" y="' + (Y(t) + 4) + '" text-anchor="end">' + (o.fmt ? o.fmt(t) : top < 10 ? fmtNum(t) : Math.round(t)) + '</text>'; });
   if (o.ref) s += '<line class="ref" x1="' + pl + '" x2="' + (W - pr) + '" y1="' + Y(o.ref) + '" y2="' + Y(o.ref) + '"/>';
   data.forEach((d, i) => {
     const x = pl + i * bw + bw * 0.2, w = bw * 0.6, y = Y(d.value), hgt = Math.max(0, H - pb - y), r = Math.min(6, hgt / 2, w / 2);
-    if (hgt > 0) s += '<path class="bar ' + (o.tone || '') + (o.cur !== undefined && i !== o.cur ? ' dim' : '') + '" d="M' + x + ',' + (H - pb) + 'V' + (y + r) + 'Q' + x + ',' + y + ' ' + (x + r) + ',' + y + 'H' + (x + w - r) + 'Q' + (x + w) + ',' + y + ' ' + (x + w) + ',' + (y + r) + 'V' + (H - pb) + 'Z"/>';
+    if (hgt > 0) s += '<path class="bar ' + (o.tone || '') + (o.cur !== undefined && i !== o.cur ? ' dim' : '') + '" fill="url(#lg-bar-' + (o.tone || 'load') + ')" d="M' + x + ',' + (H - pb) + 'V' + (y + r) + 'Q' + x + ',' + y + ' ' + (x + r) + ',' + y + 'H' + (x + w - r) + 'Q' + (x + w) + ',' + y + ' ' + (x + w) + ',' + (y + r) + 'V' + (H - pb) + 'Z"/>';
     if (data.length <= 6 || i % 2 === (data.length - 1) % 2) s += '<text x="' + (pl + i * bw + bw / 2) + '" y="' + (H - 8) + '" text-anchor="middle">' + esc(d.label) + '</text>';
     if ((o.cur === undefined || i === o.cur) && d.value && o.showVal !== false) s += '<text class="lab" x="' + (pl + i * bw + bw / 2) + '" y="' + (y - 10) + '" text-anchor="middle">' + (o.fmt ? o.fmt(d.value) : d.value) + '</text>';
   });

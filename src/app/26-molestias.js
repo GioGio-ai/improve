@@ -336,8 +336,8 @@ function molestiasCard(st, today) {
   const vals = {}, best = {};
   for (const m of list) { const k = m.zona + ':' + m.lado, lvl = Math.max(num(m.nivel) || 1, ...((m.updates || []).map(u => num(u.nivel) || 0))); if (!best[k] || lvl > best[k].lvl || (m.tipo === 'dolor' && best[k].tipo !== 'dolor')) best[k] = { lvl, tipo: m.tipo }; }
   for (const k of Object.keys(best)) vals[k] = painColor(best[k].tipo, best[k].lvl);
-  let h = '<section class="card"><div class="stack-sm"><div class="row between"><span class="h3">Molestias · 14 días</span><button class="btn sm" data-act="mol-new">' + ic('plus') + 'Marcar</button></div>';
-  if (!list.length) return h + '<p class="sub">Sin molestias registradas en dos semanas.</p></div></section>';
+  let h = '<section class="card"><div class="stack-sm"><div class="ed-head"><span class="kicker">Molestias · 14 días</span><button class="btn sm" data-act="mol-new">' + ic('plus') + 'Marcar</button></div>';
+  if (!list.length) return h + '<p class="sub">Sin molestias en dos semanas.</p></div></section>';
   h += '<div class="bmap-duo">' + bodyMapSvg({ view: 'front', mode: 'pain', values: vals }) + bodyMapSvg({ view: 'back', mode: 'pain', values: vals }) + '</div>';
   h += '<div class="bmap-legend"><span><i style="background:' + painColor('cargado', 6) + '"></i>Carga o tirantez</span><span><i style="background:' + painColor('dolor', 6) + '"></i>Dolor</span></div>';
   molestiaInsights(st, today).forEach(x => { h += note('blue', '<b>' + esc(zoneName(x.zona, x.lado)) + ': ' + x.n + ' días con molestia.</b> ' + esc(x.tip) + (x.causes.length ? ' Antes: ' + esc(x.causes.join(', ')) + '.' : '')); });

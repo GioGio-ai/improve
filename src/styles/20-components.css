@@ -124,7 +124,7 @@ input[type='date'].input, input[type='time'].input { min-height: 48px; }
 .input.num { text-align: center; font-family: var(--mono); font-size: var(--fs-4); font-weight: var(--fw-2); }
 .err { color: var(--amber-ink); font-size: var(--fs-2); }
 
-.seg { display: flex; gap: var(--s-5); min-width: 0; border-bottom: 1px solid var(--hair); overflow-x: auto; scrollbar-width: none; }
+.seg { display: flex; gap: var(--s-4); min-width: 0; border-bottom: 1px solid var(--hair); overflow-x: auto; scrollbar-width: none; }
 .seg::-webkit-scrollbar { display: none; }
 .seg > button { flex: 1 0 auto; min-height: 44px; padding: 0 2px; font-size: var(--fs-3); font-weight: var(--fw-2); color: var(--fg-3); white-space: nowrap; box-shadow: inset 0 -2px 0 transparent; }
 .seg > button.on { color: var(--fg); box-shadow: inset 0 -2px 0 var(--fg); }
@@ -302,6 +302,7 @@ body.training .tabbar, body.locked .tabbar { transform: translateY(100%); opacit
 /* ---------- Filas y listas ---------- */
 .blk { position: relative; display: flex; align-items: center; gap: var(--s-4); width: 100%; min-height: 68px; padding: var(--s-3) 0; text-align: left; min-width: 0; border-top: 1px solid var(--hair); transition: transform var(--dur-1) var(--ease-out); }
 .blk:last-child { border-bottom: 1px solid var(--hair); }
+.card .blk:last-child, .panel .blk:last-child { border-bottom: 0; }
 :is(.stack, .stack-sm, .stack-xs, .exlist):has(> .blk) { gap: 0; }
 button.blk:active, a.blk:active { transform: scale(0.99); }
 .blk .c { width: 22px; height: 22px; display: grid; place-items: center; flex: none; color: var(--blue); }
@@ -368,15 +369,15 @@ details > .in { padding: 0 0 var(--s-5); display: grid; gap: var(--s-3); }
 /* Escaleras K/S y fases */
 .ladder { display: grid; grid-template-columns: repeat(var(--n, 8), minmax(0, 1fr)); gap: var(--s-1); }
 .ladder .st { display: grid; place-items: center; height: 40px; border-radius: var(--r-sm); font: var(--fw-2) var(--fs-1)/1 var(--mono); color: var(--fg-3); background: var(--fill-1); border: 1px solid var(--line); }
-.ladder .st.done { color: var(--on-accent); background: var(--lime); border-color: transparent; }
-.ladder .st.cur { color: var(--on-blue); background: var(--blue-fill); border-color: transparent; box-shadow: 0 0 0 3px var(--blue-soft); }
+.ladder .st.done { color: var(--on-accent); background: var(--grad-lime); border-color: transparent; }
+.ladder .st.cur { color: var(--on-blue); background: var(--grad-primary); border-color: transparent; box-shadow: var(--glow-primary); }
 .ladder .st.locked { opacity: 0.4; border-style: dashed; }
 .ladder .st.next { color: var(--blue-ink); border-color: var(--blue-line); }
 .rail { display: grid; grid-template-columns: repeat(6, 1fr); gap: var(--s-1); }
 .rail .seg6 { display: grid; gap: 6px; }
 .rail .bar { height: 4px; border-radius: 2px; background: var(--fill-3); }
-.rail .seg6.done .bar { background: var(--lime); }
-.rail .seg6.cur .bar { background: var(--blue); }
+.rail .seg6.done .bar { background: var(--grad-lime); }
+.rail .seg6.cur .bar { background: var(--grad-primary); box-shadow: 0 0 12px rgba(91, 140, 255, 0.7); }
 .rail .lbl { font: var(--fw-2) var(--fs-1)/1 var(--mono); color: var(--fg-3); text-align: center; }
 .rail .seg6.cur .lbl { color: var(--fg); }
 
@@ -384,8 +385,8 @@ details > .in { padding: 0 0 var(--s-5); display: grid; gap: var(--s-3); }
 .lsi { display: grid; gap: 14px; }
 .lsi-row .top { display: flex; justify-content: space-between; font-size: var(--fs-2); margin-bottom: 6px; }
 .lsi-track { position: relative; height: 8px; border-radius: var(--r-pill); background: var(--fill-2); }
-.lsi-fill { position: absolute; left: 0; top: 0; bottom: 0; border-radius: inherit; background: var(--amber); }
-.lsi-fill.pass { background: var(--lime); }
+.lsi-fill { position: absolute; left: 0; top: 0; bottom: 0; border-radius: inherit; background: linear-gradient(90deg, rgba(255, 143, 58, 0.5), var(--amber)); }
+.lsi-fill.pass { background: linear-gradient(90deg, rgba(143, 212, 58, 0.5), var(--lime)); }
 .lsi-ref { position: absolute; top: -4px; bottom: -4px; width: 2px; border-radius: 1px; background: var(--fg-2); }
 
 .defs { position: absolute; width: 0; height: 0; overflow: hidden; }
@@ -394,17 +395,17 @@ details > .in { padding: 0 0 var(--s-5); display: grid; gap: var(--s-3); }
 .chart text { fill: var(--fg-3); font: var(--fw-2) 26px var(--mono); }
 .chart .grid { stroke: rgba(255, 255, 255, 0.05); stroke-width: 1.5; }
 .chart .ref { stroke: var(--lime-line); stroke-width: 2; stroke-dasharray: 6 6; }
-.chart .line { fill: none; stroke: var(--blue); stroke-width: 4; stroke-linecap: round; stroke-linejoin: round; }
-.chart .area { opacity: 0.6; }
+.chart .line { fill: none; stroke-width: 4; stroke-linecap: round; stroke-linejoin: round; }
+.chart .area { opacity: 1; }
 .chart .dot { fill: var(--surface-1); stroke: var(--blue); stroke-width: 4; }
 .chart .lab { fill: var(--fg); font-weight: var(--fw-3); font-size: 28px; }
-.chart .bar { fill: var(--amber); } .chart .bar.dim { opacity: 0.35; } .chart .bar.sleep { fill: var(--violet); } .chart .bar.prot { fill: var(--teal); }
+.chart .bar.dim { opacity: 0.4; }
 
 .hbars { display: grid; gap: var(--s-2); }
 .hbar { display: grid; grid-template-columns: 120px minmax(0, 1fr) 28px; gap: 10px; align-items: center; font-size: var(--fs-2); }
 .hbar .nm { color: var(--fg-2); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .hbar .tr { height: 6px; border-radius: var(--r-pill); background: var(--fill-2); overflow: hidden; }
-.hbar .fl { display: block; height: 100%; border-radius: inherit; background: var(--blue); }
+.hbar .fl { display: block; height: 100%; border-radius: inherit; background: var(--grad-primary); }
 .hbar.zero .nm { color: var(--amber-ink); } .hbar .val { text-align: right; font-family: var(--mono); color: var(--fg-3); }
 
 .ring { position: relative; display: grid; place-items: center; }

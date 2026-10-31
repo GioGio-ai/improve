@@ -3,32 +3,32 @@
    ============================================================ */
 function viewProgreso(st, today) {
   if (!S.data.profile) return onboarding();
-  let h = '<div class="page-head"><h1 class="h1 grow">Progreso</h1><button class="iconbtn" data-act="guide" data-g="fks" aria-label="Qué significan F, K y S">' + ic('info') + '</button><a class="iconbtn glow" href="#coach" aria-label="Coach con IA">' + ic('spark') + '</a></div>';
+  let h = '<div class="aura" aria-hidden="true"></div><div class="page-head"><h1 class="h1 grow">Progreso</h1><button class="iconbtn" data-act="guide" data-g="fks" aria-label="Qué significan F, K y S">' + ic('info') + '</button><a class="iconbtn glow" href="#coach" aria-label="Coach con IA">' + ic('spark') + '</a></div>';
   const inj = st.injury;
   if (inj) {
     const since = diffDays(today, inj.date), crit = st.criteria;
-    h += '<section class="hero" style="min-height:236px">' + photoImg('f2') + '<span class="tag"><span class="d"></span>' + esc(inj.zone) + ' ' + (inj.side === 'i' ? 'izquierdo' : 'derecho') + ' · día ' + since + '</span>' +
+    h += '<section class="hero phase-hero">' + photoImg('f2') + '<span class="tag"><span class="d"></span>' + esc(inj.zone) + ' ' + (inj.side === 'i' ? 'izquierdo' : 'derecho') + ' · día ' + since + '</span>' +
       '<div class="t">' + PHASES[st.phase].n + ' · ' + esc(PHASES[st.phase].t) + '</div><div class="meta">' + (crit ? '<span>' + ic('check') + crit.ok + ' de ' + crit.total + ' criterios para ' + (PHASES[st.phase + 1] ? PHASES[st.phase + 1].n : '') + '</span>' : '<span>' + ic('check') + 'Rendimiento</span>') + '<span>' + ic('flame') + plural(inj.recurrences || 1, 'lesión', 'lesiones') + ' en la zona</span></div>' +
-      '<div style="margin-top:8px">' + phaseRail(st.phase) + '</div><div class="cta"><button class="btn glass" data-act="guide" data-g="fks">' + ic('info') + 'Qué significan F, K y S</button></div></section>';
+      '<div class="mt-2">' + phaseRail(st.phase) + '</div></section>';
     if (st.injuryActive) h += roadCard(st, today);
     if (crit && PHASES[st.phase + 1]) {
       const next = PHASES[st.phase + 1];
-      h += '<section class="card"><div class="stack"><div class="row between"><span class="h3">Para pasar a ' + next.n + ' · ' + esc(next.t) + '</span>' + chip(crit.ok + '/' + crit.total, crit.ready ? 'lime' : '') + '</div><ul class="crit">' +
-        crit.items.map(i => '<li><span class="mk ' + (i.ok ? 'ok' : i.req ? 'no' : '') + '">' + (i.ok ? ic('check') : '') + '</span><div><div class="small" style="font-weight:620">' + esc(i.label) + '</div>' + (i.req ? '' : '<div class="opt">Recomendado</div>') + '</div><span class="det">' + esc(i.detail || '') + '</span></li>').join('') + '</ul>';
+      h += '<section class="card"><div class="stack"><div class="ed-head"><span class="kicker">Para pasar a ' + next.n + ' · ' + esc(next.t) + '</span>' + chip(crit.ok + '/' + crit.total, crit.ready ? 'lime' : '') + '</div><ul class="crit">' +
+        crit.items.map(i => '<li><span class="mk ' + (i.ok ? 'ok' : i.req ? 'no' : '') + '">' + (i.ok ? ic('check') : '') + '</span><div><div class="crit-t">' + esc(i.label) + '</div>' + (i.req ? '' : '<div class="opt">Recomendado</div>') + '</div><span class="det">' + esc(i.detail || '') + '</span></li>').join('') + '</ul>';
       const manual = [];
       if (st.phase === 1) [['walk', 'Camino sin dolor'], ['jog', 'Troto sin dolor'], ['stretch', 'Estiro sin dolor']].forEach(([k, l]) => manual.push(['f1checks', k, l]));
       if (st.phase === 4) manual.push(['f4checks', 'medical', 'Fisio y ecografía hechos']);
       if (st.phase === 5) manual.push(['f5checks', 'fullTeam', 'Entreno completo sin síntomas']);
       if (manual.length) h += '<div class="pills">' + manual.map(([g, k, l]) => { const on = inj[g] && inj[g][k]; return '<button type="button" class="pill' + (on ? ' on lime' : '') + '" data-act="injury-check" data-g="' + g + '" data-k="' + k + '" aria-pressed="' + !!on + '">' + esc(l) + '</button>'; }).join('') + '</div>';
       h += '<div class="grid2"><button class="btn ' + (crit.ready ? 'lime' : '') + '" data-act="phase-up"' + (crit.ready ? '' : ' disabled') + '>Avanzar a ' + next.n + '</button>' + (st.phase > 1 ? '<button class="btn ghost" data-act="phase-down">Volver a ' + PHASES[st.phase - 1].n + '</button>' : '<span></span>') + '</div>' +
-        (crit.ready ? '' : '<p class="sub">Se activa con todos los criterios obligatorios. Sin excepciones: así no recaes.</p>') + '</div></section>';
+        (crit.ready ? '' : '<p class="sub">Se activa con todos los criterios obligatorios.</p>') + '</div></section>';
     } else if (st.phase === 6) h += '<section class="card"><div class="stack"><p class="body">Fase final. El recto femoral recibe mantenimiento 2 veces por semana.</p><div class="grid2"><button class="btn" data-act="resolve-injury">Cerrar lesión</button><button class="btn ghost" data-act="phase-down">Volver a F5</button></div></div></section>';
   } else h += '<div class="empty"><b>Sin lesión activa.</b><span class="small">El plan trabaja en modo rendimiento.</span><button class="btn sm" data-act="new-injury">Registrar lesión</button></div>';
   h += levelsCard(st);
   h += ballCard(st, today);
   h += testsCard(st);
   const tl = trainingLSI(st.sessions, st.side);
-  if (tl.length) h += '<section class="card"><div class="stack-sm"><span class="h3">Entre piernas · entrenamiento</span><p class="sub">Estimado con el peso y las repeticiones de cada lado. Orienta entre tests.</p>' + tl.map(r => '<div class="lrow"><span class="fg2">' + esc(r.n) + ' · ' + fmtDate(r.date) + '</span><b class="num ' + (r.lsi >= 90 ? 'c-lime' : 'c-load') + '">' + fmtNum(r.lsi) + ' %</b></div>').join('') + '</div></section>';
+  if (tl.length) h += '<section class="card"><div class="stack-sm"><span class="kicker">Entre piernas · entrenamiento</span>' + tl.map(r => '<div class="lrow"><span class="fg2">' + esc(r.n) + ' · ' + fmtDate(r.date) + '</span><b class="num ' + (r.lsi >= 90 ? 'c-lime' : 'c-load') + '">' + fmtNum(r.lsi) + ' %</b></div>').join('') + '</div></section>';
   h += sleepCard(st, today);
   h += loadCard(st, today);
   h += coverageCard(st, today);
@@ -42,9 +42,9 @@ function levelsCard(st) {
   const sNeed = Sp.top ? 'Completado' : Sp.streak + '/' + Sp.req + ' limpias para subir';
   const kCap = st.injuryActive ? KCAP[st.phase] : 8, sCap = st.injuryActive ? SCAP[st.phase] : 6;
   return '<section class="card"><div class="stack">' +
-    '<div class="stack-sm"><div class="row between"><span class="h3"><span class="c-lime">K</span> · Golpeo</span><span class="sub num">' + kNeed + '</span></div>' + ladderHtml('k', st) + '<div class="small fg2"><b>' + KICK[K.level].n + ':</b> ' + esc(KICK[K.level].d) + '</div>' + (st.injuryActive && kCap < 8 ? '<div class="sub">Hasta ' + KICK[kCap].n + ' en ' + PHASES[st.phase].n + '.</div>' : '') + '</div>' +
-    '<div class="stack-sm"><div class="row between"><span class="h3"><span class="c-load">S</span> · Sprint</span><span class="sub num">' + sNeed + '</span></div>' + ladderHtml('s', st) + '<div class="small fg2"><b>' + SPRINT[Sp.level].n + ':</b> ' + esc(SPRINT[Sp.level].d) + '</div>' + (st.injuryActive && sCap < 6 ? '<div class="sub">Hasta ' + SPRINT[sCap].n + ' en ' + PHASES[st.phase].n + '.</div>' : '') + '</div>' +
-    '<div class="row between"><span class="h3"><span class="c-sleep">RT</span> · Esfuerzos repetidos</span><span class="sub num">' + RT_LEVELS[st.rt.idx].replace('x', ' × ') + ' · ' + st.rt.streak + '/2</span></div>' +
+    '<div class="stack-sm"><div class="row between"><span class="h3">K · Golpeo</span><span class="sub num">' + kNeed + '</span></div>' + ladderHtml('k', st) + '<div class="small fg2"><b>' + KICK[K.level].n + ':</b> ' + esc(KICK[K.level].d) + '</div>' + (st.injuryActive && kCap < 8 ? '<div class="sub">Hasta ' + KICK[kCap].n + ' en ' + PHASES[st.phase].n + '.</div>' : '') + '</div>' +
+    '<div class="stack-sm"><div class="row between"><span class="h3">S · Sprint</span><span class="sub num">' + sNeed + '</span></div>' + ladderHtml('s', st) + '<div class="small fg2"><b>' + SPRINT[Sp.level].n + ':</b> ' + esc(SPRINT[Sp.level].d) + '</div>' + (st.injuryActive && sCap < 6 ? '<div class="sub">Hasta ' + SPRINT[sCap].n + ' en ' + PHASES[st.phase].n + '.</div>' : '') + '</div>' +
+    '<div class="row between"><span class="h3">RT · Esfuerzos repetidos</span><span class="sub num">' + RT_LEVELS[st.rt.idx].replace('x', ' × ') + ' · ' + st.rt.streak + '/2</span></div>' +
     '<details><summary>' + ic('info') + 'Reglas de los niveles</summary><div class="in"><ul class="crit">' + [
       ['Sesión limpia', 'Dolor ≤ 2 durante y 0 al día siguiente.'], ['K5, K7, S4 y S6', 'Piden 2 limpias seguidas: son los umbrales donde te lesionaste.'], ['Dolor 3 o más', 'Bajas un nivel.'], ['Una variable a la vez', 'Distancia, intensidad, tipo de golpe, volumen o carrera.'],
     ].map(([a, b]) => '<li><span class="mk">' + ic('info') + '</span><div class="small"><b>' + a + '</b><div class="fg3">' + b + '</div></div><span></span></li>').join('') + '</ul></div></details></div></section>';
@@ -72,21 +72,21 @@ function ballCard(st, today) {
     const b = ballBest(st.sessions, d.id, p); if (!b) continue;
     rows.push({ d, p, b, pts: ballSeries(st.sessions, d.id, p).slice(-8) });
   }
-  let h = '<section class="card"><div class="stack-sm"><div class="row between"><span class="h3">' + ic('ball') + ' Balón</span>' + chip('cabeceo fuerza alta ' + headers + '/' + BALL_HEADER_CAP, headers >= BALL_HEADER_CAP ? 'warn' : headers >= 7 ? 'load' : '') + '</div>';
+  let h = '<section class="card"><div class="stack-sm"><div class="ed-head"><span class="kicker">Balón</span>' + chip('cabeceo fuerza alta ' + headers + '/' + BALL_HEADER_CAP, headers >= BALL_HEADER_CAP ? 'warn' : headers >= 7 ? 'load' : '') + '</div>';
   if (mins.some(m => m.min)) h += barChart(mins.map(m => ({ label: fmtDate(m.start), value: m.min })), { cur: mins.length - 1, tone: 'lime', label: 'Minutos con balón por semana' }) + '<div class="sub">Minutos con balón por semana</div>';
-  if (!rows.length) h += '<p class="sub">Todavía no registraste estaciones con balón. Los récords aparecen acá.</p>';
-  else h += '<div class="stack-xs">' + rows.map(r => '<div class="lrow ball-row"><span class="fg2">' + esc(r.d.n) + (r.p ? ' <span class="fg4">· ' + (r.p === 'der' ? 'derecha' : 'izquierda') + '</span>' : '') + '<br><span class="fg4 small">' + fmtDate(r.b.date) + '</span></span>' + sparkline(r.pts, r.d.lowerBetter) + '<b class="num c-lime">' + fmtNum(r.b.val) + (r.d.metric === 'aciertos' ? '' : ' <small class="fg3">' + esc(r.d.unit) + '</small>') + '</b></div>').join('') + '</div>';
+  if (!rows.length) h += '<p class="sub">Sin récords todavía.</p>';
+  else h += '<div class="stack-xs">' + rows.map(r => '<div class="lrow ball-row"><span class="fg2">' + esc(r.d.n) + (r.p ? ' <span class="fg3">· ' + (r.p === 'der' ? 'derecha' : 'izquierda') + '</span>' : '') + '<br><span class="fg3 small">' + fmtDate(r.b.date) + '</span></span>' + sparkline(r.pts, r.d.lowerBetter) + '<b class="num c-lime">' + fmtNum(r.b.val) + (r.d.metric === 'aciertos' ? '' : ' <small class="fg3">' + esc(r.d.unit) + '</small>') + '</b></div>').join('') + '</div>';
   return h + '</div></section>';
 }
 function testsCard(st) {
   const T = st.test;
-  let h = '<section class="card"><div class="stack"><div class="row between"><span class="h3">Tests</span><button class="btn sm primary" data-act="new-test">' + ic('plus') + 'Cargar</button></div>';
-  if (!T) h += '<p class="sub">Sin tests todavía. El primero es la línea base.</p>';
+  let h = '<section class="card"><div class="stack"><div class="ed-head"><span class="kicker">Tests</span><button class="btn sm" data-act="new-test">' + ic('plus') + 'Cargar</button></div>';
+  if (!T) h += '<p class="sub">Sin tests todavía.</p>';
   else {
     const dd = T.dates || {};
     const rows = [['Extensión 8RM', T.ext, dd.ext8], ['Salto simple', T.hop1, dd.hop1], ['Triple salto', T.hop3, dd.hop3]];
-    h += '<div class="sub">Pierna lesionada vs sana · la línea marca el 90 %</div><div class="lsi">' + rows.map(([n, v, d]) => '<div class="lsi-row"><div class="top"><span>' + n + (d ? ' <span class="fg4">· ' + fmtDate(d) + '</span>' : '') + '</span><span class="num ' + (v === null ? 'fg4' : v >= 90 ? 'c-lime' : 'c-load') + '">' + (v === null ? 'sin medir' : fmtNum(v) + ' %') + '</span></div><div class="lsi-track"><div class="lsi-fill' + (v !== null && v >= 90 ? ' pass' : '') + '" style="width:' + (v === null ? 0 : clamp(v, 0, 110) / 110 * 100) + '%"></div><div class="lsi-ref" style="left:' + (90 / 110 * 100) + '%"></div></div></div>').join('') + '</div>' +
-      '<div class="stats"><div class="stat ' + (T.rn === 'completo' && (T.rnPain || 0) <= 1 ? 'lime' : '') + '"><span class="v" style="font-size:16px">' + esc(T.rn ? capFirst(T.rn) : '—') + '</span><span class="k">Reverse Nordic' + (T.rnPain !== null && T.rnPain !== undefined ? ' · dolor ' + T.rnPain : '') + '</span></div><div class="stat ' + (T.palp === 0 ? 'lime' : T.palp >= 3 ? 'pain' : '') + '"><span class="v">' + (T.palp ?? '—') + '</span><span class="k">Palpación</span></div><div class="stat"><span class="v">' + (T.stretchDiff === null ? '—' : fmtNum(T.stretchDiff)) + '<small>cm</small></span><span class="k">Talón-glúteo</span></div></div>';
+    h += '<div class="sub">Pierna lesionada vs sana · la línea marca el 90 %</div><div class="lsi">' + rows.map(([n, v, d]) => '<div class="lsi-row"><div class="top"><span>' + n + (d ? ' <span class="fg3">· ' + fmtDate(d) + '</span>' : '') + '</span><span class="num ' + (v === null ? 'fg3' : v >= 90 ? 'c-lime' : 'c-load') + '">' + (v === null ? 'sin medir' : fmtNum(v) + ' %') + '</span></div><div class="lsi-track"><div class="lsi-fill' + (v !== null && v >= 90 ? ' pass' : '') + '" style="width:' + (v === null ? 0 : clamp(v, 0, 110) / 110 * 100) + '%"></div><div class="lsi-ref" style="left:' + (90 / 110 * 100) + '%"></div></div></div>').join('') + '</div>' +
+      '<div class="stats"><div class="stat ' + (T.rn === 'completo' && (T.rnPain || 0) <= 1 ? 'lime' : '') + '"><span class="v v-sm">' + esc(T.rn ? capFirst(T.rn) : '—') + '</span><span class="k">Reverse Nordic' + (T.rnPain !== null && T.rnPain !== undefined ? ' · dolor ' + T.rnPain : '') + '</span></div><div class="stat ' + (T.palp === 0 ? 'lime' : T.palp >= 3 ? 'pain' : '') + '"><span class="v">' + (T.palp ?? '—') + '</span><span class="k">Palpación</span></div><div class="stat"><span class="v">' + (T.stretchDiff === null ? '—' : fmtNum(T.stretchDiff)) + '<small>cm</small></span><span class="k">Talón-glúteo</span></div></div>';
     const pts = st.tests.map(t => ({ x: t.date, y: testSummary(t, st.side).ext })).filter(p => p.y !== null);
     if (pts.length > 1) h += lineChart(pts, { ref: 90, unit: ' %', min: 60, max: 110, label: 'Evolución de la extensión' });
     h += '<details><summary>' + ic('history') + 'Historial de tests</summary><div class="in">' + st.tests.slice().reverse().map(t => { const x = testSummary(t, st.side); return '<button class="blk" data-act="edit-test" data-id="' + esc(t.id) + '"><span class="c">' + ic('flask') + '</span><div class="grow"><div class="t">' + fmtDate(t.date) + '</div><div class="s">Ext. ' + (x.ext === null ? '—' : fmtNum(x.ext) + ' %') + ' · Salto ' + (x.hop1 === null ? '—' : fmtNum(x.hop1) + ' %') + ' · RN ' + esc(t.rn || '—') + '</div></div>' + ic('chev') + '</button>'; }).join('') + '</div></details>';
@@ -102,15 +102,15 @@ function sleepCard(st, today) {
   const avg = Math.round(vals.reduce((a, b) => a + b, 0) / vals.length * 10) / 10;
   const scores = (S.data.checkins || []).filter(c => c.date >= addDays(today, -13)).map(readinessScore).filter(x => x !== null);
   const rAvg = scores.length ? Math.round(scores.reduce((a, b) => a + b, 0) / scores.length) : null;
-  return '<section class="card t-sleep"><div class="stack-sm"><div class="row between"><span class="h3">Sueño · 14 días</span><span class="row nowrap" style="gap:6px">' + chip('media ' + fmtNum(avg) + ' h', avg >= 9 ? 'sleep' : avg >= 8 ? 'blue' : 'warn', 'moon') + (rAvg !== null ? chip('estado ' + rAvg, readinessTone(rAvg) === 'load' ? 'warn' : readinessTone(rAvg)) : '') + '</span></div>' +
-    barChart(rows, { tone: 'sleep', ref: 9, label: 'Horas de sueño', showVal: false, fmt: (v) => fmtNum(v) }) + '<p class="sub">La línea marca 9 h. Dormir de 21:30 a 7:30 te da 10 h: tu mayor ventaja.</p></div></section>';
+  return '<section class="card t-sleep"><div class="stack-sm"><div class="ed-head"><span class="kicker">Sueño · 14 días</span><span class="row nowrap tight">' + chip('media ' + fmtNum(avg) + ' h', avg >= 9 ? 'sleep' : avg >= 8 ? 'blue' : 'warn', 'moon') + (rAvg !== null ? chip('estado ' + rAvg, readinessTone(rAvg) === 'load' ? 'warn' : readinessTone(rAvg)) : '') + '</span></div>' +
+    barChart(rows, { tone: 'sleep', ref: 9, label: 'Horas de sueño', showVal: false, fmt: (v) => fmtNum(v) }) + '<p class="sub">La línea marca 9 h.</p></div></section>';
 }
 function loadCard(st, today) {
   const loads = weeklyLoads(st.sessions, today, 8), cur = loads[loads.length - 1], prev = loads[loads.length - 2];
   const ch = prev.load > 0 ? Math.round((cur.load / prev.load - 1) * 100) : null;
-  return '<section class="card"><div class="stack-sm"><div class="row between"><span class="h3">Carga semanal</span>' + (ch !== null ? chip((ch > 0 ? '+' : '') + ch + ' %', ch > 20 ? 'warn' : 'lime') : '') + '</div>' +
+  return '<section class="card"><div class="stack-sm"><div class="ed-head"><span class="kicker">Carga semanal</span>' + (ch !== null ? chip((ch > 0 ? '+' : '') + ch + ' %', ch > 20 ? 'warn' : 'lime') : '') + '</div>' +
     barChart(loads.map(l => ({ label: fmtDate(l.start), value: l.load })), { cur: loads.length - 1, label: 'Carga semanal' }) +
-    '<p class="sub">Minutos × esfuerzo (RPE). Subir más de 20 % de una semana a otra aumenta el riesgo de lesión.</p></div></section>';
+    '<p class="sub">Minutos × esfuerzo. Evita subir más de 20 % por semana.</p></div></section>';
 }
 function coverageCard(st, today) {
   const ws = weekStartOf(today), led = muscleLedger(st, ws, today, weekPlan(ws));
@@ -121,20 +121,20 @@ function coverageCard(st, today) {
   const cov = coverage(st.sessions, today, 28);
   const patGaps = coverageGaps(cov, st).map(p => LABELS.pat[p]);
   const patRows = KEY_PATTERNS.map(p => ({ n: LABELS.pat[p], v: cov.pat[p] || 0 })), zoneRows = PREV_ZONES.map(z => ({ n: LABELS.z[z], v: cov.z[z] || 0 }));
-  let h = '<section class="card"><div class="stack-sm"><div class="row between"><span class="h3">Series por grupo · esta semana</span>' + chip(short.length ? short.length + ' por debajo' : 'Todo cubierto', short.length ? 'warn' : 'lime') + '</div>' +
-    '<p class="sub">Hecho más lo que falta del plan, contra el objetivo semanal de ' + PHASES[st.phase].n + '. El plan suma accesorios solo cuando hay margen de tiempo.</p>' +
+  let h = '<section class="card"><div class="stack-sm"><div class="ed-head"><span class="kicker">Series por grupo · semana</span>' + chip(short.length ? short.length + ' por debajo' : 'Todo cubierto', short.length ? 'warn' : 'lime') + '</div>' +
+    '<p class="sub">Contra el objetivo semanal de ' + PHASES[st.phase].n + '.</p>' +
     '<div class="bmap-duo">' + bodyMapSvg({ view: 'front', mode: 'heat', values: vals }) + bodyMapSvg({ view: 'back', mode: 'heat', values: vals }) + '</div>' +
     '<div class="bmap-legend"><span><i style="background:' + heatColor(1) + '"></i>Objetivo cubierto</span><span><i style="background:' + heatColor(0.8) + '"></i>Cerca</span><span><i style="background:' + heatColor(0.2) + '"></i>Falta</span></div>' +
     '<div class="stack-xs">' + gaps.map(g => { const r = g.lo ? g.have / g.lo : 0; return '<div class="mg-row"><span class="nm">' + esc(g.n) + '</span><span class="tr"><span class="fl" style="width:' + clamp(g.have / Math.max(g.hi, 1) * 100, 0, 100).toFixed(0) + '%;background:' + heatColor(r) + '"></span><span class="tg" style="left:' + (g.lo / Math.max(g.hi, 1) * 100).toFixed(0) + '%"></span></span><span class="val num">' + fmtNum(g.have) + '<small>/' + g.lo + '-' + g.hi + '</small></span></div>'; }).join('') + '</div>' +
     '<details><summary>' + ic('chart') + 'Patrones y zonas · 28 días</summary><div class="in">' + (patGaps.length ? note('warn', '<b>Sin estímulo y ya permitido en tu fase:</b> ' + esc(patGaps.slice(0, 8).join(', ')) + (patGaps.length > 8 ? ' y ' + (patGaps.length - 8) + ' más' : '') + '.') : note('good', 'Todos los patrones permitidos en tu fase tuvieron estímulo.')) +
     '<div class="h3">Patrones</div>' + hbars(patRows) + '<div class="h3">Zonas de prevención</div>' + hbars(zoneRows) + '</div></details>' +
-    '<p class="sub fg4">Siluetas: react-body-highlighter (MIT).</p></div></section>';
+    '<p class="credit">Siluetas: react-body-highlighter (MIT).</p></div></section>';
   return h;
 }
 function weightCard(st) {
   const ws = st.weights;
-  return '<section class="card"><div class="stack-sm"><div class="row between"><span class="h3">Peso</span><button class="btn sm" data-act="add-weight">' + ic('plus') + 'Registrar</button></div>' +
-    (ws.length >= 2 ? lineChart(ws.map(w => ({ x: w.date, y: Number(w.kg) })), { unit: ' kg', label: 'Peso' }) : '<p class="sub">' + (ws.length ? fmtNum(ws[0].kg) + ' kg el ' + fmtDate(ws[0].date) + '. ' : '') + 'Pésate una vez por semana en el gimnasio, a la misma hora.</p>') +
+  return '<section class="card"><div class="stack-sm"><div class="ed-head"><span class="kicker">Peso</span><button class="btn sm" data-act="add-weight">' + ic('plus') + 'Registrar</button></div>' +
+    (ws.length >= 2 ? lineChart(ws.map(w => ({ x: w.date, y: Number(w.kg) })), { unit: ' kg', label: 'Peso' }) : '<p class="sub">' + (ws.length ? fmtNum(ws[0].kg) + ' kg el ' + fmtDate(ws[0].date) + '. ' : '') + 'Pésate una vez por semana.</p>') +
     (st.profile.weightTarget ? '<div class="sub">' + ic('target') + ' ' + esc(st.profile.weightTarget) + '</div>' : '') + '</div></section>';
 }
 
