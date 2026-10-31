@@ -183,6 +183,7 @@ a.chip:active, button.chip:active { transform: scale(0.96); }
 .toggle .sw::after { content: ''; position: absolute; top: 3px; left: 3px; width: 22px; height: 22px; border-radius: 50%; background: #fff; box-shadow: 0 1px 3px rgba(0, 0, 0, 0.4); transition: transform var(--dur-2) var(--ease-out); }
 .toggle.on .sw { background: var(--blue-fill); }
 .toggle.on.lime .sw { background: var(--lime); }
+.toggle.on.sleep .sw { background: var(--violet); }
 .toggle.on .sw::after { transform: translateX(18px); }
 
 /* ---------- Pestañas: fijas abajo, con zona segura; activa en blanco, sin píldora ---------- */
