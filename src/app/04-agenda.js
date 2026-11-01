@@ -21,6 +21,24 @@ function sleepOf(st, date) {
   const h = span !== null ? span / 60 : num(ci.sleepH);
   return { h, wake: ci.wakeTime ? hm(ci.wakeTime) : null, bed: ci.bedTime ? hm(ci.bedTime) : null };
 }
+/* Deuda de sueño de las últimas 7 noches contra el objetivo (9 h). Neta: las noches largas descuentan.
+   Solo cuentan las noches registradas en el check-in. */
+const SLEEP_TARGET_H = 9, SLEEP_DEBT_LIMIT = 5;
+function sleepTargetOf(st) { const t = num(st && st.profile && st.profile.sleepTarget); return t !== null && t >= 6 && t <= 12 ? t : SLEEP_TARGET_H; }
+function sleepDebt(st, date) {
+  const target = sleepTargetOf(st);
+  let sum = 0, nights = 0;
+  for (let k = 0; k < 7; k++) { const s = sleepOf(st, addDays(date, -k)); if (s && s.h !== null && s.h > 0) { nights++; sum += target - s.h; } }
+  return { debt: Math.max(0, Math.round(sum * 10) / 10), nights, target };
+}
+/* Sueño del día: menos de 6 h anoche o una deuda de 5 h o más → sin golpeo fuerte ni sprint rápido (y sin test) */
+function sleepDayRule(st, date) {
+  const sl = sleepOf(st, date);
+  if (sl && sl.h !== null && sl.h < 6) return { why: 'dormiste ' + fmtDur(sl.h * 60), text: 'Dormiste ' + fmtDur(sl.h * 60) + ': hoy golpeo hasta K3 y sprint hasta S2.' };
+  const d = sleepDebt(st, date);
+  if (d.debt >= SLEEP_DEBT_LIMIT) return { why: 'te faltan ' + fmtDur(d.debt * 60) + ' de sueño', text: 'Te faltan ' + fmtDur(d.debt * 60) + ' de sueño en 7 días: mientras las recuperas, golpeo hasta K3 y sprint hasta S2. Acuéstate 30 min antes.' };
+  return null;
+}
 /* Margen mínimo desde que te levantas hasta empezar el gimnasio: desayuno + traslado (como 07:30 → 08:30) */
 const WAKE_TO_GYM = 60;
 
@@ -50,13 +68,16 @@ function buildAgenda(day, st, agendaDoc, opts) {
   const prof = st.profile || {}, sch = scheduleOf(prof), ov = (agendaDoc && agendaDoc.items) || {};
   const wd = weekday(day.date);
   const items = [], warnings = [];
-  const kind = dayKind(day, prof);
+  const kind = dayKind(day, prof, st.sessions);
   const O = (key, def) => (ov[key] && num(ov[key].start) !== null ? num(ov[key].start) : def);
   const hidden = (key) => !!(ov[key] && ov[key].hidden);
   const add = (it) => { if (!hidden(it.key)) { it.end = it.start + it.dur; it.moved = !!(ov[it.key] && num(ov[it.key].start) !== null); it.why = AGENDA_WHY[it.key] || AGENDA_WHY[it.kind] || ''; items.push(it); } return it; };
 
   const slept = sleepOf(st, day.date);
-  const wake = O('wake', slept && slept.wake !== null ? slept.wake : hm(sch.wake)), sleep = O('sleep', hm(sch.sleep));
+  /* Dormir 30 min antes mientras haya deuda de sueño y desde 5 días antes de una prueba (hasta 1 h antes) */
+  const sDebt = sleepDebt(st, day.date).debt, preTrial = (prof.trials || []).some(t => { const x = diffDays(t, day.date); return x >= 1 && x <= 5; });
+  const earlier = Math.min(60, (sDebt >= 1 ? 30 : 0) + (preTrial ? 30 : 0));
+  const wake = O('wake', slept && slept.wake !== null ? slept.wake : hm(sch.wake)), sleep = O('sleep', hm(sch.sleep) - earlier);
   const lateWake = !!(slept && slept.wake !== null && !(ov.wake && num(ov.wake.start) !== null) && slept.wake > hm(sch.wake) + 20);
   add({ key: 'wake', kind: 'wake', title: slept && slept.wake !== null ? 'Te levantaste' : 'Despertar', start: wake, dur: 0, movable: true, marker: true });
 
@@ -133,10 +154,11 @@ function buildAgenda(day, st, agendaDoc, opts) {
     warnings.push({ key: 'campo', level: 'warning', text: 'Menos de 6 h entre la fuerza y la cancha: el sprint y el golpeo salen con menos calidad.' });
   const sleepH = (nextWake + 1440 - sleep) / 60;
   if (sleepH < 8.5) warnings.push({ key: 'sleep', level: 'warning', text: 'Quedan ' + fmtDur(nextWake + 1440 - sleep) + ' de sueño: apunta a 9 h o más.' });
-  if (debt) {
-    const sl = items.find(x => x.key === 'sleep');
-    if (sl) sl.why = 'Anoche dormiste ' + fmtDur(slept.h * 60) + '. Acuéstate a tu hora de siempre y levántate a la hora fija: así se recupera el ritmo sin arrastrar el desfase.';
-  }
+  const slItem = items.find(x => x.key === 'sleep');
+  if (slItem && earlier && !(ov.sleep && num(ov.sleep.start) !== null)) {
+    slItem.why = (sDebt >= 1 ? 'Te faltan ' + fmtDur(sDebt * 60) + ' de sueño en los últimos 7 días' : '') + (sDebt >= 1 && preTrial ? ' y ' : '') + (preTrial ? 'la prueba es en menos de una semana' : '') +
+      ': acuéstate ' + (earlier >= 60 ? '1 h' : earlier + ' min') + ' antes, con la hora de levantarte fija' + (preTrial ? '. En deportistas, dormir más mejoró la velocidad y la precisión.' : ', hasta recuperarlas.');
+  } else if (slItem && debt) slItem.why = 'Anoche dormiste ' + fmtDur(slept.h * 60) + '. Acuéstate a tu hora de siempre y levántate a la hora fija: así se recupera el ritmo sin arrastrar el desfase.';
 
   const first = Math.min(wake, ...items.map(x => x.start));
   const last = Math.max(sleep, ...items.map(x => x.end));

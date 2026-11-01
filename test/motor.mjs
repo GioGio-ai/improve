@@ -1,4 +1,5 @@
-// Motor v4.1: reglas de seguridad, sesiones movidas y semana de la prueba. Sin navegador ni fixture externo.
+// Motor v4.1-v4.2: seguridad, sesiones movidas, semana de la prueba (fase A) y estructura, progresión y sueño (fase B).
+// Sin navegador ni fixture externo.
 // node test/motor.mjs
 import { createRequire } from 'node:module';
 import fs from 'node:fs';
@@ -254,6 +255,197 @@ if (freezeTargets) {
   const wk = {}; for (let i = 0; i < 21; i++) { const a = addDays(TUE, i); if (intenseOn(a)) wk[E.weekStartOf(a)] = (wk[E.weekStartOf(a)] || 0) + 1; }
   Object.entries(wk).forEach(([w, n]) => ok(n <= 3, 'Simulación: ' + n + ' días intensos en la semana del ' + w));
   ok(moved.length > 0, 'Simulación: no hubo ningún movimiento para comprobar');
+}
+
+/* ======================= Fase B (v4.2) ======================= */
+const dayBlocks = E.dayBlocks, deriveKick = G('deriveKick'), KICK_REQ = G('KICK_REQ'), buildAgenda = G('buildAgenda'), hm = G('hm');
+const k8 = [{ id: 'k8a', date: '2026-10-26', type: 'golpeo', done: true, kick: { level: 8, pd: 0, pn: 0 } }];
+const F5 = { phase: 5, kickStart: 8, sprintStart: 6, phaseLog: [{ phase: 4, date: '2026-10-10' }, { phase: 5, date: '2026-10-25' }] };
+const WEEK = [MON, TUE, WED, THU, '2026-11-06', SAT, '2026-11-08'];
+const campoOrder = (day) => ((dayBlocks(day).find(b => b.key === 'campo') || { sessions: [] }).sessions).map(s => s.type);
+
+/* ---------- E2 · F5 sin club: golpeo, sprint y balón; 3 intensos no seguidos ---------- */
+{
+  const p = plan(MON, { injury: F5, sessions: s6.concat(k8) });
+  const wk = WEEK.map(dt => p.day(dt));
+  const n = (t) => wk.filter(x => types(x).includes(t)).length;
+  ok(n('golpeo') >= 2, 'E2: F5 sin club con ' + n('golpeo') + ' golpeos: ' + wk.map(desc).join(' · '));
+  ok(n('sprint') >= 1, 'E2: F5 sin club sin sprint');
+  ok(n('balon') >= 6, 'E2: F5 sin club con balón ' + n('balon') + ' días');
+  const ints = wk.map(x => x.intense);
+  ok(ints.filter(Boolean).length <= 3 && !ints.some((v, i) => v && ints[i + 1]), 'E2: intensos ' + wk.map(x => (x.intense ? 'I' : '·')).join(''));
+  const fm = wk.flatMap(x => x.sessions).find(s => s.type === 'fuerzaMax');
+  ok(fm && fm.est <= 80, 'E17: Fuerza máxima de ' + (fm && fm.est) + ' min');
+  const sat = p.day(SAT), j = ses(sat, 'juego');
+  ok(j && /Simulación/.test(j.title) && j.field.steps.length === 4, 'E12: sin compañeros el sábado no es simulación de partido: ' + (j && j.title));
+  const q = plan(MON, { injury: F5, sessions: s6.concat(k8), profile: { partners: true } });
+  ok(/Juego reducido/.test((ses(q.day(SAT), 'juego') || { field: { steps: [{}] } }).field.steps[0].n || ''), 'E12: con compañeros no hay juego reducido');
+  /* E11 · K8 con fatiga: el jueves después del RT; sin RT, un RT corto antes */
+  const thu = p.day(THU), tue = p.day(TUE);
+  const order = campoOrder(thu);
+  ok(order.indexOf('rt') >= 0 && order.indexOf('golpeo') > order.indexOf('rt'), 'E11: el jueves el golpeo K8 no va después del RT: ' + order.join(','));
+  ok(ses(thu, 'golpeo') && !ses(thu, 'golpeo').field.pre, 'E11: con RT en el día, el K8 no debería sumar otro RT');
+  ok(ses(tue, 'golpeo') && ses(tue, 'golpeo').field.pre && ses(tue, 'golpeo').field.pre.series === 2, 'E11: K8 sin RT en el día y sin RT corto antes');
+  const gNo = E.makeSession('golpeo', TUE, p.st, { noRT: true });
+  ok(gNo.level === 8 && !gNo.field.pre, 'E11: con una molestia que quita el RT, el K8 suma un RT corto');
+  const iq = plan(TUE, { injury: F5, sessions: s6.concat(k8), molestias: [mol({ fecha: TUE, zona: 'isquio', lado: 'd', tipo: 'cargado', nivel: 8 })] });
+  ok(!iq.week.filter(x => x.date >= TUE && x.date <= WED).some(x => (ses(x, 'golpeo') || { field: {} }).field.pre), 'E11: isquio cargado 8 y un día con RT corto antes del K8');
+}
+
+/* ---------- D9 · Golpeo primero hasta K7 ---------- */
+{
+  const tue = plan(TUE).day(TUE), order = campoOrder(tue);
+  ok(order[0] === 'golpeo' && order.indexOf('sprint') > 0, 'D9: el martes F3 la cancha no empieza por el golpeo: ' + order.join(','));
+}
+
+/* ---------- D2 · Ritmo de progresión ---------- */
+{
+  ok(KICK_REQ[6] === 2, 'D2: K6 debería pedir 2 sesiones limpias');
+  const L = (arr) => deriveKick(arr.map(([date, level], i) => ({ id: 'k' + i, date, type: 'golpeo', done: true, kick: { level, pd: 0, pn: 0 } })), 1);
+  const a = L([['2026-10-05', 1], ['2026-10-06', 2]]);
+  ok(a.level === 2 && a.hold, 'D2: K1 y K2 en días seguidos suben a K' + a.level + ' (máximo un nivel cada 48 h)');
+  const b = L([['2026-10-05', 1], ['2026-10-06', 2], ['2026-10-07', 2]]);
+  ok(b.level === 3, 'D2: a las 48 h no sube: K' + b.level);
+  // Plan con aceleración (F2-F3): el golpeo previsto nunca sube dos días seguidos
+  const p = plan(MON, { injury: { phase: 3, kickStart: 1, sprintStart: 1 } , sessions: [] });
+  const base = clone(BASE); base.sessions = base.sessions.filter(s => s.type !== 'golpeo' && s.type !== 'sprint');
+  const st = E.deriveState({ profile: base.profile, settings: base.settings, weights: base.weights, injuries: base.injuries, tests: base.tests, checkins: [], sessions: base.sessions, agenda: [], molestias: [], customExercises: [] }, MON);
+  const wk = E.buildWeek(st, MON, MON).concat(E.buildWeek(st, addDays(MON, 7), MON));
+  let prev = null, lastUp = null;
+  for (const x of wk) { const g = ses(x, 'golpeo'); if (!g) continue; if (prev !== null && g.level > prev) { ok(!lastUp || E.addDays(lastUp, 2) <= x.date, 'D2: el golpeo previsto sube el ' + lastUp + ' y otra vez el ' + x.date); lastUp = x.date; } prev = g.level; }
+  ok(p.st, 'D2: estado');
+  // K7 en dos pasos
+  const k7 = [['2026-10-12', 6], ['2026-10-15', 6], ['2026-10-19', 6]].map(([date, level], i) => ({ id: 'k7-' + i, date, type: 'golpeo', done: true, kick: { level, pd: 0, pn: 0 } }));
+  const q = plan(TUE, { injury: { phase: 4, phaseLog: [{ phase: 4, date: '2026-10-10' }] }, sessions: k7 });
+  const g7 = ses(q.day(TUE), 'golpeo');
+  ok(q.st.kick.level === 7 && g7 && g7.level === 7 && g7.field.target === 30, 'D2: la primera sesión de K7 no es 20 remates + 10 centros: K' + (g7 && g7.level) + ' · ' + (g7 && g7.field.target));
+  const volley = ((ses(q.day(TUE), 'balon') || { field: { drills: [] } }).field.drills || []).filter(x => x.foot === 'der');
+  ok(!volley.length, 'D2: la primera sesión de K7 ya tiene voleas con la derecha en Balón: ' + volley.map(x => x.id).join(','));
+  const q2 = plan(THU, { injury: { phase: 4, phaseLog: [{ phase: 4, date: '2026-10-10' }] }, sessions: k7.concat([{ id: 'k7-x', date: TUE, type: 'golpeo', done: true, kick: { level: 7, pd: 0, pn: 0 } }]) });
+  const g72 = ses(q2.day(THU), 'golpeo');
+  ok(g72 && g72.level === 7 && g72.field.target === 40, 'D2: la segunda sesión de K7 no es completa: ' + (g72 && g72.field.target));
+  // Piso de días desde la lesión
+  const recent = plan(MON, { injury: { phase: 2, date: '2026-10-25', phaseLog: [{ phase: 1, date: '2026-10-25' }, { phase: 2, date: '2026-10-30' }] } });
+  ok(recent.st.criteria && !recent.st.criteria.ready && recent.st.criteria.items.some(i => /días desde la lesión/.test(i.label) && !i.ok), 'D2: lesión de 8 días lista para F3');
+  const pr = E.project(recent.st, MON);
+  ok(!pr.phases[3] || pr.phases[3] >= '2026-11-08', 'D2: la proyección pasa a F3 el ' + pr.phases[3] + ', antes de los 14 días');
+  const own = plan(MON, { injury: { phase: 2, date: '2026-10-25', floors: { 3: 5 }, phaseLog: [{ phase: 1, date: '2026-10-25' }, { phase: 2, date: '2026-10-30' }] } });
+  ok(own.st.criteria && own.st.criteria.ready, 'D2: el piso configurado en la lesión no se usa');
+  const old = plan(MON);
+  ok(!(old.st.criteria.items || []).some(i => /días desde la lesión/.test(i.label) && !i.ok), 'D2: el piso frena una lesión de 2 meses');
+}
+
+/* ---------- D5 · Sueño acumulado ---------- */
+{
+  const short = plan(TUE, { checkins: [ci(TUE, { sleepH: 5.5 })] }).day(TUE);
+  ok((ses(short, 'golpeo') || { level: 0 }).level <= 3 && (ses(short, 'sprint') || { level: 0 }).level <= 2 && !types(short).includes('test'), 'D5: 5,5 h de sueño: ' + desc(short));
+  const nights = [0, 1, 2, 3, 4, 5, 6].map(k => ci(addDays(TUE, -k), { sleepH: 8.2 }));
+  const debt = plan(TUE, { checkins: nights });
+  const dT = debt.day(TUE), dW = debt.day(WED);
+  ok((ses(dT, 'golpeo') || { level: 0 }).level <= 3 && !types(dT).includes('test'), 'D5: deuda de 5,6 h y el martes: ' + desc(dT));
+  ok(dT.notes.some(n => /de sueño en 7 días/.test(n)), 'D5: sin nota de la deuda de sueño');
+  ok(G('sleepDebt')(debt.st, TUE).debt >= 5, 'D5: la deuda no suma 5 h');
+  const fine = plan(TUE, { checkins: [0, 1, 2, 3, 4, 5, 6].map(k => ci(addDays(TUE, -k), { sleepH: 9.5 })) }).day(TUE);
+  ok((ses(fine, 'golpeo') || {}).level === (ses(plan(TUE).day(TUE), 'golpeo') || {}).level, 'D5: con 9,5 h el golpeo cambia');
+  if (buildAgenda) {
+    const ag = buildAgenda(dT, debt.st, null), ag0 = buildAgenda(plan(TUE).day(TUE), plan(TUE).st, null);
+    ok(ag.sleep === ag0.sleep - 30, 'D5: con deuda la hora de dormir no se adelanta 30 min (' + ag.sleep + ' vs ' + ag0.sleep + ')');
+    const pt = plan('2026-11-12');
+    const agT = buildAgenda(pt.day('2026-11-12'), pt.st, null);
+    ok(agT.sleep === hm('21:30') - 30, 'D5: a 4 días de la prueba no se adelanta la hora de dormir');
+  }
+}
+
+/* ---------- D7 · Dolor muscular alto: saltos a la mitad y sin estrenar nivel ---------- */
+{
+  const base = plan(THU).day(THU), sore = plan(THU, { checkins: [ci(THU, { soreness: 1 })] }).day(THU);
+  const jumps = (d) => d.sessions.flatMap(s => s.items || []).filter(it => BANK_INDEX[it.id] && BANK_INDEX[it.id].c === 'pliom').reduce((a, it) => a + it.spec.s, 0);
+  ok(jumps(base) > 0 && jumps(sore) <= Math.ceil(jumps(base) / 2) + 1, 'D7: saltos ' + jumps(base) + ' → ' + jumps(sore));
+  const st = plan(THU).st, best = Math.max(1, ...st.sessions.filter(s => s.type === 'golpeo' && s.kick && G('outcome')(s.kick.pd, s.kick.pn) === 'clean').map(s => s.kick.level));
+  ok(!ses(sore, 'golpeo') || ses(sore, 'golpeo').level <= best, 'D7: con dolor muscular estrena K' + (ses(sore, 'golpeo') || {}).level);
+}
+
+/* ---------- D8 · Día de test más liviano ---------- */
+{
+  const d = plan(TUE).day(TUE), fa = ses(d, 'fuerzaA');
+  ok(types(d).includes('test') && fa && !fa.items.some(it => it.slot === 'ext_uni'), 'D8: el día de test la Fuerza A repite la extensión de rodilla');
+  ok(fa && fa.items.some(it => it.cutTest), 'D8: el día de test la Fuerza A no baja una serie');
+}
+
+/* ---------- E16 · Tipo de día para la comida ---------- */
+{
+  const dayKind = G('dayKind');
+  const p = plan(TUE), d = p.day(TUE);
+  const skipped = d.sessions.map(s => ({ id: 'n-' + s.type, date: TUE, type: s.type, done: false }));
+  ok(dayKind(d, p.st.profile, skipped) !== 'alto', 'E16: con todo «No la hice» el día sigue en carga alta');
+  const m = plan(TUE, { sessions: [match(MON)] });
+  ok(['moderado', 'alto'].includes(dayKind(m.day(TUE), m.st.profile, m.st.sessions)), 'E16: el día después de un partido es «' + dayKind(m.day(TUE), m.st.profile, m.st.sessions) + '»');
+}
+
+/* ---------- Simulación de 6 semanas día por día (F2 → F5 y F5 sin club), congelando como la app ---------- */
+function simulate(start, nDays, patch) {
+  const d = clone(BASE); patch = patch || {};
+  if (patch.injury) Object.assign(d.injuries[0], patch.injury);
+  if (patch.keep) d.sessions = d.sessions.filter(patch.keep);
+  if (patch.sessions) d.sessions = d.sessions.concat(patch.sessions);
+  let id = 0; const moved = [], levelUps = { k: [], s: [] }, plans = [];
+  let prevK = null, prevS = null;
+  for (let i = 0; i < nDays; i++) {
+    const today = addDays(start, i);
+    const mk = () => E.deriveState({ profile: d.profile, settings: d.settings, weights: d.weights, injuries: d.injuries, tests: d.tests, checkins: d.checkins, sessions: d.sessions, agenda: [], molestias: [], customExercises: [] }, today);
+    let st = mk();
+    if (st.criteria && st.criteria.ready && st.phase < 5) { d.injuries[0].phase = st.phase + 1; d.injuries[0].phaseLog.push({ phase: st.phase + 1, date: today }); st = mk(); }
+    if (prevK !== null && st.kick.level > prevK) levelUps.k.push(today);
+    if (prevS !== null && st.sprint.level > prevS) levelUps.s.push(today);
+    prevK = st.kick.level; prevS = st.sprint.level;
+    const week = E.buildWeek(st, E.weekStartOf(today), today);
+    const day = week.find(x => x.date === today);
+    plans.push({ date: today, phase: st.phase, day });
+    Object.assign(d.settings.plan, freezeTargets(week, today, d.settings.plan));
+    if (day.swapTo) moved.push(day.swapTo);
+    for (const s of day.sessions) {
+      if (s.type === 'descanso') continue;
+      const L = { id: 'sim-' + (++id), date: today, type: s.type, done: true, minutes: s.est || 30, rpe: s.intense ? 8 : 5, est: s.est, source: 'entreno' };
+      if (s.field && s.field.kind === 'golpeo') L.kick = { level: s.level, pd: 0, pn: 0 };
+      if (s.field && s.field.kind === 'sprint') L.spr = { level: s.level, pd: 0, pn: 0 };
+      if (s.field && s.field.kind === 'rt') L.rt = { level: s.level };
+      if (s.type === 'test') { L.tests = ['ext8', 'hop1', 'hop3', 'rn', 'palp']; d.tests.push({ id: 't-' + today, date: today, ext8: { d: 48, i: 50 }, hop1: { d: 160, i: 165 }, hop3: { d: 510, i: 520 }, rn: 'completo', rnPain: 0, palp: 0 }); }
+      if (s.items && s.items.length) L.exercises = s.items.map(it => ({ id: it.id, slot: it.slot, sets: Array.from({ length: (it.spec && it.spec.s) || 0 }, () => ({ kg: 20, reps: 8, done: true })) }));
+      d.sessions.push(L);
+    }
+  }
+  return { d, moved, levelUps, plans };
+}
+function invariants(tag, R, start, nDays) {
+  const intenseOn = (dt) => R.d.sessions.some(s => s.date === dt && isIntenseLog(s));
+  for (const dt of R.moved) if (dt < addDays(start, nDays)) ok(intenseOn(dt), tag + ': lo movido al ' + dt + ' no se hizo');
+  for (let i = 0; i + 1 < nDays; i++) { const a = addDays(start, i), b = addDays(start, i + 1); ok(!(intenseOn(a) && intenseOn(b)), tag + ': dos días intensos seguidos ' + a + ' y ' + b); }
+  const wk = {}; for (let i = 0; i < nDays; i++) { const a = addDays(start, i); if (intenseOn(a)) wk[E.weekStartOf(a)] = (wk[E.weekStartOf(a)] || 0) + 1; }
+  Object.entries(wk).forEach(([w, n]) => ok(n <= 3, tag + ': ' + n + ' días intensos en la semana del ' + w));
+  for (const k of ['k', 's']) { const u = R.levelUps[k]; for (let i = 1; i < u.length; i++) ok(E.addDays(u[i - 1], 2) <= u[i], tag + ': sube de nivel ' + k.toUpperCase() + ' el ' + u[i - 1] + ' y el ' + u[i]); }
+}
+if (freezeTargets) {
+  // Desde F2 con K1 y S1, todo limpio: avanza de fase al cumplir criterios
+  const A = simulate(MON, 42, { injury: { phase: 2, kickStart: 1, sprintStart: 1, phaseLog: [{ phase: 1, date: '2026-09-02' }, { phase: 2, date: '2026-09-20' }] }, keep: s => s.type !== 'golpeo' && s.type !== 'sprint' });
+  invariants('Sim F2', A, MON, 42);
+  const kFirst7 = A.d.sessions.filter(s => s.kick && s.kick.level === 7).sort((a, b) => (a.date < b.date ? -1 : 1))[0];
+  const p7 = kFirst7 && A.plans.find(x => x.date === kFirst7.date);
+  ok(!kFirst7 || (p7 && ses(p7.day, 'golpeo').field.target === 30), 'Sim F2: la primera sesión de K7 no es el paso 1');
+  const k8s = A.plans.filter(x => (ses(x.day, 'golpeo') || {}).level === 8);
+  ok(k8s.every(x => ses(x.day, 'golpeo').field.pre || types(x.day).includes('rt')), 'Sim F2: K8 sin fatiga previa el ' + k8s.filter(x => !ses(x.day, 'golpeo').field.pre && !types(x.day).includes('rt')).map(x => x.date).join(','));
+  const days48 = A.plans.filter(x => (ses(x.day, 'golpeo') || {}).level >= 1).length;
+  ok(days48 > 0, 'Sim F2: sin golpeo');
+  console.log('  sim F2 → fase final F' + A.plans[A.plans.length - 1].phase + ' · subidas K ' + A.levelUps.k.join(' ') + ' · S ' + A.levelUps.s.join(' '));
+  // F5 sin club, 6 semanas
+  const B = simulate(MON, 42, { injury: F5, sessions: s6.concat(k8) });
+  invariants('Sim F5', B, MON, 42);
+  for (let w = 0; w < 6; w++) {
+    const ws = addDays(MON, 7 * w), we = addDays(ws, 6);
+    if (BASE.profile.trials.some(t => t >= ws && t <= we)) continue; // la semana de la prueba tiene su propio plan
+    const inW = (t) => B.d.sessions.filter(s => s.date >= ws && s.date <= we && s.type === t).length;
+    ok(inW('golpeo') >= 2 && inW('sprint') >= 1, 'Sim F5: semana del ' + ws + ' con ' + inW('golpeo') + ' golpeos y ' + inW('sprint') + ' sprints');
+    ok(inW('balon') >= 5, 'Sim F5: semana del ' + ws + ' con balón ' + inW('balon') + ' días');
+  }
 }
 
 console.log('motor · fallos:', fails.length);

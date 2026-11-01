@@ -127,6 +127,7 @@ document.addEventListener('click', (e) => {
     case 'trial-add': { const v = ($('#trial-date') || {}).value; if (!v) { toast('Elige una fecha.', 'warn'); return; } updateProfile(p => { const t = (p.trials || []).slice(); if (!t.includes(v)) t.push(v); p.trials = t.sort(); }).then(() => toast('Prueba agregada: el plan se ajusta.')); return; }
     case 'trial-del': { const v = g('v'); updateProfile(p => { p.trials = (p.trials || []).filter(x => x !== v); }); return; }
     case 'sched-nap': setSchedule('nap', !(scheduleOf(S.data.profile).nap !== false)); return;
+    case 'partners': updateProfile(p => { p.partners = !(p.partners === true); }); return;
     case 'export': exportData(); return;
     case 'photo-set': pickMediaPhoto(el.dataset.k); return;
     case 'sign-out': openConfirm('Cerrar sesión', 'Tus datos quedan guardados en tu cuenta. Para volver a entrar necesitas tu contraseña.', 'do-sign-out'); return;

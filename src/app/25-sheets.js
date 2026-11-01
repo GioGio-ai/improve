@@ -67,7 +67,7 @@ function itemRow(it, noSwap) {
 }
 function fieldSummary(s) {
   const f = s.field; if (!f) return '';
-  if (f.kind === 'golpeo') return '<div class="card flat tight"><div class="stack-sm"><div class="row nowrap"><span class="chip lime">' + KICK[f.level].n + '</span><span class="h3">' + esc(KICK[f.level].t) + '</span></div><div class="small fg2">' + esc(KICK[f.level].d) + '</div><div class="sub">Objetivo: ' + f.target + ' golpes' + (f.tec ? ' · técnica, no cuenta para subir' : '') + '</div></div></div>';
+  if (f.kind === 'golpeo') return '<div class="card flat tight"><div class="stack-sm"><div class="row nowrap"><span class="chip lime">' + KICK[f.level].n + '</span><span class="h3">' + esc(f.t || KICK[f.level].t) + '</span></div><div class="small fg2">' + esc(f.d || KICK[f.level].d) + '</div>' + (f.pre ? '<div class="sub">Antes: RT corto, ' + f.pre.series + ' series de ' + f.pre.reps + '.</div>' : '') + '<div class="sub">Objetivo: ' + f.target + ' golpes' + (f.tec ? ' · técnica, no cuenta para subir' : '') + '</div></div></div>';
   if (f.kind === 'sprint') return '<div class="card flat tight"><div class="stack-sm"><div class="row nowrap"><span class="chip load">' + SPRINT[f.level].n + '</span><span class="h3">' + esc(SPRINT[f.level].t) + '</span></div><div class="small fg2">' + esc(SPRINT[f.level].d) + '</div></div></div>';
   if (f.kind === 'rt') return '<div class="card flat tight"><div class="stack-sm"><div class="row nowrap"><span class="chip sleep">RT</span><span class="h3">' + f.reps + ' repeticiones × ' + f.series + ' series</span></div><div class="small fg2">Esfuerzos repetidos: conducción intensa y vuelta trotando. 2-3 min entre series.</div></div></div>';
   if (f.kind === 'test') return '<div class="stack-sm">' + f.steps.map(x => '<div class="lrow"><span class="fg2">' + esc(x.n) + '</span><span class="sub">' + (x.min ? x.min + ' min' : '') + '</span></div>').join('') + '</div>';
@@ -147,7 +147,7 @@ function sessionReviewHtml(log, planned) {
   }
   if (log.tec) h += '<div class="sub">Técnica ' + KICK[log.tec.level].n + ' · ' + (log.tec.count || 0) + ' golpes</div>';
   if (log.ball && (log.ball.drills || []).length) h += '<div class="card flat tight"><div class="stack-sm"><div class="row between"><span class="h3">' + ic('ball') + ' Balón</span>' + (num(log.ball.headersAlta) ? chip(log.ball.headersAlta + ' cabezazos fuerza alta', 'load') : '') + '</div>' + log.ball.drills.map(d => { const b = ballBest((S.data.sessions || []).filter(x => x.id !== log.id), d.id, d.pie || null, log.date); const v = ballEntryVal(d); const rec = d.metric !== 'aciertos' && d.metric !== 'hits' && v !== null && (!b || ((BALL_DRILL_INDEX[d.id] || {}).lowerBetter ? v < b.val : v > b.val)); return '<div class="lrow"><span class="fg2">' + esc(d.n || (BALL_DRILL_INDEX[d.id] || {}).n || d.id) + (d.pie ? ' <span class="fg4">· ' + (d.pie === 'der' ? 'derecha' : 'izquierda') + '</span>' : '') + '</span><b class="num' + (rec ? ' c-lime' : '') + '">' + esc(ballValTxt(d)) + (rec ? ' ★' : '') + '</b></div>'; }).join('') + '</div></div>';
-  if (log.rt) h += '<div class="sub">Circuito RT ' + String(log.rt.level).replace('x', ' × ') + (log.rt.series ? ' · ' + log.rt.series + ' series hechas' : '') + '</div>';
+  if (log.rt) h += '<div class="sub">' + (log.rt.pre ? 'RT corto antes de K8' : 'Circuito RT ' + String(log.rt.level).replace('x', ' × ')) + (log.rt.series ? ' · ' + log.rt.series + ' series hechas' : '') + '</div>';
   if (exs.length) {
     h += '<div class="stack-sm">' + exs.map(e => {
       const ex = exInfo(e.id, e) || {};

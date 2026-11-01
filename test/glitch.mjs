@@ -41,6 +41,22 @@ try {
   await click('[data-act="tr-skipwarm"]');
   await page.waitForTimeout(300);
   await page.evaluate(() => { window.__tr = document.querySelector('.train'); });
+  // Golpeo (va primero hasta K7): contador
+  const before = await page.locator('.counter .big').innerText();
+  for (let i = 0; i < 20; i++) {
+    await click('[data-act="tr-count"][data-d="1"]');
+    const r = await probe();
+    if (r.min < 1 || !r.sameTrain) fails.push('+1 #' + i + ' ' + JSON.stringify(r));
+  }
+  const after = await page.locator('.counter .big').innerText();
+  if (parseInt(after, 10) - parseInt(before, 10) !== 20) fails.push('contador: ' + before + ' → ' + after);
+  await click('[data-act="tr-count"][data-d="10"]');
+  const ten = await page.locator('.counter .big').innerText();
+  if (parseInt(ten, 10) - parseInt(after, 10) !== 10) fails.push('+10: ' + after + ' → ' + ten);
+  for (const v of [0, 1, 2]) { await click('[data-act="tr-pd"][data-v="' + v + '"]'); const r = await probe(); if (r.min < 1 || !r.sameTrain) fails.push('dolor ' + v + ' ' + JSON.stringify(r)); }
+  await page.screenshot({ path: outDir + '/contador.png' });
+  await click('[data-act="tr-next"]');
+  await page.waitForTimeout(300);
   // Sprint: repetición → descanso grande
   await click('.reps button[data-k="0"]');
   await page.waitForTimeout(400);
@@ -58,21 +74,6 @@ try {
     if (r.min < 1 || !r.sameTrain) fails.push('rep #' + k + ' ' + JSON.stringify(r));
     const sk = page.locator('[data-act="tr-rest-skip"]'); if (await sk.count()) await sk.first().click();
   }
-  await click('[data-act="tr-next"]');
-  await page.waitForTimeout(300);
-  const before = await page.locator('.counter .big').innerText();
-  for (let i = 0; i < 20; i++) {
-    await click('[data-act="tr-count"][data-d="1"]');
-    const r = await probe();
-    if (r.min < 1 || !r.sameTrain) fails.push('+1 #' + i + ' ' + JSON.stringify(r));
-  }
-  const after = await page.locator('.counter .big').innerText();
-  if (parseInt(after, 10) - parseInt(before, 10) !== 20) fails.push('contador: ' + before + ' → ' + after);
-  await click('[data-act="tr-count"][data-d="10"]');
-  const ten = await page.locator('.counter .big').innerText();
-  if (parseInt(ten, 10) - parseInt(after, 10) !== 10) fails.push('+10: ' + after + ' → ' + ten);
-  for (const v of [0, 1, 2]) { await click('[data-act="tr-pd"][data-v="' + v + '"]'); const r = await probe(); if (r.min < 1 || !r.sameTrain) fails.push('dolor ' + v + ' ' + JSON.stringify(r)); }
-  await page.screenshot({ path: outDir + '/contador.png' });
   // Reloj de sesión con cifras de ancho fijo
   const dd = await page.locator('#tr-clock .dd').count();
   if (!dd) fails.push('reloj sin cifras de ancho fijo');

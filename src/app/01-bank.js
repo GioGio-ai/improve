@@ -444,8 +444,9 @@ const KICK = [
   { n: 'K7', t: 'Remate al 100 %, 20 tiros + centros y voleas', d: '20 remates al 100 %, 10 centros largos y 10 voleas.', pct: 100 },
   { n: 'K8', t: 'Remates con fatiga (después del RT)', d: '15-20 remates al 100 % inmediatamente después del circuito RT.', pct: 100 },
 ];
-// Sesiones limpias necesarias para subir: doble confirmación en los umbrales donde te lesionaste
-const KICK_REQ = [0, 1, 1, 1, 1, 2, 1, 2, 1];
+// Sesiones limpias necesarias para subir: doble confirmación desde K5 (donde te lesionaste) hasta K7.
+// K6 → K7 pasa de 10 a 40 golpes al 100 %: 2 sesiones de K6, y K7 en dos pasos (ver makeSession).
+const KICK_REQ = [0, 1, 1, 1, 1, 2, 2, 2, 1];
 
 /* -------- Progresión de sprint (S) -------- */
 const SPRINT = [

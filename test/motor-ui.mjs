@@ -58,6 +58,57 @@ try {
   ok(/Fuerza A/.test(wedText) && /Golpeo/.test(wedText), 'el miércoles sin Fuerza A o Golpeo: ' + wedText.replace(/\s+/g, ' ').slice(0, 200));
   await shot('02-miercoles');
 } catch (e) { fails.push('PASO: ' + e.message.split('\n')[0]); }
+
+/* v4.2 · F5 sin club: K8 con RT corto antes de los remates y simulación de partido sin compañeros */
+const f5 = JSON.parse(JSON.stringify(store));
+const injId = Object.keys(f5.injuries || {})[0];
+if (injId) Object.assign(f5.injuries[injId], { phase: 5, kickStart: 8, sprintStart: 6, phaseLog: [{ phase: 4, date: '2026-10-10' }, { phase: 5, date: '2026-10-25' }] });
+f5.sessions = f5.sessions || {};
+f5.sessions['k8-limpio'] = { date: '2026-10-26', type: 'golpeo', done: true, kick: { level: 8, pd: 0, pn: 0 } };
+f5.sessions['s6-a'] = { date: '2026-10-21', type: 'sprint', done: true, spr: { level: 6, pd: 0, pn: 0 } };
+f5.sessions['s6-b'] = { date: '2026-10-23', type: 'sprint', done: true, spr: { level: 6, pd: 0, pn: 0 } };
+delete f5.sessions['s-partido-lunes'];
+if (f5.profile && f5.profile.main) { f5.profile.main.trials = []; delete f5.profile.main.partners; }
+if (f5.settings && f5.settings.main) f5.settings.main.plan = {};
+const ctx2 = await browser.newContext({ viewport: { width: 390, height: 844 }, deviceScaleFactor: 2, isMobile: true, hasTouch: true, locale: 'es-PY', timezoneId: 'America/Asuncion' });
+await ctx2.addInitScript((s) => { if (!sessionStorage.getItem('seeded')) { localStorage.setItem('improve-local-v1', s); localStorage.removeItem('improve-entreno-v3'); sessionStorage.setItem('seeded', '1'); } }, JSON.stringify(f5));
+const p2 = await ctx2.newPage();
+p2.on('pageerror', e => errors.push('pageerror: ' + e.message));
+try {
+  await p2.clock.setFixedTime(new Date(TUE + 'T12:00:00-03:00'));
+  await p2.goto('http://127.0.0.1:8765/?local=1#hoy');
+  await p2.waitForSelector('.topbar', { timeout: 15000 });
+  await p2.locator('.tl-blk[data-key="campo"] .main').first().click();
+  await p2.locator('.sheet [data-act="start-block"]').first().click();
+  await p2.waitForSelector('.train', { timeout: 10000 });
+  await p2.waitForTimeout(500);
+  const dr = await p2.evaluate(() => JSON.parse(localStorage.getItem('improve-entreno-v3') || 'null'));
+  const steps = (dr && dr.steps) || [];
+  const gi = steps.findIndex(s => s.kind === 'golpeo');
+  ok(gi > 0 && steps[gi - 1].kind === 'rt' && steps[gi - 1].pre, 'F5 martes: el K8 no tiene el RT corto justo antes: ' + steps.map(s => s.kind + (s.pre ? '*' : '')).join(','));
+  ok(gi === steps.length - 1 || steps.slice(gi + 1).every(s => s.kind !== 'sprint'), 'F5 martes: el sprint va después de los remates K8');
+  await p2.screenshot({ path: outDir + '/03-f5-cancha.png' });
+  await p2.locator('[data-act="tr-min"]').first().click();
+  await p2.waitForTimeout(300);
+  // Sábado: simulación de partido sin compañeros; con compañeros, juego reducido
+  await p2.evaluate(() => { location.hash = '#entreno'; });
+  await p2.waitForSelector('.day-sec', { timeout: 15000 });
+  await p2.waitForTimeout(500);
+  const satTxt = await p2.locator('.day-sec').filter({ hasText: /sábado|Sáb/i }).first().innerText().catch(() => '');
+  ok(/Simulación/.test(satTxt), 'F5 sábado sin compañeros no muestra la simulación de partido: ' + satTxt.replace(/\s+/g, ' ').slice(0, 160));
+  await p2.evaluate(() => { location.hash = '#perfil'; });
+  await p2.waitForSelector('[data-act="partners"]', { timeout: 15000 });
+  await p2.locator('[data-act="partners"]').first().click();
+  await p2.waitForTimeout(500);
+  const prof = await p2.evaluate(() => JSON.parse(localStorage.getItem('improve-local-v1') || '{}').profile);
+  ok(prof && prof.main && prof.main.partners === true, 'Perfil: «Tengo con quién jugar» no se guarda');
+  await p2.evaluate(() => { location.hash = '#entreno'; });
+  await p2.waitForSelector('.day-sec', { timeout: 15000 });
+  await p2.waitForTimeout(500);
+  const satTxt2 = await p2.locator('.day-sec').filter({ hasText: /sábado|Sáb/i }).first().innerText().catch(() => '');
+  ok(/Juego/.test(satTxt2) && !/Simulación/.test(satTxt2), 'F5 sábado con compañeros sigue en simulación: ' + satTxt2.replace(/\s+/g, ' ').slice(0, 160));
+  await p2.screenshot({ path: outDir + '/04-f5-semana.png', fullPage: true });
+} catch (e) { fails.push('PASO F5: ' + e.message.split('\n')[0]); await p2.screenshot({ path: outDir + '/ERROR-f5.png' }).catch(() => {}); }
 await browser.close();
 console.log('motor-ui · fallos:', fails.length, '· errores:', errors.length);
 fails.concat(errors).slice(0, 20).forEach(f => console.log('  ', f));

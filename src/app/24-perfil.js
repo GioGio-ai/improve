@@ -35,7 +35,8 @@ function viewPerfil(st, today) {
     '<div class="row nowrap"><input class="input grow" type="date" id="trial-date" aria-label="Fecha de prueba"><button class="btn sm" data-act="trial-add">' + ic('plus') + 'Añadir</button></div><span class="hint">El plan prepara los 2 días anteriores y recupera el siguiente.</span></div>' +
     '<div class="field"><span class="lab">Día de descanso</span>' + dayBtns('restDay', false) + '</div>' +
     '<div class="field"><span class="lab">Entrenamientos con un club</span>' + dayBtns('teamDays', true) + '</div>' +
-    '<div class="field"><span class="lab">Días de partido</span>' + dayBtns('matchDays', true) + '<span class="hint">Desde F5, el plan se organiza por día de partido.</span></div></div></section>';
+    '<div class="field"><span class="lab">Días de partido</span>' + dayBtns('matchDays', true) + '<span class="hint">Desde F5, el plan se organiza por día de partido.</span></div>' +
+    toggleHtml('partners', p.partners === true, 'Tengo con quién jugar', 'Para el juego reducido. Si no, el plan pone una simulación de partido individual.') + '</div></section>';
   const places = placesOf(p);
   h += '<section class="card"><div class="stack"><div class="stack-sm"><span class="kicker">Lugares</span><p class="sub">Desmarca lo que no tengas: el plan elige alternativas.</p></div>' +
     PLACES.map(pl => '<div class="field"><span class="lab">' + PLACE_NAMES[pl] + '</span><div class="pills">' + PLACES_DEFAULT[pl].eq.map(e => { const on = places[pl].eq.includes(e); return '<button type="button" class="pill' + (on ? ' on' : '') + '" data-act="place-eq" data-place="' + pl + '" data-v="' + esc(e) + '" aria-pressed="' + on + '">' + esc(e) + '</button>'; }).join('') + '</div></div>').join('') +
@@ -70,7 +71,7 @@ function profileHtml() {
 function saveProfile() {
   const p = clone(UI.pf); delete p.id;
   p.heightCm = num(p.heightCm);
-  ['restDay', 'teamDays', 'matchDays', 'equipmentOff', 'places', 'trials', 'schedule'].forEach(k => { if (p[k] === undefined && S.data.profile && S.data.profile[k] !== undefined) p[k] = S.data.profile[k]; });
+  ['restDay', 'teamDays', 'matchDays', 'equipmentOff', 'places', 'trials', 'schedule', 'partners'].forEach(k => { if (p[k] === undefined && S.data.profile && S.data.profile[k] !== undefined) p[k] = S.data.profile[k]; });
   if (p.restDay === undefined) p.restDay = 6;
   put('profile', 'main', p).then(() => toast('Perfil guardado.'));
   closeSheet();
@@ -80,7 +81,9 @@ function setSchedule(k, v) { updateProfile(p => { p.schedule = Object.assign({},
 function openInjury(isNew) {
   const inj = isNew ? null : ST.injury;
   const img = inj ? (inj.imaging || [])[0] || {} : {};
-  UI.ij = { isNew, zone: inj ? inj.zone : '', side: inj ? inj.side : 'd', date: inj ? inj.date : todayStr(), recurrences: inj ? inj.recurrences || 1 : 1, location: inj ? inj.location || '' : '', mechanism: inj ? inj.mechanism || '' : '', imgDate: img.date || '', imgType: img.type || 'Ecografía', imgText: img.text || '' };
+  const fl = (inj && inj.floors) || {};
+  UI.ij = { isNew, zone: inj ? inj.zone : '', side: inj ? inj.side : 'd', date: inj ? inj.date : todayStr(), recurrences: inj ? inj.recurrences || 1 : 1, location: inj ? inj.location || '' : '', mechanism: inj ? inj.mechanism || '' : '', imgDate: img.date || '', imgType: img.type || 'Ecografía', imgText: img.text || '',
+    floor3: fl[3] ?? '', floor4: fl[4] ?? '', floor5: fl[5] ?? '' };
   openSheet({ id: 'injury', full: true, render: injuryHtml });
 }
 function injuryHtml() {
@@ -90,6 +93,8 @@ function injuryHtml() {
     '<div class="grid2">' + f('zone', 'Zona') + '<div class="field"><span class="lab">Lado</span><div class="seg"><button type="button" data-act="ij-side" data-v="d" class="' + (v.side !== 'i' ? 'on' : '') + '">Derecho</button><button type="button" data-act="ij-side" data-v="i" class="' + (v.side === 'i' ? 'on' : '') + '">Izquierdo</button></div></div></div>' +
     '<div class="grid2">' + f('date', 'Fecha', 'date') + f('recurrences', 'Lesiones en la zona', 'text') + '</div>' + f('location', 'Localización') +
     '<div class="field"><label for="ij-mech">Mecanismo</label><textarea class="input" id="ij-mech" data-bind="ij" data-name="mechanism" rows="2">' + esc(v.mechanism) + '</textarea></div>' +
+    '<div class="field"><span class="lab">Días mínimos desde la lesión para empezar</span><div class="grid3">' + [3, 4, 5].map(k => '<div class="field"><label for="ij-floor' + k + '">' + PHASES[k].n + '</label><input class="input num" id="ij-floor' + k + '" type="text" inputmode="numeric" data-bind="ij" data-name="floor' + k + '" value="' + esc(v['floor' + k] ?? '') + '" placeholder="' + PHASE_FLOOR[k] + '"></div>').join('') + '</div>' +
+    '<span class="hint">Además de los criterios de cada fase. Vacío: ' + PHASE_FLOOR[3] + ', ' + PHASE_FLOOR[4] + ' y ' + PHASE_FLOOR[5] + ' días.</span></div>' +
     '<div class="grid2">' + f('imgDate', 'Fecha de la imagen', 'date') + f('imgType', 'Tipo') + '</div>' +
     '<div class="field"><label for="ij-img">Informe</label><textarea class="input" id="ij-img" data-bind="ij" data-name="imgText" rows="3">' + esc(v.imgText) + '</textarea></div>' +
     '<div class="sheet-foot"><button class="btn primary lg" data-act="ij-save">Guardar</button></div></div>';
@@ -99,6 +104,10 @@ function saveInjury() {
   const inj = v.isNew ? { status: 'activa', phase: 1, kickStart: 1, sprintStart: 1, phaseLog: [{ phase: 1, date: v.date || todayStr(), note: 'Lesión' }] } : clone(ST.injury);
   delete inj.id;
   inj.zone = (v.zone || 'Lesión').trim(); inj.side = v.side; inj.date = v.date || todayStr(); inj.recurrences = num(v.recurrences) || 1; inj.location = v.location; inj.mechanism = v.mechanism;
+  /* Piso de días por fase: solo lo que se escribió (vacío = valor por defecto) */
+  const floors = {};
+  [3, 4, 5].forEach(k => { const n = num(v['floor' + k]); if (n !== null && n >= 0) floors[k] = Math.round(n); });
+  if (Object.keys(floors).length) inj.floors = floors; else delete inj.floors;
   const rest = (inj.imaging || []).slice(1);
   inj.imaging = v.imgText ? [{ date: v.imgDate || inj.date, type: v.imgType || 'Imagen', text: v.imgText }].concat(rest) : rest;
   put('injuries', v.isNew ? uid('les') : ST.injury.id, inj).then(() => toast('Lesión guardada.'));

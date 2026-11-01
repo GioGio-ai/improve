@@ -38,8 +38,9 @@ function viewProgreso(st, today) {
 }
 function levelsCard(st) {
   const K = st.kick, Sp = st.sprint;
-  const kNeed = K.top ? 'Completado' : K.streak + '/' + K.req + ' limpias para subir';
-  const sNeed = Sp.top ? 'Completado' : Sp.streak + '/' + Sp.req + ' limpias para subir';
+  /* Con la cuenta completa pero la subida anterior hace menos de 48 h, sube con la próxima limpia */
+  const need = (L) => L.top ? 'Completado' : L.hold ? 'Sube con la próxima limpia' : L.streak + '/' + L.req + ' limpias para subir';
+  const kNeed = need(K), sNeed = need(Sp);
   const kCap = st.injuryActive ? KCAP[st.phase] : 8, sCap = st.injuryActive ? SCAP[st.phase] : 6;
   return '<section class="card"><div class="stack">' +
     '<div class="stack-sm"><div class="row between"><span class="h3">K · Golpeo</span><span class="sub num">' + kNeed + '</span></div>' + ladderHtml('k', st) + '<div class="small fg2"><b>' + KICK[K.level].n + ':</b> ' + esc(KICK[K.level].d) + '</div>' + (st.injuryActive && kCap < 8 ? '<div class="sub">Hasta ' + KICK[kCap].n + ' en ' + PHASES[st.phase].n + '.</div>' : '') + '</div>' +

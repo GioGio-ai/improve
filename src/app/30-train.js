@@ -70,7 +70,11 @@ function warmStep(w) {
 function fieldSteps(s) {
   const f = s.field, out = [];
   if (!f) return out;
-  if (f.kind === 'golpeo') out.push({ kind: 'golpeo', sess: s.type, level: f.level, target: f.target, count: 0, pd: null, tec: !!f.tec, notes: '' });
+  if (f.kind === 'golpeo') {
+    /* K8: RT corto antes de los remates (los remates van con fatiga) */
+    if (f.pre) out.push({ kind: 'rt', sess: s.type, level: f.pre.reps + 'x' + f.pre.series, reps: f.pre.reps, done: Array(f.pre.series).fill(false), rest: f.pre.rest || 90, notes: '', pre: true });
+    out.push({ kind: 'golpeo', sess: s.type, level: f.level, target: f.target, count: 0, pd: null, tec: !!f.tec, notes: '', t: f.t || null, d: f.d || null });
+  }
   else if (f.kind === 'sprint') out.push({ kind: 'sprint', sess: s.type, level: f.level, done: Array(f.reps).fill(false), pd: null, rest: f.rest || 90, notes: '' });
   else if (f.kind === 'rt') out.push({ kind: 'rt', sess: s.type, level: f.level, reps: f.reps, done: Array(f.series).fill(false), rest: f.rest || 150, notes: '' });
   else if (f.kind === 'test') {
@@ -183,7 +187,7 @@ function stepLabel(s) {
   if (s.kind === 'ex') return s.n;
   if (s.kind === 'golpeo') return (s.tec ? 'Técnica ' : 'Golpeo ') + KICK[s.level].n;
   if (s.kind === 'sprint') return 'Sprint ' + SPRINT[s.level].n;
-  if (s.kind === 'rt') return 'Circuito RT ' + String(s.level).replace('x', '×');
+  if (s.kind === 'rt') return s.pre ? 'RT corto antes de K8' : 'Circuito RT ' + String(s.level).replace('x', '×');
   if (s.kind === 'test') return s.n;
   if (s.kind === 'list') return s.items[0] ? s.items[0].n : 'Lista';
   if (s.kind === 'balon') return s.n;
@@ -367,7 +371,7 @@ function trExHtml(s) {
 }
 function trGolpeoHtml(s) {
   const K = KICK[s.level];
-  let h = '<div class="exhead"><div class="badgek k">' + K.n + '</div><div class="stack-xs"><div class="kicker">' + (s.tec ? 'Técnica con balón' : 'Golpeo · nivel ' + s.level + ' de 8') + '</div><button class="exname" data-act="tr-copy">' + esc(K.t) + '</button></div></div><div class="excue">' + esc(K.d) + '</div>';
+  let h = '<div class="exhead"><div class="badgek k">' + K.n + '</div><div class="stack-xs"><div class="kicker">' + (s.tec ? 'Técnica con balón' : 'Golpeo · nivel ' + s.level + ' de 8') + '</div><button class="exname" data-act="tr-copy">' + esc(s.t || K.t) + '</button></div></div><div class="excue">' + esc(s.d || K.d) + '</div>';
   h += '<div class="counter"><div class="big num" aria-live="polite">' + counterInner(s) + '</div>' + countBtns('golpe') + '<div class="sub">golpes</div></div>';
   h += '<div class="field"><span class="lab">Dolor en el recto femoral durante el golpeo</span>' + scaleHtml('pd', s.pd, { pain: true, act: 'tr-pd', l: '0 nada', r: '≥ 3 para' }) + '</div>';
   if (num(s.pd) !== null && s.pd >= 3) h += note('pain', 'Dolor ' + s.pd + '/10: para el golpeo. Mañana el plan baja un nivel.');
@@ -387,7 +391,7 @@ function trRepsHtml(s, kind) {
   const isS = kind === 'sprint';
   const cur = s.done.findIndex(d => !d);
   let h = isS ? '<div class="exhead"><div class="badgek s">' + SPRINT[s.level].n + '</div><div class="stack-xs"><div class="kicker">Sprint · nivel ' + s.level + ' de 6</div><button class="exname" data-act="tr-copy">' + esc(SPRINT[s.level].t) + '</button></div></div><div class="excue">' + esc(SPRINT[s.level].d) + '</div>'
-    : '<div class="exhead"><div class="badgek r">RT</div><div class="stack-xs"><div class="kicker">Esfuerzos repetidos</div><button class="exname" data-act="tr-copy">' + s.reps + ' repeticiones × ' + s.done.length + ' series</button></div></div><div class="excue">Conducción intensa y vuelta trotando. ' + fmtNum(Math.round(s.rest / 60 * 10) / 10) + ' min entre series.</div>';
+    : '<div class="exhead"><div class="badgek r">RT</div><div class="stack-xs"><div class="kicker">' + (s.pre ? 'RT corto · antes de los remates K8' : 'Esfuerzos repetidos') + '</div><button class="exname" data-act="tr-copy">' + s.reps + ' repeticiones × ' + s.done.length + ' series</button></div></div><div class="excue">Conducción intensa y vuelta trotando. ' + fmtNum(Math.round(s.rest / 60 * 10) / 10) + ' min entre series.' + (s.pre ? ' Los remates van justo después, con fatiga.' : '') + '</div>';
   h += '<div class="reps">' + s.done.map((d, k) => '<button class="' + (d ? 'done' : k === cur ? 'cur' : '') + '" data-act="tr-rep" data-k="' + k + '" aria-label="' + (isS ? 'Repetición ' : 'Serie ') + (k + 1) + (d ? ' hecha' : '') + '">' + (k + 1) + '<small>' + (d ? 'hecha' : isS ? 'rep' : 'serie') + '</small></button>').join('') + '</div>';
   h += '<div class="sub">' + (isS ? 'Toca cada repetición al terminarla: el descanso de ' + s.rest + ' s arranca solo.' : 'Toca cada serie al terminarla: arranca el descanso.') + '</div>';
   if (isS) {
@@ -799,7 +803,7 @@ function trToLogs(tr, f, auto) {
       } else if (s.kind === 'sprint') {
         log.spr = { level: s.level, pd: num(s.pd) !== null ? num(s.pd) : num(f.pd), pn: null, reps: s.done.filter(Boolean).length };
         if (log.spr.reps < Math.ceil(s.done.length * 0.6)) log.spr.partial = true;
-      } else if (s.kind === 'rt') log.rt = { level: s.level, series: s.done.filter(Boolean).length };
+      } else if (s.kind === 'rt') log.rt = Object.assign({ level: s.level, series: s.done.filter(Boolean).length }, s.pre ? { pre: true } : {});
       else if (s.kind === 'test') { log.tests = log.tests || []; if (s.saved) log.tests.push(s.key); }
       else if (s.kind === 'balon') {
         log.ball = log.ball || { drills: [], headersAlta: 0 };

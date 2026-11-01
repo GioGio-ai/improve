@@ -80,8 +80,19 @@ const TEMPLATES = {
   2: [['superiorA', 'balon', 'rt'], ['golpeo', 'fuerzaA'], ['sprint', 'rt', 'movilidad'], ['golpeo', 'fuerzaA'], ['sprint', 'rt', 'movilidad'], ['golpeo', 'prevencion', 'superiorB'], ['descanso']],
   3: [['superiorA', 'balon', 'rt'], ['fuerzaA', 'sprint', 'golpeo', 'balon'], ['prevencion', 'balon', 'movilidad'], ['potenciaB', 'sprint', 'golpeo', 'balon'], ['superiorB', 'rt', 'balon'], ['fuerzaA', 'sprint', 'golpeo', 'balon'], ['descanso']],
   4: [['superiorA', 'balon', 'rt'], ['fuerzaA', 'sprint', 'golpeo', 'balon'], ['prevencion', 'balon', 'movilidad'], ['potenciaB', 'sprint', 'golpeo', 'balon'], ['superiorB', 'rt', 'balon'], ['fuerzaA', 'sprint', 'golpeo', 'balon'], ['descanso']],
-  off: [['fuerzaMax'], ['sprint', 'golpeo', 'prevencion'], ['superiorA', 'movilidad'], ['potencia', 'rt'], ['juego', 'prevencion'], ['fuerzaMax', 'superiorB'], ['descanso']],
+  /* F5-F6 sin calendario de club: la estructura de F4 (3 días intensos, nunca seguidos) con fuerza máxima y potencia,
+     golpeo 2 veces (el jueves después del RT), sprint, balón todos los días y juego o simulación de partido el sábado */
+  off: [['superiorA', 'balon', 'rt'], ['fuerzaMax', 'sprint', 'golpeo', 'balon'], ['prevencion', 'balon', 'movilidad'], ['potencia', 'rt', 'golpeo', 'balon'], ['superiorB', 'balon'], ['juego', 'balon', 'movilidad'], ['descanso']],
 };
+/* Mínimo de días desde la lesión para empezar cada fase (configurable en la lesión: injury.floors).
+   Por defecto no frena una lesión de más de 6 semanas. */
+const PHASE_FLOOR = { 3: 14, 4: 28, 5: 42 };
+function phaseFloor(injury, phase) {
+  const f = injury && injury.floors && num(injury.floors[phase]);
+  return f !== null && f !== undefined && f >= 0 ? f : (PHASE_FLOOR[phase] || 0);
+}
+/* Como máximo un nivel de golpeo y uno de sprint cada 48 h */
+const LEVEL_GAP_DAYS = 2;
 
 function sessionSlots(type, phase, injuryActive) {
   switch (type) {
@@ -96,7 +107,7 @@ function sessionSlots(type, phase, injuryActive) {
     case 'prevencion': return (injuryActive && phase >= 2) ? ['rf_exc', 'aductor', 'isquio_exc', 'gemelo', 'tibial', 'lumbar', 'gluteo_med', 'core_lat', 'tobillo'] : ['aductor', 'isquio_exc', 'rf_exc', 'gemelo', 'tibial', 'lumbar', 'gluteo_med', 'core_lat', 'tobillo'];
     case 'movilidad': return ['mov_cadera', 'mov_tobillo', 'mov_toracica', 'foam', 'respiracion'];
     case 'recuperacion': return ['cardio_suave', 'mov_cadera', 'foam', 'respiracion'];
-    case 'fuerzaMax': return ['sent_princ', 'bisagra', 'uni_sent', 'empuje_cadera', 'rf_exc', 'isquio_exc', 'aductor', 'empuje_h', 'traccion_v'];
+    case 'fuerzaMax': return ['sent_princ', 'bisagra', 'uni_sent', 'empuje_cadera', 'rf_exc', 'isquio_exc', 'aductor', 'gemelo', 'empuje_h', 'traccion_v'];
     case 'fuerzaCorta': return ['sent_princ', 'bisagra', 'rf_exc', 'isquio_exc'];
     case 'potencia': return ['olimpico', 'salto_v', 'salto_h', 'lanz_mb', 'trineo', 'reactivo', 'core_rot', 'rf_exc'];
     case 'activacion': return ['mov_din', 'activacion', 'reactivo'];
@@ -213,7 +224,7 @@ const PRESC = {
 };
 const PRIO = {
   rf_iso_largo: 1, rf_exc: 1, ext_uni: 1, flex_cadera: 1, patada_rapida: 1, sent_princ: 1, bisagra: 1, olimpico: 1, salto_v: 1, salto_h: 1, iso_cuad: 1,
-  uni_sent: 2, isquio_exc: 2, aductor: 2, trineo: 2, empuje_h: 2, traccion_v: 2, empuje_v: 2, traccion_h: 2, empuje_incl: 2, reactivo: 2, salto_lat: 2, empuje_cadera: 2, lanz_mb: 2,
+  uni_sent: 2, isquio_exc: 2, aductor: 2, gemelo: 2, trineo: 2, empuje_h: 2, traccion_v: 2, empuje_v: 2, traccion_h: 2, empuje_incl: 2, reactivo: 2, salto_lat: 2, empuje_cadera: 2, lanz_mb: 2,
 };
 function specFor(slot, phase) { const p = PRESC[slot]; if (!p) return { s: 3, r: [8, 10] }; const v = p[clamp(phase, 1, 6)]; return v ? Object.assign({}, v) : (p[6] ? Object.assign({}, p[6]) : { s: 3, r: [8, 10] }); }
 function specMode(sp) { return !sp ? 'reps' : sp.min ? 'min' : sp.t ? 'time' : sp.m ? 'dist' : sp.c ? 'contacts' : 'reps'; }
@@ -258,7 +269,7 @@ function estimateItemSec(it) {
 }
 function fieldSec(f) {
   if (!f) return 0;
-  if (f.kind === 'golpeo') return [0, 15, 20, 20, 25, 25, 25, 35, 30][f.level] * 60;
+  if (f.kind === 'golpeo') return [0, 15, 20, 20, 25, 25, 25, 35, 30][f.level] * 60 + (f.pre ? f.pre.series * f.pre.reps * 30 + (f.pre.series - 1) * f.pre.rest : 0);
   if (f.kind === 'sprint') return (f.level <= 2 ? 15 : 20) * 60;
   if (f.kind === 'rt') return f.series * f.reps * 30 + (f.series - 1) * 150;
   if (f.kind === 'test') return 20 * 60;
@@ -365,7 +376,7 @@ function outcome(pd, pn, partial) {
 }
 function deriveLadder(sessions, type, field, req, max, baseline) {
   const list = sessions.filter(s => s.type === type && s.done !== false && s[field] && s[field].level).slice().sort(byDate);
-  let level = clamp(baseline || 1, 1, max), streak = 0, top = false, last = null;
+  let level = clamp(baseline || 1, 1, max), streak = 0, top = false, last = null, lastUp = null;
   for (const s of list) {
     const L = clamp(Number(s[field].level), 1, max);
     const o = outcome(s[field].pd, s[field].pn, s[field].partial);
@@ -376,10 +387,14 @@ function deriveLadder(sessions, type, field, req, max, baseline) {
     if (L > level) { level = L; streak = 0; }
     if (L === level) {
       streak++;
-      if (streak >= req[level]) { if (level < max) { level++; streak = 0; } else top = true; }
+      /* Un nivel cada 48 h como máximo: si la anterior subida fue hace menos, se repite el nivel */
+      if (streak >= req[level]) {
+        if (level >= max) top = true;
+        else if (!lastUp || diffDays(s.date, lastUp) >= LEVEL_GAP_DAYS) { level++; streak = 0; lastUp = s.date; }
+      }
     }
   }
-  return { level, streak, req: req[level], top, last, count: list.length };
+  return { level, streak, req: req[level], top, last, count: list.length, lastUp, hold: !top && streak >= req[level] };
 }
 function deriveKick(sessions, baseline) { return deriveLadder(sessions, 'golpeo', 'kick', KICK_REQ, 8, baseline); }
 function deriveSprint(sessions, baseline) { return deriveLadder(sessions, 'sprint', 'spr', SPRINT_REQ, 6, baseline); }
@@ -455,6 +470,13 @@ function phaseCriteria(phase, ctx) {
   const T = ctx.test, items = [];
   const add = (label, ok, detail, req = true) => items.push({ label, ok: !!ok, detail, req });
   const pct = (v) => (v === null || v === undefined ? 'sin dato' : String(v).replace('.', ',') + ' %');
+  /* Piso de tiempo: días mínimos desde la lesión para empezar la fase siguiente */
+  const floor = (next) => {
+    if (ctx.noFloor || !ctx.injury || !ctx.injury.date || !ctx.today) return;
+    const f = phaseFloor(ctx.injury, next); if (!f) return;
+    const since = diffDays(ctx.today, ctx.injury.date);
+    add('Al menos ' + f + ' días desde la lesión', since >= f, since >= f ? since + ' días' : since + ' de ' + f + ' días');
+  };
   if (phase === 1) {
     const c = (ctx.injury && ctx.injury.f1checks) || {};
     add('Caminar sin dolor', c.walk, 'Manual');
@@ -488,6 +510,7 @@ function phaseCriteria(phase, ctx) {
     add('Sin dolor ≥ 3/10 en 14 días', !ctx.recentPain, ctx.recentPain ? 'Hubo dolor' : 'Sin dolor');
     add('Entrenamiento completo con el equipo sin síntomas', c.fullTeam, 'Manual');
   }
+  if (phase >= 2 && phase <= 4) floor(phase + 1);
   const required = items.filter(i => i.req);
   return { items, ready: required.length > 0 && required.every(i => i.ok), ok: required.filter(i => i.ok).length, total: required.length };
 }
@@ -566,7 +589,9 @@ function effLevels(st) {
 function ballEligible(d, st, opts) {
   if ((d.minPhase || 1) > st.phase) return false;
   const L = effLevels(st);
-  const k = opts && opts.capK ? Math.min(L.k, opts.capK) : L.k;
+  let k = opts && opts.capK ? Math.min(L.k, opts.capK) : L.k;
+  /* K7 en dos pasos: hasta la segunda sesión de K7, sin voleas ni centros con la pierna lesionada en Balón */
+  if (k === 7 && st.kick.level === 7 && !st.kick.top && !(st.kick.streak > 0)) k = 6;
   if (d.kRight && k < d.kRight) return false;
   if (d.sMin && L.s < d.sMin) return false;
   /* Molestia en la pierna sana: hoy sin remates con ella (foot 'izq' = pierna sana en el banco) */
@@ -748,7 +773,8 @@ function makeSession(type, date, st, opts) {
       used.add(ex.id);
       let spec = specFor(slot, ph);
       if (type === 'prevencion' && slot === 'rf_exc') spec = ph <= 3 ? { s: 2, r: [5, 5], note: 'ligero' } : { s: 2, r: [6, 6] };
-      if (type === 'prevencion' && ['gemelo', 'tibial', 'lumbar'].includes(slot) && spec.s > 2) spec.s = 2;
+      /* Prevención corta: tibial y lumbar a 2 series; pantorrilla a 3 (es la que más falta en la semana) */
+      if (type === 'prevencion' && ['tibial', 'lumbar'].includes(slot) && spec.s > 2) spec.s = 2;
       if (type === 'potencia' && slot === 'rf_exc') spec = { s: 2, r: [5, 5], note: 'mantenimiento' };
       if (type === 'fuerzaCorta' && spec.s) spec.s = 2;
       if ((type === 'superiorA' || type === 'superior') && upperMain.includes(slot)) spec = ph >= 2 ? { s: 4, r: [5, 6], rpe: '8', note: 'fuerza' } : { s: 3, r: [8, 8], rpe: '7' };
@@ -756,6 +782,8 @@ function makeSession(type, date, st, opts) {
       s.items.push(makeItem(ex, slot, spec));
     }
     if (UPPER_TYPES.includes(type)) { autoSupersets(s.items); capSession(s, st, 55); }
+    /* Fuerza y potencia: tope de 80 min con el calentamiento (y tu factor real de duración) */
+    if (STRENGTH_TYPES.includes(type)) { const wu = warmupFor(type, st, place); capSession(s, st, 80 - (wu ? wu.min : 0) * (st.durFactor || 1)); }
     /* P-2 de una prueba: nada excéntrico ni pliométrico, solo isométricos */
     if (opts.isoOnly) { const ids = new Set(s.items.map(x => x.id)); s.items = s.items.map(it => { const ni = isoFor(it, st, ctx, 'isométrica: la prueba es en 2 días', 2, ids); if (ni && ni !== it) ni.isoTrial = true; return ni; }).filter(Boolean); }
     /* Semana de la prueba (P-4 y P-3): misma intensidad, una serie menos (los principales solo si tienen 4 o más) */
@@ -777,9 +805,25 @@ function makeSession(type, date, st, opts) {
     if (!tec) {
       s.intense = L >= 4;
       if (st.kick.top && L === 8) s.notes.push('K8 completado: mantenimiento.');
-      else if (L === st.kick.level) s.notes.push('Para subir: ' + Math.max(0, KICK_REQ[L] - st.kick.streak) + ' sesión(es) limpia(s): dolor ≤ 2 durante y 0 al día siguiente.');
-      else if (L < capPh) s.notes.push(opts.trialCap && opts.capK === L ? 'Semana de la prueba: repites ' + KICK[L].n + ', sin estrenar nivel.' : 'Nivel limitado hoy.');
+      else if (L === st.kick.level) {
+        const need = Math.max(0, KICK_REQ[L] - st.kick.streak);
+        s.notes.push(need ? 'Para subir: ' + need + ' sesión(es) limpia(s): dolor ≤ 2 durante y 0 al día siguiente.' : 'Repites ' + KICK[L].n + ': un nivel cada 48 h como máximo. Si sale limpia, subes.');
+      }
+      else if (L < capPh) s.notes.push(opts.trialCap && opts.capK === L ? 'Semana de la prueba: repites ' + KICK[L].n + ', sin estrenar nivel.' : opts.capReason ? 'Hoy hasta ' + KICK[L].n + ': ' + opts.capReason + '.' : 'Nivel limitado hoy.');
       else if (L < st.kick.level) s.notes.push('Nivel limitado por la fase ' + PHASES[ph].n + '.');
+      /* K7 en dos pasos: la primera sesión, 20 remates y 10 centros; la segunda, completa con voleas */
+      if (L === 7 && st.kick.level === 7 && !st.kick.top && !(st.kick.streak > 0) && !opts.taper) {
+        s.field.target = 30; s.field.t = 'Remate al 100 %, 20 tiros + 10 centros'; s.field.d = '20 remates al 100 % y 10 centros largos. Las voleas, en la próxima sesión de K7.';
+        s.notes.push('K7 en dos pasos: hoy 20 remates y 10 centros; la próxima, completo con voleas.');
+      }
+      /* K8 son remates con fatiga: sin circuito RT ese día, un RT corto antes de los remates
+         (no con una molestia que quitó el RT ni con dolor muscular alto) */
+      if (L === 8 && !opts.hasRT && !opts.taper && opts.noRT) s.notes.push('Hoy los remates K8 van sin RT previo.');
+      if (L === 8 && !opts.hasRT && !opts.taper && !opts.noRT) {
+        const reps = Number(String(RT_LEVELS[(st.rt && st.rt.idx) || 0]).split('x')[0]) || 6;
+        s.field.pre = { reps, series: 2, rest: 90 };
+        s.notes.push('Primero un RT corto (2 series de ' + reps + '), después los remates: K8 es con fatiga.');
+      }
       if (opts.taper) { s.field.target = Math.max(5, Math.ceil(KICK_TARGET[L] * 0.6)); s.notes.push('Semana de la prueba: ' + s.field.target + ' golpeos en lugar de ' + KICK_TARGET[L] + '.'); }
     } else s.notes.push('Técnica: no cuenta para subir de nivel.');
   }
@@ -792,8 +836,12 @@ function makeSession(type, date, st, opts) {
     if (opts.capS) L = Math.min(L, opts.capS);
     s.level = L; s.title = 'Sprint · ' + SPRINT[L].n; s.short = 'Sprint ' + SPRINT[L].n; s.intense = L >= 3;
     s.field = { kind: 'sprint', level: L, reps: SPRINT_REPS[L], rest: 90 };
-    if (L === st.sprint.level && !(st.sprint.top && L === 6)) s.notes.push('Para subir: ' + Math.max(0, SPRINT_REQ[L] - st.sprint.streak) + ' sesión(es) limpia(s).');
+    if (L === st.sprint.level && !(st.sprint.top && L === 6)) {
+      const need = Math.max(0, SPRINT_REQ[L] - st.sprint.streak);
+      s.notes.push(need ? 'Para subir: ' + need + ' sesión(es) limpia(s).' : 'Repites ' + SPRINT[L].n + ': un nivel cada 48 h como máximo. Si sale limpia, subes.');
+    }
     else if (L < capPh && opts.trialCap && opts.capS === L) s.notes.push('Semana de la prueba: repites ' + SPRINT[L].n + ', sin estrenar nivel.');
+    else if (L < capPh && opts.capReason) s.notes.push('Hoy hasta ' + SPRINT[L].n + ': ' + opts.capReason + '.');
     if (opts.taper) { s.field.reps = Math.max(3, Math.ceil(SPRINT_REPS[L] * 0.6)); s.notes.push('Semana de la prueba: ' + s.field.reps + ' sprints en lugar de ' + SPRINT_REPS[L] + '.'); }
   }
   if (type === 'rt') {
@@ -828,7 +876,21 @@ function makeSession(type, date, st, opts) {
     if (opts.taper) s.notes.push('Semana de la prueba: balón más corto.');
     if (!drills.length) s.notes.push('Sin estaciones habilitadas en ' + PHASES[ph].n + '.');
   }
-  if (type === 'juego') { s.intense = true; s.field = { kind: 'list', steps: [{ n: 'Juego reducido 4c4 o 5c5', d: '4 × 4 min con 2 min de pausa. Con remates y duelos.', min: 24 }] }; }
+  if (type === 'juego') {
+    s.intense = true;
+    if (st.profile && st.profile.partners === true) s.field = { kind: 'list', steps: [{ n: 'Juego reducido 4c4 o 5c5', d: '4 × 4 min con 2 min de pausa. Con remates y duelos.', min: 24 }] };
+    else {
+      /* Sin compañeros: la misma carga del juego reducido (4 × 4 min a ritmo de partido) con balón, pared, conos y arco */
+      s.title = 'Simulación de partido'; s.short = 'Simulación';
+      s.field = { kind: 'list', steps: [
+        { n: 'Bloque 1 · Pared y remate', d: '4 min sin parar: 6 paredes rápidas, conducción de 20 m y remate al arco. Vuelta trotando y otra vez.', min: 6 },
+        { n: 'Bloque 2 · Desmarque y definición', d: '4 min: sprint de 10-15 m, pase a la pared, control orientado y remate de zurda o de derecha.', min: 6 },
+        { n: 'Bloque 3 · Duelo con conos', d: '4 min: conducción con cambios de ritmo y de dirección entre conos, amague y remate.', min: 6 },
+        { n: 'Bloque 4 · Presión y contra', d: '4 min: sprint de 20 m presionando, trote de vuelta, conducción rápida y remate o centro.', min: 6 },
+      ] };
+      s.notes.push('Sin compañeros: 4 bloques de 4 min a ritmo de partido con 2 min de pausa. Si tienes con quién jugar, márcalo en Perfil.');
+    }
+  }
   if (type === 'test') {
     /* Esfuerzo máximo de la pierna lesionada (8RM, saltos, Reverse Nordic): cuenta como intenso */
     s.intense = true;
@@ -876,7 +938,9 @@ function mergeWarmups(list) {
 function dayBlocks(day) {
   const by = { gym: [], campo: [], recup: [], club: [] };
   for (const s of day.sessions) { const k = blockKind(s.type); if (by[k]) by[k].push(s); }
-  const rank = (x) => x.type === 'sprint' ? 0 : x.type === 'golpeoTec' ? 1 : x.type === 'golpeo' ? (x.level >= 8 ? 4 : 1) : x.type === 'balon' ? 2 : x.type === 'rt' ? 3 : 5;
+  /* Cancha: el golpeo va primero, con el recto femoral fresco, hasta completar K7; K8 va al final, después del RT
+     (los remates con fatiga se buscan a propósito). Después sprint, balón y RT. */
+  const rank = (x) => x.type === 'golpeo' ? (x.level >= 8 ? 4 : 0) : x.type === 'golpeoTec' ? 0 : x.type === 'sprint' ? 1 : x.type === 'balon' ? 2 : x.type === 'rt' ? 3 : 5;
   by.campo.sort((a, b) => rank(a) - rank(b));
   by.gym.sort((a, b) => (a.type === 'test' ? -1 : b.type === 'test' ? 1 : 0));
   const out = [];
@@ -1002,13 +1066,16 @@ function downgradeTypes(types) {
 }
 const cloneSim = (sim) => ({ kick: Object.assign({}, sim.kick), sprint: Object.assign({}, sim.sprint), rt: Object.assign({}, sim.rt), hdr: sim.hdr });
 function restoreSim(sim, snap) { sim.kick = Object.assign({}, snap.kick); sim.sprint = Object.assign({}, snap.sprint); sim.rt = Object.assign({}, snap.rt); sim.hdr = snap.hdr; }
-function stepLadder(lad, req, max, cap) {
+function stepLadder(lad, req, max, cap, date) {
   if (lad.top || lad.level > cap) return;
   lad.streak++;
-  if (lad.streak >= req[lad.level]) { if (lad.level < max) { lad.level++; lad.streak = 0; } else lad.top = true; }
+  if (lad.streak >= req[lad.level]) {
+    if (lad.level >= max) lad.top = true;
+    else if (!date || !lad.lastUp || diffDays(date, lad.lastUp) >= LEVEL_GAP_DAYS) { lad.level++; lad.streak = 0; if (date) lad.lastUp = date; }
+  }
 }
 function buildDaySessions(d, st, sim, today, opts) {
-  opts = Object.assign({}, d.molOpts || {}, opts || {});
+  opts = Object.assign({}, d.molOpts || {}, opts || {}, { hasRT: d.types.includes('rt') });
   const future = d.date > today;
   return d.types.map(t => {
     const stx = Object.assign({}, st, { kick: Object.assign({}, sim.kick), sprint: Object.assign({}, sim.sprint), rt: Object.assign({}, sim.rt) });
@@ -1019,8 +1086,8 @@ function buildDaySessions(d, st, sim, today, opts) {
     const projected = future && ((t === 'golpeo' && s.level > Math.min(st.kick.level, KCAP[st.phase] || 0)) || (t === 'sprint' && s.level > Math.min(st.sprint.level, SCAP[st.phase] || 0) && !(st.phase >= 5 && st.sprint.top)) || (t === 'rt' && sim.rt.idx !== st.rt.idx));
     if (projected) { s.projected = true; s.notes.unshift('Nivel previsto: se confirma si la sesión anterior sale limpia.'); }
     /* Solo avanza la escalera prevista si la sesión es del nivel actual: una sesión con tope no cuenta para subir */
-    if (t === 'golpeo' && s.level >= sim.kick.level) stepLadder(sim.kick, KICK_REQ, 8, KCAP[st.phase] || 0);
-    if (t === 'sprint' && s.level >= sim.sprint.level) stepLadder(sim.sprint, SPRINT_REQ, 6, SCAP[st.phase] || 0);
+    if (t === 'golpeo' && s.level >= sim.kick.level) stepLadder(sim.kick, KICK_REQ, 8, KCAP[st.phase] || 0, d.date);
+    if (t === 'sprint' && s.level >= sim.sprint.level) stepLadder(sim.sprint, SPRINT_REQ, 6, SCAP[st.phase] || 0, d.date);
     if (t === 'rt') { sim.rt.streak = (sim.rt.streak || 0) + 1; if (sim.rt.streak >= 2 && sim.rt.idx < RT_LEVELS.length - 1) { sim.rt.idx++; sim.rt.streak = 0; } }
     return s;
   });
@@ -1098,6 +1165,15 @@ function adjustSessionsForState(sessions, st, date) {
       if (n) s.est = estimateSession(s);
     }
     if (n) notes.push('Dolor muscular alto: hoy isometrías en lugar de excéntricos (' + plural(n, 'ejercicio', 'ejercicios') + ').');
+    /* Saltos a la mitad de series (los contactos también cargan el músculo dolorido) */
+    let nj = 0;
+    for (const s of sessions) {
+      let cut = false;
+      for (const it of (s.items || [])) { const ex = BANK_INDEX[it.id]; if (ex && ex.c === 'pliom' && it.spec && it.spec.s > 1) { it.spec = Object.assign({}, it.spec, { s: Math.ceil(it.spec.s / 2) }); it.domsJump = true; cut = true; nj++; } }
+      if (cut) reEstimate(s, st);
+    }
+    if (nj) notes.push('Dolor muscular alto: saltos a la mitad de series (' + plural(nj, 'ejercicio', 'ejercicios') + ').');
+    if (sessions.some(s => s.type === 'golpeo' || s.type === 'sprint')) notes.push('Dolor muscular alto: golpeo y sprint sin estrenar nivel.');
   }
   const sl = sleepOf(st, date), shortSleep = !!(sl && sl.h !== null && sl.h < 6);
   if ((score !== null && score < 50) || shortSleep) {
@@ -1108,6 +1184,26 @@ function adjustSessionsForState(sessions, st, date) {
   return notes;
 }
 function plural(n, a, b) { return n + ' ' + (n === 1 ? a : b); }
+/* Dolor muscular alto en el check-in del día (1-2 de 5) */
+function domsHigh(st, date) { const ci = (st.checkins || []).find(c => c.date === date); const v = ci ? num(ci.soreness) : null; return v !== null && v <= 2; }
+/* Duración estimada de nuevo tras un cambio (con tu factor real de duración) */
+function reEstimate(s, st) {
+  s.estRaw = estimateSession(s);
+  s.est = s.items && s.items.length && st.durFactor && Math.abs(st.durFactor - 1) >= 0.05 ? Math.max(5, Math.round(s.estRaw * st.durFactor / 5) * 5) : s.estRaw;
+}
+/* Día de test: la fuerza sin la extensión de rodilla (va en el test) y con una serie menos en el resto */
+function lightenForTest(sessions, st) {
+  let n = 0;
+  for (const s of sessions) {
+    if (!['fuerzaA', 'fuerzaMax'].includes(s.type) || !s.items || !s.items.length) continue;
+    const before = s.items.length;
+    s.items = s.items.filter(it => it.slot !== 'ext_uni');
+    let cut = s.items.length !== before;
+    for (const it of s.items) if (it.spec && it.spec.s > 2) { it.spec = Object.assign({}, it.spec, { s: it.spec.s - 1 }); it.cutTest = true; cut = true; }
+    if (cut) { reEstimate(s, st); n++; }
+  }
+  return n;
+}
 
 /* ---------- Molestias (mapa del cuerpo) ---------- */
 /* Vigentes desde que se reportan hasta el día siguiente del último «¿Sigue?», salvo «Ya no».
@@ -1310,6 +1406,7 @@ function testBlockReason(st, date, ctx) {
   if (ctx && ctx.downgraded) return 'día con carga reducida';
   if (ctx && ctx.prevIntense) return 'el día anterior fue intenso';
   const sl = sleepOf(st, date); if (sl && sl.h !== null && sl.h < 6) return 'dormiste poco';
+  if (sleepDebt(st, date).debt >= SLEEP_DEBT_LIMIT) return 'te falta sueño esta semana';
   const sc = p.ci ? readinessScore(p.ci) : null; if (sc !== null && sc < 50) return 'estado bajo';
   if (activeMolestias(st, date).some(m => !(m.noAdjust || []).includes(date) && MOL_LEG_ZONES.includes(m.zona) && molSeverity(m) !== 'ninguna')) return 'molestia en las piernas';
   return null;
@@ -1371,7 +1468,8 @@ function buildWeekCore(st, weekStart, today, carry) {
   }
   /* Semana de la prueba: sin estrenar niveles (tope = el mejor nivel ya hecho limpio) */
   const bestClean = (type, f) => { let b = 0; for (const s of st.sessions) if (s.type === type && s.done !== false && s[f] && outcome(s[f].pd, s[f].pn, s[f].partial) === 'clean') b = Math.max(b, Number(s[f].level) || 0); return Math.max(1, b); };
-  const trialK = trials.length ? bestClean('golpeo', 'kick') : 8, trialS = trials.length ? bestClean('sprint', 'spr') : 6;
+  const bestK = bestClean('golpeo', 'kick'), bestS = bestClean('sprint', 'spr');
+  const trialK = trials.length ? bestK : 8, trialS = trials.length ? bestS : 6;
   const realIntense = (date) => st.sessions.some(s => s.date === date && isIntenseLog(s));
   const doneOn = (date) => st.sessions.some(s => s.date === date && s.done !== false);
   let prevIntense = carry ? carry.lastIntense : realIntense(addDays(weekStart, -1));
@@ -1405,9 +1503,23 @@ function buildWeekCore(st, weekStart, today, carry) {
       const molFilter = (types) => { if (!molR || !molR.list.length) return types; const kept = types.filter(t => !molR.remove.includes(t)); return kept.length ? kept : ['movilidad']; };
       if (molR && molR.list.length) {
         d.types = molFilter(d.types);
-        d.molOpts = { capK: molR.capK, capS: molR.capS, avoid: molR.avoid.length ? molR.avoid : null, noSanaShots: molR.noSanaShots || null };
+        d.molOpts = { capK: molR.capK, capS: molR.capS, avoid: molR.avoid.length ? molR.avoid : null, noSanaShots: molR.noSanaShots || null, noRT: molR.remove.includes('rt') || null };
         d.molAdj = molR.notes;
         d.notes.push(...molR.notes.map(x => x.text));
+      }
+      if (near) {
+        /* Sueño: menos de 6 h anoche o deuda de 5 h o más en 7 días → golpeo hasta K3 y sprint hasta S2 */
+        const sr = sleepDayRule(st, d.date);
+        if (sr) {
+          const o = d.molOpts || (d.molOpts = {});
+          o.capK = Math.min(o.capK || 8, 3); o.capS = Math.min(o.capS || 6, 2); o.capReason = o.capReason || sr.why;
+          if (d.types.some(t => t === 'golpeo' || t === 'sprint')) d.notes.push(sr.text);
+        }
+        /* Dolor muscular alto (check-in de hoy): sin estrenar nivel de golpeo ni de sprint */
+        if (d.date === today && domsHigh(st, today)) {
+          const o = d.molOpts || (d.molOpts = {});
+          o.capK = Math.min(o.capK || 8, bestK); o.capS = Math.min(o.capS || 6, bestS); o.noRT = true; o.capReason = o.capReason || 'dolor muscular alto, sin estrenar nivel';
+        }
       }
       /* Semana de la prueba: sin estrenar nivel a ≤ 5 días; P-4 y P-3 con ~40 % menos volumen; P-2 solo isométricos */
       const k = toTrial(d.date);
@@ -1455,7 +1567,10 @@ function buildWeekCore(st, weekStart, today, carry) {
           if (!d.types.length) { d.types = ['movilidad']; sessions = [makeSession('movilidad', d.date, sD, d.molOpts || {})]; }
           testCarry = why; d.notes.push('Test de control pospuesto: ' + why + '.');
           intense = sessions.some(s => s.intense);
-        } else if (d.testIn) d.notes.push('Recibe el test de control pospuesto (' + d.testIn + ').');
+        } else {
+          if (d.testIn) d.notes.push('Recibe el test de control pospuesto (' + d.testIn + ').');
+          if (lightenForTest(sessions, sD)) d.notes.push('Día de test: la fuerza va sin extensión de rodilla (ya la mides en el test) y con una serie menos.');
+        }
       }
       if (d.date === today && realIntense(today)) intense = true;
       if (d.date === today) d.notes.push(...adjustSessionsForState(sessions, st, today));
@@ -1480,18 +1595,23 @@ function project(st, today, horizon, opts) {
   const sim = Object.assign({}, st, { kick: Object.assign({}, st.kick), sprint: Object.assign({}, st.sprint), rt: Object.assign({}, st.rt), phase: st.phase, lastTestDate: st.lastTestDate });
   const out = { phases: {}, k8: null, s6: null };
   const ok = { 2: !!(st.testPasses && st.testPasses[2]), 4: false };
-  const step = (lad, req, max) => { if (lad.top) return; lad.streak++; if (lad.streak >= req[lad.level]) { if (lad.level < max) { lad.level++; lad.streak = 0; } else lad.top = true; } };
+  const step = (lad, req, max, date) => stepLadder(lad, req, max, 99, date);
+  /* Piso de tiempo de cada fase (días desde la lesión) */
+  const floorOk = (k, date) => !st.injury || !st.injury.date || diffDays(date, st.injury.date) >= phaseFloor(st.injury, k);
+  /* Semana de la prueba: a 5 días o menos no se estrena nivel (igual que el plan) */
+  const trialsP = (st.profile && st.profile.trials) || [];
+  const noNewLevel = (date) => trialsP.some(t => { const x = diffDays(t, date); return x >= 1 && x <= 5; });
   let pending = null;
   for (let i = 0; i < horizon && sim.phase < 5; i++) {
     const date = addDays(today, i);
-    if (pending) { sim.phase = pending; out.phases[pending] = date; pending = null; }
+    if (pending && floorOk(pending, date)) { sim.phase = pending; out.phases[pending] = date; pending = null; }
     const plan = (st.settings && st.settings.plan && st.settings.plan[date]) || null;
     let types = plan && Array.isArray(plan.types) ? plan.types.slice() : templateTypes(date, sim).types.slice();
     if (!plan && !opts.noAccel) types = accelerateTypes(types, Object.assign({}, sim, { injuryActive: st.injuryActive }), sim).types;
     if (sim.phase >= 2 && (!sim.lastTestDate || diffDays(date, sim.lastTestDate) >= 7) && types.includes('fuerzaA')) types.unshift('test');
     for (const t of types) {
-      if (t === 'golpeo') { if (sim.kick.level <= KCAP[sim.phase]) step(sim.kick, KICK_REQ, 8); if (sim.kick.top) out.k8 = out.k8 || date; }
-      if (t === 'sprint') { if (sim.sprint.level <= SCAP[sim.phase]) step(sim.sprint, SPRINT_REQ, 6); if (sim.sprint.top) out.s6 = out.s6 || date; }
+      if (t === 'golpeo') { if (sim.kick.level <= KCAP[sim.phase] && !noNewLevel(date)) step(sim.kick, KICK_REQ, 8, date); if (sim.kick.top) out.k8 = out.k8 || date; }
+      if (t === 'sprint') { if (sim.sprint.level <= SCAP[sim.phase] && !noNewLevel(date)) step(sim.sprint, SPRINT_REQ, 6, date); if (sim.sprint.top) out.s6 = out.s6 || date; }
       if (t === 'test') { sim.lastTestDate = date; if (sim.phase === 2) ok[2] = true; if (sim.phase === 4) ok[4] = true; }
     }
     if (sim.phase === 2 && ok[2]) pending = 3;
@@ -1789,17 +1909,23 @@ function bestE1RM(exId, sessions) {
 }
 
 /* ---------- Tipo de día para la nutrición ---------- */
-function dayKind(day, prof) {
+function dayKind(day, prof, logs) {
   if (!day) return 'descanso';
-  const types = day.sessions.map(s => s.type);
+  /* Lo marcado «No la hice» no cuenta: el tipo de día se calcula con lo que queda */
+  const own = (logs || []).filter(l => l && l.date === day.date && !l.deleted);
+  const skip = new Set(own.filter(l => l.done === false).map(l => l.type));
+  const sess = skip.size ? day.sessions.filter(s => !skip.has(s.type)) : day.sessions;
+  const types = sess.map(s => s.type);
+  const intense = skip.size ? (sess.some(s => s.intense) || own.some(isIntenseLog)) : day.intense;
   const trials = (prof && prof.trials) || [];
   if (types.includes('partido') || types.includes('prueba') || day.trial) return 'prueba';
   if (trials.includes(addDays(day.date, 1)) || day.md === 'MD-1') return 'prueba';
-  /* Dos días antes de una prueba (aunque sea descanso) y el día después: carbohidratos al menos de carga media
-     (llegar con el glucógeno lleno; tras un partido tarda más de 48 h en reponerse) */
-  if (trials.includes(addDays(day.date, 2)) || trials.includes(addDays(day.date, -1))) return day.intense ? 'alto' : 'moderado';
+  /* Dos días antes de una prueba (aunque sea descanso) y el día después de una prueba o un partido: carbohidratos al menos
+     de carga media (llegar con el glucógeno lleno; tras un partido tarda más de 48 h en reponerse) */
+  const afterMatch = day.md === 'MD+1' || (logs || []).some(l => l && l.date === addDays(day.date, -1) && l.done !== false && !l.deleted && ['partido', 'prueba'].includes(l.type));
+  if (trials.includes(addDays(day.date, 2)) || trials.includes(addDays(day.date, -1)) || afterMatch) return intense ? 'alto' : 'moderado';
   if (!types.length || types.every(t => t === 'descanso')) return 'descanso';
-  if (day.intense) return 'alto';
+  if (intense) return 'alto';
   if (types.every(t => ['movilidad', 'recuperacion', 'descanso', 'prevencion', 'superior', 'superiorA', 'superiorB', 'activacion'].includes(t))) return 'bajo';
   return 'moderado';
 }
@@ -1842,7 +1968,7 @@ function deriveState(data, today) {
     durFactor: durationFactor(sessions, today),
   };
   st.criteria = injury && phase <= 5 ? phaseCriteria(phase, { test: T, kick, sprint, injury, today, phaseSince, recentPain }) : null;
-  st.testPasses = { 2: !!(T && phaseCriteria(2, { test: T, kick, sprint, injury, today }).ready), 4: false };
+  st.testPasses = { 2: !!(T && phaseCriteria(2, { test: T, kick, sprint, injury, today, noFloor: true }).ready), 4: false };
   return st;
 }
 

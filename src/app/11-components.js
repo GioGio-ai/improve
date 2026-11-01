@@ -120,7 +120,7 @@ function dayTitle(day) {
 function blockSub(s) {
   const parts = [];
   if (s.est) parts.push(s.est + ' min');
-  if (s.field && s.field.kind === 'golpeo') parts.push(KICK[s.field.level].t.toLowerCase());
+  if (s.field && s.field.kind === 'golpeo') { const t = s.field.t || KICK[s.field.level].t; parts.push((s.field.pre ? 'RT corto + ' : '') + t.charAt(0).toLowerCase() + t.slice(1)); }
   else if (s.field && s.field.kind === 'sprint') parts.push(SPRINT[s.field.level].t.toLowerCase());
   else if (s.field && s.field.kind === 'rt') parts.push(s.field.reps + ' rep × ' + s.field.series + ' series');
   else if (s.field && s.field.kind === 'test') parts.push('decide el paso de fase');

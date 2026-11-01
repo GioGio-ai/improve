@@ -81,6 +81,9 @@ with sync_playwright() as p:
     shot(pg, 'entreno-abierto')
     check(pg.locator('#tr-save').count() == 1, 'la barra muestra el estado de guardado')
     click(pg, '[data-act="tr-skipwarm"]')
+    # Desde v4.2 el golpeo va primero (hasta K7): se pasa al sprint
+    if pg.locator('.counter').count():
+        click(pg, '[data-act="tr-next"]')
     click(pg, '.reps button[data-k="0"]'); skip_rest(pg)
     click(pg, '.reps button[data-k="1"]'); skip_rest(pg)
     click(pg, '.reps button[data-k="2"]')

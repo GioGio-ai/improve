@@ -55,6 +55,15 @@ await step('bloque-cancha', async () => {
   await page.waitForTimeout(600);
   await shot('entreno-calentamiento-2');
   await click('[data-act="tr-skipwarm"]');
+  /* Desde v4.2 el golpeo va primero, con el recto femoral fresco (hasta K7) */
+  await shot('entreno-golpeo');
+  for (let k = 0; k < 6; k++) await click('[data-act="tr-count"][data-d="5"]');
+  await click('[data-act="tr-pd"][data-v="1"]');
+  await shot('entreno-golpeo-contado');
+  await click('[data-act="tr-copy"]');
+  await shot('copiar-nombre');
+  await click('.sheet [data-act="close"]');
+  await click('[data-act="tr-next"]');
   await shot('entreno-sprint');
   await click('.reps button[data-k="0"]');
   await shot('entreno-descanso-grande');
@@ -64,14 +73,6 @@ await step('bloque-cancha', async () => {
   await click('.restbar [data-act="tr-rest-skip"]');
   for (let k = 1; k < 6; k++) { await click('.reps button[data-k="' + k + '"]'); const r = page.locator('[data-act="tr-rest-skip"]'); if (await r.count()) await r.first().click(); }
   await click('[data-act="tr-pd"][data-v="0"]');
-  await click('[data-act="tr-next"]');
-  await shot('entreno-golpeo');
-  for (let k = 0; k < 6; k++) await click('[data-act="tr-count"][data-d="5"]');
-  await click('[data-act="tr-pd"][data-v="1"]');
-  await shot('entreno-golpeo-contado');
-  await click('[data-act="tr-copy"]');
-  await shot('copiar-nombre');
-  await click('.sheet [data-act="close"]');
   await click('.tbar [data-act="tr-finish"]');
   await shot('terminar');
   await click('[data-act="fin-scale"][data-name="rpe"][data-v="6"]');
