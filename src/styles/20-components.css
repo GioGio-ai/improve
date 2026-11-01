@@ -221,21 +221,21 @@ body.training .tabbar, body.locked .tabbar { transform: translateY(100%); opacit
 .sheet {
   position: relative; width: 100%; max-width: 560px; max-height: 92dvh; overflow-y: auto; overscroll-behavior: contain; -webkit-overflow-scrolling: touch;
   border-radius: var(--r-xl) var(--r-xl) 0 0; padding: 0 calc(var(--s-5) + var(--safe-r)) calc(var(--s-6) + var(--safe-b)) calc(var(--s-5) + var(--safe-l));
-  background: var(--surface-2); border: 1px solid var(--line-2); border-bottom: 0;
-  box-shadow: var(--elev-2);
+  background: radial-gradient(90% 260px at 0% 0%, rgba(70, 110, 255, 0.16), transparent 70%), radial-gradient(70% 220px at 100% 0%, rgba(140, 96, 255, 0.12), transparent 70%), var(--surface-2);
+  border: 1px solid var(--line-2); border-bottom: 0; box-shadow: var(--elev-2);
   animation: sheetIn var(--dur-3) var(--ease-sheet);
 }
 .sheet.full { height: 94dvh; max-height: 94dvh; }
 .sheet.dragging { transition: none; }
 .sheet.closing { transition: transform var(--dur-2) var(--ease-out); }
-.sheet .grab-zone { position: sticky; top: 0; z-index: 3; margin: 0 calc(-1 * var(--s-5)); padding: var(--s-2) var(--s-5) 0; background: linear-gradient(180deg, var(--surface-2) 72%, rgba(23, 26, 33, 0)); touch-action: none; }
+.sheet .grab-zone { position: sticky; top: 0; z-index: 3; margin: 0 calc(-1 * var(--s-5)); padding: var(--s-2) var(--s-5) 0; background: rgba(24, 27, 42, 0.4); -webkit-backdrop-filter: blur(14px); backdrop-filter: blur(14px); touch-action: none; }
 .grab { width: 36px; height: 5px; border-radius: 3px; background: var(--line-3); margin: 2px auto var(--s-2); }
 .sheet-head { display: flex; align-items: flex-start; gap: var(--s-3); padding: var(--s-2) 0 var(--s-5); }
 .sheet-head .h2 { font-size: 28px; letter-spacing: var(--tr-display); line-height: 1.1; }
 .sheet-head .grow { display: grid; gap: var(--s-1); padding-top: var(--s-1); }
 .sheet-body { display: grid; gap: var(--s-6); min-width: 0; }
 .sheet-foot { position: sticky; bottom: calc(-1 * (var(--s-6) + var(--safe-b))); margin: var(--s-2) calc(-1 * var(--s-5)) calc(-1 * (var(--s-6) + var(--safe-b))); padding: var(--s-3) var(--s-5) calc(var(--s-4) + var(--safe-b)); display: flex; gap: var(--s-2);
-  background: linear-gradient(180deg, rgba(23, 26, 33, 0) 0%, var(--surface-2) 30%); z-index: 2; }
+  background: linear-gradient(180deg, rgba(24, 27, 42, 0) 0%, var(--surface-2) 30%); z-index: 2; }
 .sheet-foot .btn { flex: 1; }
 
 /* ---------- Avisos ---------- */
@@ -421,6 +421,13 @@ details > .in { padding: 0 0 var(--s-5); display: grid; gap: var(--s-3); }
 /* Coach: tus mensajes en burbuja neutra; las respuestas, en tarjeta */
 .msg { padding: var(--s-3) 14px; border-radius: var(--r-lg); font-size: var(--fs-3); line-height: 1.55; white-space: pre-wrap; max-width: 92%; }
 .msg.me { justify-self: end; color: var(--on-blue); background: var(--grad-primary); border-bottom-right-radius: 6px; box-shadow: var(--glow-primary); }
+.lrow.c3 { grid-template-columns: 30px 1fr 1fr; } .lrow.c2 { grid-template-columns: 30px 1fr; } .lrow.nob { border: 0; }
+.seg.full { width: 100%; }
+button.mini-alert { width: 100%; text-align: left; }
+/* Respiración guiada: un núcleo violeta que crece al inhalar */
+.breath { justify-items: center; text-align: center; }
+.breath-ring { width: 220px; height: 220px; }
+#breath-core { width: 90px; height: 90px; border-radius: 50%; background: radial-gradient(circle at 35% 30%, #DDD3FF, #7A5CF0 70%); box-shadow: 0 0 60px rgba(164, 139, 255, 0.6); transition: transform 4s cubic-bezier(0.45, 0, 0.55, 1); }
 .msg.cl { justify-self: start; color: var(--fg); background: linear-gradient(165deg, rgba(91, 140, 255, 0.12), rgba(255, 255, 255, 0.03)); border-bottom-left-radius: 6px; }
 .msg.cl.pending { color: var(--fg-3); animation: pulse 1.4s ease-in-out infinite; }
 

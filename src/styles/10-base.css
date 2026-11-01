@@ -83,6 +83,9 @@ b, strong { font-weight: var(--fw-3); }
 .stack-sm { display: grid; gap: var(--s-2); min-width: 0; }
 .stack-xs { display: grid; gap: var(--s-1); min-width: 0; }
 .stack-lg { display: grid; gap: var(--s-6); min-width: 0; }
+.gap3 { gap: var(--s-3); } .g2 { gap: 2px; }
+.dgrid { display: grid; }
+.center-self { justify-self: center; }
 .row { display: flex; align-items: center; gap: var(--s-2); min-width: 0; flex-wrap: wrap; }
 .row.nowrap { flex-wrap: nowrap; }
 .row.between { justify-content: space-between; }
