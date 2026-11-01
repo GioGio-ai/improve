@@ -179,7 +179,7 @@ function dayHtml(date) {
   const ci = checkinFor(date), adv = readinessAdvice(ci);
   const logs = logsFor(date), done = logs.filter(l => l.done !== false);
   const load = done.reduce((a, l) => a + sessionLoad(l), 0);
-  const T = nutritionTargets(ST.weight || 88, ag.kind, ag), ms = mealsFor(date), tot = sumItems([].concat(...ms.map(m => m.items || [])));
+  const T = dayTargets(ST, date, ag), ms = mealsFor(date), tot = sumItems([].concat(...ms.map(m => m.items || [])));
   const water = (num((nutriDoc(date) || {}).water) || 0) / 1000;
   let h = sheetHead(capFirst(fmtDateLong(date)), (d.intense ? '<span class="c-load">Día intenso para el RF</span>' : 'Carga baja para el RF') + ' · ' + esc(KIND_N[ag.kind] || '')) + '<div class="sheet-body">';
   h += '<div class="tiles">' +
@@ -304,7 +304,7 @@ function saveQuickDone() {
     if (s.field && s.field.kind === 'golpeo' && s.field.tec) log.tec = { level: s.field.level, count: s.field.target };
     if (s.field && s.field.kind === 'sprint') log.spr = { level: s.field.level, pd: num(q.pd), pn: null };
     if (s.field && s.field.kind === 'rt') log.rt = { level: s.field.level };
-    if (s.field && s.field.kind === 'balon') log.ball = { drills: [], headersAlta: s.headersPlan || 0, asPlanned: true };
+    if (s.field && s.field.kind === 'balon') log.ball = { drills: [], headersAlta: s.headersPlan || 0, shotsSana: s.shotsPlan || 0, asPlanned: true };
     if (isIntenseLog(log)) intense = true;
     put('sessions', 's-' + q.date + '-' + s.type, log);
   }

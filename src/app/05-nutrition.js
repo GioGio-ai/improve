@@ -115,20 +115,110 @@ function nutritionTargets(kg, kind, ag) {
   return { kind, kindN: KIND_N[kind] || '', kg, p, c, f, kcal: Math.round(p * 4 + c * 4 + f * 9), choKg, perMeal: Math.round(kg * 0.4 / 5) * 5, water, creatine: 5 };
 }
 
+/* ---------- Ajustes del día: calor y meta de peso ---------- */
+/* Clima por fecha (máxima del día), lo llena la app desde Open-Meteo con la ubicación del perfil */
+const WX = {};
+/* Agua extra con calor: un poco más en el día y más por hora de cancha (el sudor sube con la temperatura) */
+function heatWater(tmax, fieldMin) {
+  if (tmax === null || tmax === undefined) return 0;
+  const base = tmax >= 35 ? 0.8 : tmax >= 30 ? 0.5 : tmax >= 27 ? 0.25 : 0;
+  const perH = tmax >= 35 ? 0.6 : tmax >= 30 ? 0.3 : 0;
+  return Math.round((base + (fieldMin || 0) / 60 * perH) * 10) / 10;
+}
+/* Meta de peso: el primer número del texto («87», «86-88» → 87) */
+function parseWeightTarget(v) {
+  const m = String(v || '').replace(',', '.').match(/(\d{2,3}(?:\.\d)?)(?:\s*[-–a]\s*(\d{2,3}(?:\.\d)?))?/);
+  if (!m) return null;
+  const a = Number(m[1]), b = m[2] ? Number(m[2]) : null;
+  const t = b ? (a + b) / 2 : a;
+  return t >= 40 && t <= 160 ? t : null;
+}
+/* Tendencia de peso (kg por semana) con los registros de las últimas 3 semanas: mínimo 3 en 10 días o más */
+function weightTrend(weights, date) {
+  const w = (weights || []).filter(x => x.date <= date && x.date >= addDays(date, -21) && num(x.kg) !== null);
+  if (w.length < 3 || diffDays(w[w.length - 1].date, w[0].date) < 10) return null;
+  const xs = w.map(x => diffDays(x.date, w[0].date)), ys = w.map(x => num(x.kg));
+  const mx = xs.reduce((a, b) => a + b, 0) / xs.length, my = ys.reduce((a, b) => a + b, 0) / ys.length;
+  const den = xs.reduce((a, x) => a + (x - mx) * (x - mx), 0);
+  return den ? Math.round(xs.reduce((a, x, i) => a + (x - mx) * (ys[i] - my), 0) / den * 7 * 100) / 100 : null;
+}
+/* Ajuste pequeño (±250 kcal) si el peso está lejos de la meta y la tendencia no va hacia ella.
+   Nunca recorta en días de carga alta ni de prueba: primero el rendimiento. */
+function weightGoalAdj(st, date, kind) {
+  const target = parseWeightTarget(st.profile && st.profile.weightTarget), kg = st.weight;
+  if (target === null || !kg) return null;
+  const trend = weightTrend(st.weights, date), diff = Math.round((kg - target) * 10) / 10;
+  if (Math.abs(diff) <= 0.7) return { target, trend, diff, kcal: 0, text: 'En tu meta de peso (' + fmtNum(target) + ' kg).' };
+  if (diff > 0 && (trend === null || trend > -0.2)) {
+    const on = !['alto', 'prueba'].includes(kind);
+    return { target, trend, diff, kcal: on ? -250 : 0, c: on ? -45 : 0, f: on ? -8 : 0, text: 'Meta ' + fmtNum(target) + ' kg: ' + (on ? '−250 kcal hoy (menos carbohidratos y grasa)' : 'hoy sin recorte por la carga') + (trend !== null ? ' · tendencia ' + (trend > 0 ? '+' : '') + fmtNum(trend) + ' kg/sem' : '') + '.' };
+  }
+  if (diff < 0 && (trend === null || trend < 0.2)) return { target, trend, diff, kcal: 250, c: 45, f: 8, text: 'Meta ' + fmtNum(target) + ' kg: +250 kcal hoy' + (trend !== null ? ' · tendencia ' + (trend > 0 ? '+' : '') + fmtNum(trend) + ' kg/sem' : '') + '.' };
+  return { target, trend, diff, kcal: 0, text: 'Vas hacia tu meta de ' + fmtNum(target) + ' kg (' + (trend > 0 ? '+' : '') + fmtNum(trend) + ' kg/sem): sin cambios.' };
+}
+/* Objetivos del día con los ajustes: calor (agua) y meta de peso */
+function dayTargets(st, date, ag) {
+  const T = nutritionTargets(st.weight || 88, ag.kind, ag);
+  if (!T) return T;
+  const fieldMin = ag.items.filter(it => it.kind === 'train' && (it.key === 'campo' || it.key === 'club')).reduce((a, it) => a + it.dur, 0);
+  const wx = WX[date] || null;
+  if (wx && wx.tmax !== null && wx.tmax !== undefined) {
+    const extra = heatWater(wx.tmax, fieldMin);
+    T.heat = { tmax: Math.round(wx.tmax), extra };
+    if (extra) T.water = Math.round((T.water + extra) * 10) / 10;
+  }
+  const adj = weightGoalAdj(st, date, ag.kind);
+  if (adj) {
+    T.weightAdj = adj;
+    if (adj.kcal) { T.c = Math.max(0, T.c + (adj.c || 0)); T.f = Math.max(0, T.f + (adj.f || 0)); T.kcal = Math.round(T.p * 4 + T.c * 4 + T.f * 9); }
+  }
+  return T;
+}
+/* Comidas que se saltan seguido (3 o más «No comí» en los 7 días previos): el plan propone algo rápido */
+function habitSkips(meals, date) {
+  const cnt = {};
+  for (const m of meals || []) if (m.skipped && m.date < date && m.date >= addDays(date, -7)) cnt[m.slot] = (cnt[m.slot] || 0) + 1;
+  return new Set(Object.keys(cnt).filter(k => cnt[k] >= 3));
+}
+
 /* ---------- Reparto por comida ---------- */
 const SLOT_N = { desayuno: 'Desayuno', post: 'Post entreno', colacion: 'Media mañana', almuerzo: 'Almuerzo', merienda: 'Merienda', cena: 'Cena', nocturna: 'Antes de dormir', extra: 'Extra' };
 const SLOT_SHARE = {
   desayuno: { p: 1, c: 1.0, f: 0.9 }, post: { p: 0.8, c: 0.8, f: 0.3 }, colacion: { p: 0.6, c: 0.7, f: 0.5 },
   almuerzo: { p: 1.1, c: 1.3, f: 1.3 }, merienda: { p: 0.7, c: 0.9, f: 0.5 }, cena: { p: 1.1, c: 1.1, f: 1.2 }, nocturna: { p: 0.7, c: 0.2, f: 0.6 },
 };
-function slotTargets(ag, T, skip) {
+/* Reparto del día entre las comidas.
+   ctx.eaten { keys, tot }: lo ya comido cuenta y el resto del día se reparte entre las comidas que faltan.
+   ctx.habit: comidas que se saltan seguido (pesan menos). Los carbohidratos pesan más en la comida de las 4 h antes
+   y de las 2 h después de un entrenamiento intenso. */
+function slotTargets(ag, T, skip, ctx) {
+  ctx = ctx || {};
   const meals = ag.items.filter(x => x.kind === 'meal' && !(skip && skip.has(x.key)));
-  const sum = (k) => meals.reduce((a, m) => a + (SLOT_SHARE[m.slot] ? SLOT_SHARE[m.slot][k] : 0.8), 0) || 1;
-  const sp = sum('p'), sc = sum('c'), sf = sum('f');
-  const out = {};
-  for (const m of meals) {
-    const w = SLOT_SHARE[m.slot] || { p: 0.8, c: 0.8, f: 0.8 };
-    out[m.key] = { p: Math.round(T.p * w.p / sp), c: Math.round(T.c * w.c / sc), f: Math.round(T.f * w.f / sf) };
+  const trains = ag.items.filter(x => x.kind === 'train' && x.intense);
+  const around = (m) => trains.some(t => (m.start + (m.dur || 0) <= t.start + 5 && t.start - m.start <= 240) || (m.start >= t.end - 5 && m.start - t.end <= 120));
+  const weight = (m) => {
+    const w = Object.assign({}, SLOT_SHARE[m.slot] || { p: 0.8, c: 0.8, f: 0.8 });
+    if (around(m)) w.c *= 1.3;
+    if (ctx.habit && ctx.habit.has(m.slot)) { w.p *= 0.6; w.c *= 0.6; w.f *= 0.6; }
+    return w;
+  };
+  const share = (list, tot) => {
+    const sum = (k) => list.reduce((a, m) => a + weight(m)[k], 0) || 1;
+    const sp = sum('p'), sc = sum('c'), sf = sum('f'), o = {};
+    for (const m of list) { const w = weight(m); o[m.key] = { p: Math.round(tot.p * w.p / sp), c: Math.round(tot.c * w.c / sc), f: Math.round(tot.f * w.f / sf) }; }
+    return o;
+  };
+  const out = share(meals, T);
+  const eaten = ctx.eaten;
+  if (eaten && eaten.keys && eaten.keys.size) {
+    const pending = meals.filter(m => !eaten.keys.has(m.key));
+    if (pending.length) {
+      const left = { p: Math.max(0, T.p - eaten.tot.p), c: Math.max(0, T.c - eaten.tot.c), f: Math.max(0, T.f - eaten.tot.f) };
+      const re = share(pending, left);
+      /* Sin comidas imposibles: cada una entre la mitad y 1,6 veces su parte normal */
+      for (const m of pending) for (const k of ['p', 'c', 'f']) re[m.key][k] = clamp(re[m.key][k], Math.round(out[m.key][k] * 0.5), Math.round(out[m.key][k] * 1.6));
+      Object.assign(out, re);
+    }
   }
   return out;
 }
@@ -170,8 +260,16 @@ const MENUS = {
   ],
 };
 function dayIndex(date) { const d = parseYmd(date); return Math.floor((d - new Date(d.getFullYear(), 0, 1)) / DAYMS); }
-function buildMenu(slot, tgt, date, variant) {
-  const list = MENUS[slot] || MENUS.colacion;
+/* Opciones rápidas para las comidas que se saltan seguido */
+const MENUS_QUICK = {
+  desayuno: [
+    { name: 'Yogur con banana y miel', prot: [['yogur', 300]], carb: ['banana', 120, 240], fix: [['miel', 14]], tip: 'La salteaste varias veces esta semana: algo rápido para no empezar el día sin proteína.' },
+    { name: 'Leche de cabra con banana y miel', prot: [['leche_cabra', 400]], carb: ['banana', 120, 240], fix: [['miel', 14]], tip: 'La salteaste varias veces esta semana: se toma en 2 minutos.' },
+  ],
+  colacion: [{ name: 'Banana y queso Paraguay', prot: [['queso_py', 50]], carb: ['banana', 120, 240], fix: [], tip: 'Rápido y sin preparar.' }],
+};
+function buildMenu(slot, tgt, date, variant, quick) {
+  const list = (quick && (MENUS_QUICK[slot] || MENUS_QUICK.colacion)) || MENUS[slot] || MENUS.colacion;
   const tpl = list[(dayIndex(date) + (variant || 0)) % list.length];
   const items = [];
   // Proteína: escala la primera fuente hasta el objetivo (máximo x1,8)

@@ -70,7 +70,7 @@ f5.sessions['s6-b'] = { date: '2026-10-23', type: 'sprint', done: true, spr: { l
 delete f5.sessions['s-partido-lunes'];
 if (f5.profile && f5.profile.main) { f5.profile.main.trials = []; delete f5.profile.main.partners; }
 if (f5.settings && f5.settings.main) f5.settings.main.plan = {};
-const ctx2 = await browser.newContext({ viewport: { width: 390, height: 844 }, deviceScaleFactor: 2, isMobile: true, hasTouch: true, locale: 'es-PY', timezoneId: 'America/Asuncion' });
+const ctx2 = await browser.newContext({ viewport: { width: 390, height: 844 }, deviceScaleFactor: 2, isMobile: true, hasTouch: true, locale: 'es-PY', timezoneId: 'America/Asuncion', geolocation: { latitude: 10, longitude: 10 }, permissions: ['geolocation'] });
 await ctx2.addInitScript((s) => { if (!sessionStorage.getItem('seeded')) { localStorage.setItem('improve-local-v1', s); localStorage.removeItem('improve-entreno-v3'); sessionStorage.setItem('seeded', '1'); } }, JSON.stringify(f5));
 const p2 = await ctx2.newPage();
 p2.on('pageerror', e => errors.push('pageerror: ' + e.message));
@@ -87,6 +87,15 @@ try {
   const gi = steps.findIndex(s => s.kind === 'golpeo');
   ok(gi > 0 && steps[gi - 1].kind === 'rt' && steps[gi - 1].pre, 'F5 martes: el K8 no tiene el RT corto justo antes: ' + steps.map(s => s.kind + (s.pre ? '*' : '')).join(','));
   ok(gi === steps.length - 1 || steps.slice(gi + 1).every(s => s.kind !== 'sprint'), 'F5 martes: el sprint va después de los remates K8');
+  /* v4.3 · la batería de rendimiento va primero: 10 m con un valor único que se guarda al escribir */
+  const firstWork = steps.findIndex(s => !s.warmup);
+  ok(steps[firstWork] && steps[firstWork].kind === 'test' && steps[firstWork].key === 's10', 'F5 martes: la cancha no empieza por la batería (10 m): ' + steps.map(s => s.kind + (s.key ? ':' + s.key : '')).slice(0, 8).join(','));
+  await p2.locator('[data-act="tr-skipwarm"]').first().click();
+  await p2.waitForSelector('#tr-single', { timeout: 5000 });
+  await p2.fill('#tr-single', '1,82');
+  await p2.waitForTimeout(900);
+  const tdoc = await p2.evaluate((d) => (JSON.parse(localStorage.getItem('improve-local-v1') || '{}').tests || {})['t-' + d], TUE);
+  ok(tdoc && Math.abs(tdoc.s10 - 1.82) < 0.001, 'F5 martes: el 10 m no se guardó: ' + JSON.stringify(tdoc));
   await p2.screenshot({ path: outDir + '/03-f5-cancha.png' });
   await p2.locator('[data-act="tr-min"]').first().click();
   await p2.waitForTimeout(300);
@@ -107,6 +116,19 @@ try {
   await p2.waitForTimeout(500);
   const satTxt2 = await p2.locator('.day-sec').filter({ hasText: /sábado|Sáb/i }).first().innerText().catch(() => '');
   ok(/Juego/.test(satTxt2) && !/Simulación/.test(satTxt2), 'F5 sábado con compañeros sigue en simulación: ' + satTxt2.replace(/\s+/g, ' ').slice(0, 160));
+  /* v4.3 · clima para el agua: ubicación aproximada y agua extra con calor (modo local: 33 °C simulados) */
+  await p2.evaluate(() => { location.hash = '#perfil'; });
+  await p2.waitForSelector('[data-act="geo"]', { timeout: 15000 });
+  await p2.locator('[data-act="geo"]').first().click();
+  await p2.waitForTimeout(800);
+  const geo = await p2.evaluate(() => JSON.parse(localStorage.getItem('improve-local-v1') || '{}').profile.main.geo);
+  ok(geo && geo.lat === 10 && geo.lon === 10, 'Perfil: la ubicación para el clima no se guarda: ' + JSON.stringify(geo));
+  await p2.evaluate(() => { location.hash = '#comida'; });
+  await p2.waitForSelector('.water', { timeout: 15000 });
+  await p2.waitForTimeout(500);
+  const wtxt = await p2.locator('.water').first().innerText();
+  ok(/33 °C/.test(wtxt) && /por el calor/.test(wtxt), 'Comida: sin agua extra por el calor: ' + wtxt.replace(/\s+/g, ' '));
+  await p2.screenshot({ path: outDir + '/05-comida-calor.png' });
   await p2.screenshot({ path: outDir + '/04-f5-semana.png', fullPage: true });
 } catch (e) { fails.push('PASO F5: ' + e.message.split('\n')[0]); await p2.screenshot({ path: outDir + '/ERROR-f5.png' }).catch(() => {}); }
 await browser.close();

@@ -26,7 +26,8 @@ function viewPerfil(st, today) {
   const t = (k, label) => '<div class="field"><label for="sc-' + k + '">' + label + '</label><input class="input num" type="time" step="900" id="sc-' + k + '" data-bind="sched" data-name="' + k + '" value="' + esc(sch[k]) + '"></div>';
   h += '<section class="card"><div class="stack"><div class="stack-sm"><span class="kicker">Rutina diaria</span><p class="sub">La agenda del día parte de estos horarios.</p></div>' +
     '<div class="timegrid">' + t('wake', 'Despertar') + t('sleep', 'Dormir') + t('gym', 'Gimnasio') + t('field', 'Cancha (lun-vie)') + t('fieldEnd', 'Cancha cierra') + t('fieldSat', 'Cancha sábado') + '</div>' +
-    toggleHtml('sched-nap', sch.nap !== false, 'Siesta corta', '20-30 min después del almuerzo, antes de las 15:00', '', 'sleep') + '</div></section>';
+    toggleHtml('sched-nap', sch.nap !== false, 'Siesta corta', '20-30 min después del almuerzo, antes de las 15:00', '', 'sleep') +
+    toggleHtml('geo', !!p.geo, 'Clima para el agua', p.geo ? 'Con tu ubicación aproximada: más agua los días de calor.' : 'Usa tu ubicación aproximada para sumar agua los días de calor.', '', 'water') + '</div></section>';
   // Calendario
   const dayBtns = (key, multi) => '<div class="pills">' + DOW.map((d, i) => { const on = multi ? (p[key] || []).includes(i) : Number(p[key] ?? 6) === i; return '<button type="button" class="pill' + (on ? ' on' : '') + '" data-act="cal" data-key="' + key + '" data-i="' + i + '" aria-pressed="' + on + '">' + d + '</button>'; }).join('') + '</div>';
   const trials = (p.trials || []).slice().sort();
@@ -36,7 +37,8 @@ function viewPerfil(st, today) {
     '<div class="field"><span class="lab">Día de descanso</span>' + dayBtns('restDay', false) + '</div>' +
     '<div class="field"><span class="lab">Entrenamientos con un club</span>' + dayBtns('teamDays', true) + '</div>' +
     '<div class="field"><span class="lab">Días de partido</span>' + dayBtns('matchDays', true) + '<span class="hint">Desde F5, el plan se organiza por día de partido.</span></div>' +
-    toggleHtml('partners', p.partners === true, 'Tengo con quién jugar', 'Para el juego reducido. Si no, el plan pone una simulación de partido individual.') + '</div></section>';
+    toggleHtml('partners', p.partners === true, 'Tengo con quién jugar', 'Para el juego reducido. Si no, el plan pone una simulación de partido individual.') +
+    '<div class="field"><span class="lab">Énfasis al volver a jugar (F5-F6)</span><div class="pills">' + [['', 'Equilibrado'], ['velocidad', 'Velocidad'], ['fuerza', 'Fuerza'], ['potencia', 'Potencia']].map(([k, n]) => { const on = (p.emphasis || '') === k; return '<button type="button" class="pill' + (on ? ' on' : '') + '" data-act="emphasis" data-v="' + k + '" aria-pressed="' + on + '">' + n + '</button>'; }).join('') + '</div><span class="hint">Cambia qué fuerza y qué trabajo de cancha lleva cada día intenso.</span></div></div></section>';
   const places = placesOf(p);
   h += '<section class="card"><div class="stack"><div class="stack-sm"><span class="kicker">Lugares</span><p class="sub">Desmarca lo que no tengas: el plan elige alternativas.</p></div>' +
     PLACES.map(pl => '<div class="field"><span class="lab">' + PLACE_NAMES[pl] + '</span><div class="pills">' + PLACES_DEFAULT[pl].eq.map(e => { const on = places[pl].eq.includes(e); return '<button type="button" class="pill' + (on ? ' on' : '') + '" data-act="place-eq" data-place="' + pl + '" data-v="' + esc(e) + '" aria-pressed="' + on + '">' + esc(e) + '</button>'; }).join('') + '</div></div>').join('') +
@@ -71,10 +73,36 @@ function profileHtml() {
 function saveProfile() {
   const p = clone(UI.pf); delete p.id;
   p.heightCm = num(p.heightCm);
-  ['restDay', 'teamDays', 'matchDays', 'equipmentOff', 'places', 'trials', 'schedule', 'partners'].forEach(k => { if (p[k] === undefined && S.data.profile && S.data.profile[k] !== undefined) p[k] = S.data.profile[k]; });
+  ['restDay', 'teamDays', 'matchDays', 'equipmentOff', 'places', 'trials', 'schedule', 'partners', 'emphasis', 'geo'].forEach(k => { if (p[k] === undefined && S.data.profile && S.data.profile[k] !== undefined) p[k] = S.data.profile[k]; });
   if (p.restDay === undefined) p.restDay = 6;
   put('profile', 'main', p).then(() => toast('Perfil guardado.'));
   closeSheet();
+}
+/* Clima para el agua: ubicación aproximada (2 decimales, ~1 km) y pronóstico de Open-Meteo (gratis, sin clave) */
+const WX_KEY = 'improve-wx-v1';
+let wxAt = 0;
+function toggleGeo() {
+  const p = S.data.profile || {};
+  if (p.geo) { updateProfile(x => { delete x.geo; }); for (const k in WX) delete WX[k]; try { localStorage.removeItem(WX_KEY); } catch (e) { /* nada */ } return; }
+  if (!navigator.geolocation) { toast('Este teléfono no da la ubicación.', 'warn'); return; }
+  navigator.geolocation.getCurrentPosition((pos) => {
+    const r = (v) => Math.round(v * 100) / 100;
+    updateProfile(x => { x.geo = { lat: r(pos.coords.latitude), lon: r(pos.coords.longitude) }; }).then(() => { wxAt = 0; refreshWeather(); toast('Listo: el agua sigue el calor del día.'); });
+  }, () => toast('No se pudo obtener la ubicación.', 'warn'), { timeout: 10000, maximumAge: 3600e3 });
+}
+function refreshWeather() {
+  const g = S.data.profile && S.data.profile.geo;
+  if (!g || Date.now() - wxAt < 3 * 3600e3) return;
+  wxAt = Date.now();
+  try { const c = JSON.parse(localStorage.getItem(WX_KEY) || 'null'); if (c && c.lat === g.lat && c.lon === g.lon && Date.now() - c.at < 3 * 3600e3) { Object.assign(WX, c.days); scheduleRender(); return; } } catch (e) { /* nada */ }
+  if (S.mode !== 'cloud') { const t = todayStr(); for (let i = 0; i < 7; i++) WX[addDays(t, i)] = { tmax: 33 }; scheduleRender(); return; }
+  fetch('https://api.open-meteo.com/v1/forecast?latitude=' + g.lat + '&longitude=' + g.lon + '&daily=temperature_2m_max&timezone=auto&forecast_days=7')
+    .then(r => r.json()).then(j => {
+      const days = {}; ((j.daily && j.daily.time) || []).forEach((d, i) => { const v = num(j.daily.temperature_2m_max[i]); if (v !== null) days[d] = { tmax: v }; });
+      Object.assign(WX, days);
+      try { localStorage.setItem(WX_KEY, JSON.stringify({ at: Date.now(), lat: g.lat, lon: g.lon, days })); } catch (e) { /* nada */ }
+      scheduleRender();
+    }).catch(() => { wxAt = Date.now() - 2.5 * 3600e3; });
 }
 function updateProfile(fn) { const p = clone(S.data.profile || { restDay: 6, teamDays: [], matchDays: [], equipmentOff: [] }); delete p.id; fn(p); return put('profile', 'main', p); }
 function setSchedule(k, v) { updateProfile(p => { p.schedule = Object.assign({}, scheduleOf(p), p.schedule || {}); p.schedule[k] = v; }); }

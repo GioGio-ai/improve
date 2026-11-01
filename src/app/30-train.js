@@ -514,7 +514,7 @@ function ballDone() {
 }
 function trTestHtml(s) {
   const inj = ST.side || 'd', hea = inj === 'd' ? 'i' : 'd';
-  let h = '<div class="exhead"><div class="badgek t">' + ic('flask') + '</div><div class="stack-xs"><div class="kicker">Test de control</div><button class="exname" data-act="tr-copy">' + esc(s.n) + '</button>' + (s.saved ? '<span class="saved">' + ic('check') + 'Guardado</span>' : '<span class="sub">Se guarda al escribir</span>') + '</div></div>';
+  let h = '<div class="exhead"><div class="badgek t">' + ic('flask') + '</div><div class="stack-xs"><div class="kicker">' + (s.sess === 'testRend' ? 'Test de rendimiento' : 'Test de control') + '</div><button class="exname" data-act="tr-copy">' + esc(s.n) + '</button>' + (s.saved ? '<span class="saved">' + ic('check') + 'Guardado</span>' : '<span class="sub">Se guarda al escribir</span>') + '</div></div>';
   h += '<div class="excue">' + esc(s.d) + '</div>';
   if (s.tkind === 'pair') {
     const v = s.val || {};
@@ -532,6 +532,8 @@ function trTestHtml(s) {
     h += '<div class="field"><span class="lab">Dolor durante el Reverse Nordic</span>' + scaleHtml('rnPain', s.rnPain, { pain: true, act: 'tr-test-scale', l: '0 nada', r: '10 máximo' }) + '<span class="hint">Dolor, no esfuerzo ni tirantez muscular.</span></div>';
   } else if (s.tkind === 'scale') {
     h += '<div class="field"><span class="lab">Dolor al presionar</span>' + scaleHtml('palp', s.val, { pain: true, act: 'tr-test-scale', l: '0 nada', r: '10 máximo' }) + '</div>';
+  } else if (s.tkind === 'single') {
+    h += '<div class="field"><label for="tr-single">Mejor marca (' + esc(s.unit) + ')</label><input class="input num" id="tr-single" inputmode="decimal" enterkeyhint="done" autocomplete="off" data-bind="tr-test" data-s="v" value="' + esc(fmtNumRaw(s.val)) + '" placeholder="' + esc(s.unit) + '"></div>';
   }
   h += '<button class="btn sm ghost" data-act="tr-skip">' + ic('chev') + 'Hoy no lo mido</button>';
   return h;
@@ -714,6 +716,7 @@ function trTestSave(s) {
 function renderTrainSoft() { const ae = document.activeElement; if (ae && ae.tagName === 'INPUT' && $('#train-root').contains(ae)) return; renderTrain(); }
 function trTestInput(sd, raw) {
   const s = curStep(); if (!s || s.kind !== 'test') return;
+  if (s.tkind === 'single') { s.val = parseNum(raw); if (num(s.val) !== null) trTestSave(s); else saveDraft(); return; }
   s.val = Object.assign({}, s.val || {}); s.val[sd] = parseNum(raw);
   const box = $('#tr-lsi');
   if (box) {

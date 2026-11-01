@@ -128,6 +128,8 @@ document.addEventListener('click', (e) => {
     case 'trial-del': { const v = g('v'); updateProfile(p => { p.trials = (p.trials || []).filter(x => x !== v); }); return; }
     case 'sched-nap': setSchedule('nap', !(scheduleOf(S.data.profile).nap !== false)); return;
     case 'partners': updateProfile(p => { p.partners = !(p.partners === true); }); return;
+    case 'emphasis': updateProfile(p => { if (g('v')) p.emphasis = g('v'); else delete p.emphasis; }); return;
+    case 'geo': toggleGeo(); return;
     case 'export': exportData(); return;
     case 'photo-set': pickMediaPhoto(el.dataset.k); return;
     case 'sign-out': openConfirm('Cerrar sesión', 'Tus datos quedan guardados en tu cuenta. Para volver a entrar necesitas tu contraseña.', 'do-sign-out'); return;

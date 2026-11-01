@@ -1,7 +1,7 @@
 /* ============================================================
    NÚCLEO: datos, render, capas (hojas y entrenamiento), avisos
    ============================================================ */
-const VERSION = '4.2.0';
+const VERSION = '4.3.0';
 const COLS = {
   profile: 'single', settings: 'single', weights: 'list', injuries: 'list', tests: 'list', checkins: 'list', sessions: 'list',
   custom: 'list', traducciones: 'list', templates: 'list', agenda: 'list', meals: 'list', nutri: 'list', foods: 'list', molestias: 'list',
@@ -96,6 +96,7 @@ function render() {
   if (!allLoaded()) { $('#view').innerHTML = skeletonView(); return; }
   for (const k in memo) delete memo[k];
   syncUserFoods();
+  refreshWeather();
   ST = deriveState(engineData(), todayStr());
   const fn = RENDERERS[UI.view] || RENDERERS.hoy;
   const view = $('#view');

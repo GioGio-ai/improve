@@ -179,11 +179,22 @@ function readinessCard(ci, adv) {
   if (!ci) return '<button class="ready-cta" data-act="checkin">' + ic('sunrise') + '<span class="grow"><span class="t">¿Cómo amaneciste?</span></span>' + ic('chev') + '</button>';
   const sc = adv.score, tone = readinessTone(sc), grad = tone === 'lime' ? 'lg-lime' : tone === 'load' ? 'lg-load' : 'lg-blue';
   const pain = num(ci.rfPain), sleepH = num(ci.sleepH);
-  const label = sc >= 70 ? 'Listo para cargar' : sc >= 50 ? 'Estado normal' : 'Estado bajo';
+  const ds = dayStatus(ST, todayStr());
+  const label = ds.baseline && ds.baseline.low && sc >= 50 ? 'Bajo para ti' : sc >= 70 ? 'Listo para cargar' : sc >= 50 ? 'Estado normal' : 'Estado bajo';
   return '<button class="ready-sum ed rule" data-act="checkin"><span class="ed-head"><span class="kicker">Estado de hoy</span>' + ic('chev') + '</span>' +
     '<span class="ready-big"><span class="n c-' + (tone || 'blue') + '">' + sc + '</span><span class="grow"><span class="t">' + label + '</span><span class="s">' +
     'Sueño <b class="c-sleep">' + (sleepH === null ? '—' : fmtNum(Math.round(sleepH * 10) / 10) + ' h') + '</b> · Energía <b>' + (num(ci.fatigue) === null ? '—' : ci.fatigue + '/5') + '</b> · Dolor RF <b class="' + (pain >= 3 ? 'c-pain' : pain >= 1 ? 'c-load' : 'c-lime') + '">' + (pain === null ? '—' : pain + '/10') + '</b></span></span></span>' +
+    statusLine(ds) +
     (adv.items.length ? '<span class="stack-sm">' + adv.items.map(a => note(a.level === 'critical' ? 'pain' : 'warn', esc(a.text))).join('') + '</span>' : '') + '</button>';
+}
+/* Estado del día en una línea: verde (plan completo), ámbar (con ajustes) o rojo (nada intenso). Rojo solo si hay dolor. */
+function statusLine(ds) {
+  if (!ds) return '';
+  const pain = ds.reasons.some(r => /dolor/.test(r) && !/muscular/.test(r));
+  const tone = ds.level === 'verde' ? 'lime' : ds.level === 'rojo' && pain ? 'pain' : 'load';
+  const head = ds.level === 'verde' ? 'Plan completo' : ds.level === 'rojo' ? 'Nada intenso' : 'Con ajustes';
+  const base = ds.baseline ? ' · tu media ' + ds.baseline.mean : '';
+  return '<span class="row nowrap">' + chip(head, tone) + '<span class="sub">' + esc(ds.reasons.length ? capFirst(ds.reasons.slice(0, 3).join(' · ')) : 'Sin alertas' + base) + '</span></span>';
 }
 function weekStrip(today, sel) {
   const days = weekPlan(weekStartOf(today));
@@ -312,14 +323,20 @@ function skippedKeys(date, ag) {
   const ms = mealsFor(date); if (!ms.some(m => m.skipped)) return null;
   return new Set(ag.items.filter(x => x.kind === 'meal' && ms.some(m => m.slot === x.slot && m.skipped) && !ms.some(m => m.slot === x.slot && !m.skipped)).map(x => x.key));
 }
+/* Objetivo de cada comida: lo ya comido cuenta y el resto del día se reparte entre las que faltan */
+function mealTargets(date, ag) {
+  const T = dayTargets(ST, date, ag), ms = mealsFor(date);
+  const keys = new Set(ag.items.filter(x => x.kind === 'meal' && ms.some(m => m.slot === x.slot && !m.skipped && (m.items || []).length)).map(x => x.key));
+  const tot = sumItems([].concat(...ms.filter(m => !m.skipped).map(m => m.items || [])));
+  return slotTargets(ag, T, skippedKeys(date, ag), { eaten: { keys, tot }, habit: habitSkips(S.data.meals || [], date) });
+}
 function mealMenuFor(date, it) {
   const ag = agendaFor(date);
-  const T = nutritionTargets(ST.weight || 88, ag.kind, ag);
-  const tg = slotTargets(ag, T, skippedKeys(date, ag))[it.key] || { p: 35, c: 80, f: 15 };
-  return buildMenu(it.slot, tg, date, UI.menuVar[date + ':' + it.key] || 0);
+  const tg = mealTargets(date, ag)[it.key] || { p: 35, c: 80, f: 15 };
+  return buildMenu(it.slot, tg, date, UI.menuVar[date + ':' + it.key] || 0, habitSkips(S.data.meals || [], date).has(it.slot));
 }
 function nutritionStrip(date, ag) {
-  const T = nutritionTargets(ST.weight || 88, ag.kind, ag);
+  const T = dayTargets(ST, date, ag);
   const ms = mealsFor(date), tot = sumItems([].concat(...ms.map(m => m.items || [])));
   const water = (num((nutriDoc(date) || {}).water) || 0) / 1000;
   const mc = (k, v, of, tone, val, max) => '<div class="mc"><span class="k">' + k + '</span><span class="v c-' + tone + '">' + v + '<span class="of"> / ' + of + '</span></span>' + meter(val, max, tone === 'prot' ? 'prot' : tone === 'carb' ? 'carb' : 'water') + '</div>';

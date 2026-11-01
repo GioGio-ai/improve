@@ -31,6 +31,7 @@ function viewProgreso(st, today) {
   if (tl.length) h += '<section class="card"><div class="stack-sm"><span class="kicker">Entre piernas · entrenamiento</span>' + tl.map(r => '<div class="lrow"><span class="fg2">' + esc(r.n) + ' · ' + fmtDate(r.date) + '</span><b class="num ' + (r.lsi >= 90 ? 'c-lime' : 'c-load') + '">' + fmtNum(r.lsi) + ' %</b></div>').join('') + '</div></section>';
   h += sleepCard(st, today);
   h += loadCard(st, today);
+  h += perfCard(st);
   h += coverageCard(st, today);
   h += molestiasCard(st, today);
   h += weightCard(st);
@@ -107,11 +108,29 @@ function sleepCard(st, today) {
     barChart(rows, { tone: 'sleep', ref: 9, label: 'Horas de sueño', showVal: false, fmt: (v) => fmtNum(v) }) + '<p class="sub">La línea marca 9 h.</p></div></section>';
 }
 function loadCard(st, today) {
-  const loads = weeklyLoads(st.sessions, today, 8), cur = loads[loads.length - 1], prev = loads[loads.length - 2];
-  const ch = prev.load > 0 ? Math.round((cur.load / prev.load - 1) * 100) : null;
-  return '<section class="card"><div class="stack-sm"><div class="ed-head"><span class="kicker">Carga semanal</span>' + (ch !== null ? chip((ch > 0 ? '+' : '') + ch + ' %', ch > 20 ? 'warn' : 'lime') : '') + '</div>' +
-    barChart(loads.map(l => ({ label: fmtDate(l.start), value: l.load })), { cur: loads.length - 1, label: 'Carga semanal' }) +
-    '<p class="sub">Minutos × esfuerzo. Evita subir más de 20 % por semana.</p></div></section>';
+  const loads = weeklyLoads(st.sessions, today, 8);
+  /* Últimos 7 días contra los 7 anteriores (la semana en curso está incompleta) */
+  const lm = loadModel(st, today), ch = lm.prevWeek > 0 ? Math.round((lm.week / lm.prevWeek - 1) * 100) : null;
+  const sw = shotsWeek(st.sessions, weekStartOf(today)), cap = sanaShotCap(st.sessions, weekStartOf(today));
+  const sana = st.side === 'i' ? 'derecha' : 'zurda', les = st.side === 'i' ? 'izquierda' : 'derecha';
+  const ratio = lm.ratio !== null ? '<div class="lrow"><span class="fg2">7 días frente a tu media de 4 semanas</span><b class="num' + (lm.ratio > 1.5 ? ' c-load' : '') + '">' + fmtNum(lm.ratio) + '</b></div>' : '';
+  return '<section class="card"><div class="stack-sm"><div class="ed-head"><span class="kicker">Carga semanal</span>' + (ch !== null ? chip((ch > 0 ? '+' : '') + ch + ' % en 7 días', ch > 20 ? 'warn' : 'lime') : '') + '</div>' +
+    barChart(loads.map(l => ({ label: fmtDate(l.start), value: l.load })), { cur: loads.length - 1, label: 'Carga semanal' }) + ratio +
+    '<div class="lrow"><span class="fg2">Remates fuertes con la ' + sana + ' (semana)</span><b class="num' + (sw.sana >= cap ? ' c-load' : '') + '">' + sw.sana + ' / ' + cap + '</b></div>' +
+    '<div class="lrow"><span class="fg2">Remates fuertes con la ' + les + ' (semana)</span><b class="num">' + sw.les + '</b></div>' +
+    '<p class="sub">Minutos × esfuerzo (sin esfuerzo anotado se usa el típico de la sesión). Evita subir más de 20 % por semana. El tope de remates con la ' + sana + ' sube como mucho un 25 % por semana.</p></div></section>';
+}
+/* Batería de rendimiento: 10 y 30 m, CMJ (último y anterior) */
+function perfCard(st) {
+  const rows = [['s10', 'Sprint 10 m', 's', true], ['s30', 'Sprint 30 m', 's', true], ['cmj', 'CMJ', 'cm', false]].map(([k, n, u, lower]) => {
+    const vals = (st.tests || []).filter(t => num(t[k]) !== null).sort(byDate);
+    if (!vals.length) return null;
+    const a = vals[vals.length - 1], b = vals.length > 1 ? vals[vals.length - 2] : null;
+    const d = b ? Math.round((num(a[k]) - num(b[k])) * 100) / 100 : null, better = d !== null && (lower ? d < 0 : d > 0);
+    return '<div class="lrow"><span class="fg2">' + n + ' <span class="fg4">· ' + fmtDate(a.date) + '</span></span><b class="num">' + fmtNum(num(a[k])) + ' ' + u + (d ? ' <span class="' + (better ? 'c-lime' : 'c-load') + '">(' + (d > 0 ? '+' : '') + fmtNum(d) + ')</span>' : '') + '</b></div>';
+  }).filter(Boolean);
+  if (!rows.length) return st.phase >= 5 ? '<section class="card"><div class="stack-sm"><span class="kicker">Rendimiento</span><p class="sub">La batería de 10 y 30 m, CMJ y salto a una pierna va cada 4 semanas en un día de sprint.</p></div></section>' : '';
+  return '<section class="card"><div class="stack-sm"><span class="kicker">Rendimiento</span>' + rows.join('') + '<p class="sub">Cada 4 semanas en un día de sprint. En los sprints, menos es mejor.</p></div></section>';
 }
 function coverageCard(st, today) {
   const ws = weekStartOf(today), led = muscleLedger(st, ws, today, weekPlan(ws));

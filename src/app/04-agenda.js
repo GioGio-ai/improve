@@ -77,14 +77,17 @@ function buildAgenda(day, st, agendaDoc, opts) {
   /* Dormir 30 min antes mientras haya deuda de sueño y desde 5 días antes de una prueba (hasta 1 h antes) */
   const sDebt = sleepDebt(st, day.date).debt, preTrial = (prof.trials || []).some(t => { const x = diffDays(t, day.date); return x >= 1 && x <= 5; });
   const earlier = Math.min(60, (sDebt >= 1 ? 30 : 0) + (preTrial ? 30 : 0));
-  const wake = O('wake', slept && slept.wake !== null ? slept.wake : hm(sch.wake)), sleep = O('sleep', hm(sch.sleep) - earlier);
-  const lateWake = !!(slept && slept.wake !== null && !(ov.wake && num(ov.wake.start) !== null) && slept.wake > hm(sch.wake) + 20);
-  add({ key: 'wake', kind: 'wake', title: slept && slept.wake !== null ? 'Te levantaste' : 'Despertar', start: wake, dur: 0, movable: true, marker: true });
-
   const blocks = dayBlocks(day);
   const B = {};
   for (const b of blocks) B[b.key] = b;
   for (const k of Object.keys(B)) { if (ov[k] && ov[k].place) B[k].place = ov[k].place; }
+  /* Día de prueba o de partido: despertar 3 h antes o más, comida previa 3-4 h antes y snack 1 h antes */
+  const match = !!(B.club && B.club.sessions.some(x => x.type === 'prueba' || x.type === 'partido'));
+  const clubStart = B.club ? O('club', hm(sch.field)) : null;
+  const wakeDef = slept && slept.wake !== null ? slept.wake : match ? Math.min(hm(sch.wake), clubStart - 180) : hm(sch.wake);
+  const wake = O('wake', wakeDef), sleep = O('sleep', hm(sch.sleep) - earlier);
+  const lateWake = !!(slept && slept.wake !== null && !(ov.wake && num(ov.wake.start) !== null) && slept.wake > hm(sch.wake) + 20);
+  add({ key: 'wake', kind: 'wake', title: slept && slept.wake !== null ? 'Te levantaste' : 'Despertar', start: wake, dur: 0, movable: true, marker: true });
   const train = {};
   // ---- Gimnasio
   if (B.gym) {
@@ -105,25 +108,28 @@ function buildAgenda(day, st, agendaDoc, opts) {
     }
   }
   if (B.club) {
-    const start = O('club', hm(sch.field));
-    train.club = add({ key: 'club', kind: 'train', block: B.club, title: B.club.title, sub: B.club.short, start, dur: B.club.est, movable: true, intense: B.club.intense });
+    train.club = add({ key: 'club', kind: 'train', block: B.club, title: B.club.title, sub: B.club.short, start: clubStart, dur: B.club.est, movable: true, intense: B.club.intense });
   }
+  const amMatch = match && clubStart < 12 * 60, pmMatch = match && clubStart >= 14 * 60;
   // ---- Comidas
   const trainList = Object.values(train).sort((a, b) => a.start - b.start);
   const morning = trainList.find(t => t.start < 12 * 60);
   const afternoon = trainList.find(t => t.start >= 14 * 60);
   const desStart = O('desayuno', wake + 15);
-  add({ key: 'desayuno', kind: 'meal', slot: 'desayuno', title: 'Desayuno', start: desStart, dur: 25, movable: true });
+  const des = add({ key: 'desayuno', kind: 'meal', slot: 'desayuno', title: 'Desayuno', start: desStart, dur: 25, movable: true });
+  if (amMatch) des.why = 'Comida previa ' + (B.club.sessions.some(x => x.type === 'prueba') ? 'a la prueba' : 'al partido') + ' (2-3 h antes): carbohidratos de fácil digestión, poca grasa y poca fibra.';
   if (train.gym) add({ key: 'post', kind: 'meal', slot: 'post', title: 'Post entreno', start: O('post', train.gym.end + 5), dur: 15, movable: true, anchor: 'gym' });
+  else if (amMatch) add({ key: 'post', kind: 'meal', slot: 'post', title: 'Después de jugar', start: O('post', train.club.end + 15), dur: 15, movable: true, anchor: 'club' });
   else if (kind === 'alto' || kind === 'prueba') add({ key: 'colacion', kind: 'meal', slot: 'colacion', title: 'Media mañana', start: O('colacion', 10 * 60 + 30), dur: 15, movable: true });
-  const lunchDef = Math.max(12 * 60 + 30, train.gym && train.gym.start < 12 * 60 ? train.gym.end + 60 : 0);
-  const lunch = add({ key: 'almuerzo', kind: 'meal', slot: 'almuerzo', title: 'Almuerzo', start: O('almuerzo', lunchDef), dur: 40, movable: true });
+  const lunchDef = Math.max(12 * 60 + 30, train.gym && train.gym.start < 12 * 60 ? train.gym.end + 60 : 0, pmMatch ? clubStart - 240 : 0);
+  const lunch = add({ key: 'almuerzo', kind: 'meal', slot: 'almuerzo', title: 'Almuerzo', start: O('almuerzo', Math.min(lunchDef, pmMatch ? clubStart - 180 : lunchDef)), dur: 40, movable: true });
+  if (pmMatch) lunch.why = 'Comida previa (3-4 h antes): la principal del día, con 1-3 g/kg de carbohidratos (arroz, mandioca, papa), poca grasa y poca fibra.';
   const debt = slept && slept.h !== null && slept.h < 7.5;
   if ((sch.nap !== false || debt) && !(afternoon && afternoon.start < 15 * 60)) {
     const nap = add({ key: 'siesta', kind: 'nap', title: 'Siesta', sub: debt ? '30 min · recupera sueño' : '20-30 min', start: O('siesta', lunch.start + lunch.dur + 20), dur: debt ? 30 : 25, movable: true, optional: !debt });
     if (debt) nap.why = 'Dormiste ' + fmtDur(slept.h * 60) + ': una siesta de 30 min antes de las 15:00 recupera parte del sueño perdido sin quitarte el de la noche.';
   }
-  if (afternoon) add({ key: 'merienda', kind: 'meal', slot: 'merienda', title: 'Merienda', start: O('merienda', afternoon.start - 75), dur: 20, movable: true, anchor: afternoon.key });
+  if (afternoon) { const mer = add({ key: 'merienda', kind: 'meal', slot: 'merienda', title: 'Merienda', start: O('merienda', afternoon.start - 75), dur: 20, movable: true, anchor: afternoon.key }); if (pmMatch) mer.why = 'Snack 1 h antes: banana, mandioca o miel. Poco volumen y nada nuevo el día de la prueba.'; }
   else add({ key: 'merienda', kind: 'meal', slot: 'merienda', title: 'Merienda', start: O('merienda', 16 * 60 + 30), dur: 20, movable: true });
   const cenaDef = afternoon ? Math.max(19 * 60 + 15, afternoon.end + 30) : 19 * 60 + 30;
   add({ key: 'cena', kind: 'meal', slot: 'cena', title: 'Cena', start: O('cena', Math.min(cenaDef, sleep - 90)), dur: 35, movable: true, anchor: afternoon ? afternoon.key : null });

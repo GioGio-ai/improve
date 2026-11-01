@@ -157,7 +157,7 @@ function coachContext(st, today) {
   const week = weekPlan(weekStartOf(today)).map(d => ({ fecha: d.date, intenso: d.intense, sesiones: d.sessions.map(s => s.title), ajustes: d.notes }));
   const cov = coverage(st.sessions, today, 28);
   const proj = st.injuryActive ? project(st, today) : null;
-  const ag = agendaFor(today), T = nutritionTargets(st.weight || 88, ag.kind, ag);
+  const ag = agendaFor(today), T = dayTargets(st, today, ag);
   const ms = mealsFor(today), tot = sumItems([].concat(...ms.map(m => m.items || [])));
   return {
     hoy: today, hora: fmtHM(nowMin()),
@@ -177,6 +177,11 @@ function coachContext(st, today) {
     seriesPorGrupoSemana: (() => { const ws = weekStartOf(today), led = muscleLedger(st, ws, today, weekPlan(ws)); return groupGaps(led, st.phase).map(g => g.n + ': ' + g.have + ' (objetivo ' + g.lo + '-' + g.hi + ')'); })(),
     balon: { recordsPorEstacion: BALL_DRILLS.map(d => { const b = ballBest(st.sessions, d.id, null); return b ? d.n + ': ' + fmtNum(b.val) + ' ' + d.unit + ' (' + b.date + ')' : null; }).filter(Boolean), minutosPorSemana: ballMinutesByWeek(st.sessions, today, 4).map(w => w.start + ': ' + w.min + ' min'), cabezazosFuerzaAltaSemana: ballHeaderCount(st.sessions, weekStartOf(today)) + '/' + BALL_HEADER_CAP, reglaDerecha: 'Derecha solo interior y control; empeine por la escalera K; voleas y centros con la derecha desde K7' },
     proyeccion: proj ? { F4: proj.phases[4] || null, K8: proj.k8, S6: proj.s6, listoParaPruebas: proj.phases[5] || null } : null,
+    estadoHoy: (() => { const ds = dayStatus(st, today); return { nivel: ds.level, motivos: ds.reasons, puntaje: ds.score, mediaPersonal28dias: ds.baseline ? ds.baseline.mean : null }; })(),
+    carga: (() => { const lm = loadModel(st, today); return { ultimos7dias: lm.week, semanaAnterior: lm.prevWeek, aguda7: lm.acute, cronica28: lm.chronic, cociente: lm.ratio }; })(),
+    sueno: (() => { const d = sleepDebt(st, today); return { deuda7noches: d.debt, objetivoH: d.target, nochesRegistradas: d.nights }; })(),
+    rematesFuertesSemana: (() => { const w = shotsWeek(st.sessions, weekStartOf(today)); return { piernaSana: w.sana, topePiernaSana: sanaShotCap(st.sessions, weekStartOf(today)), piernaLesionada: w.les }; })(),
+    deudaSesiones: weekPlan(weekStartOf(today)).filter(d => d.debtFrom).map(d => d.date + ' recupera la sesión del ' + d.debtFrom),
     aprendizaje: aprendeCoachCtx(today),
   };
 }

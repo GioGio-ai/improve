@@ -270,7 +270,7 @@ const campoOrder = (day) => ((dayBlocks(day).find(b => b.key === 'campo') || { s
   const wk = WEEK.map(dt => p.day(dt));
   const n = (t) => wk.filter(x => types(x).includes(t)).length;
   ok(n('golpeo') >= 2, 'E2: F5 sin club con ' + n('golpeo') + ' golpeos: ' + wk.map(desc).join(' · '));
-  ok(n('sprint') >= 1, 'E2: F5 sin club sin sprint');
+  ok(n('sprint') + n('testRend') >= 1, 'E2: F5 sin club sin sprint');
   ok(n('balon') >= 6, 'E2: F5 sin club con balón ' + n('balon') + ' días');
   const ints = wk.map(x => x.intense);
   ok(ints.filter(Boolean).length <= 3 && !ints.some((v, i) => v && ints[i + 1]), 'E2: intensos ' + wk.map(x => (x.intense ? 'I' : '·')).join(''));
@@ -443,10 +443,147 @@ if (freezeTargets) {
     const ws = addDays(MON, 7 * w), we = addDays(ws, 6);
     if (BASE.profile.trials.some(t => t >= ws && t <= we)) continue; // la semana de la prueba tiene su propio plan
     const inW = (t) => B.d.sessions.filter(s => s.date >= ws && s.date <= we && s.type === t).length;
-    ok(inW('golpeo') >= 2 && inW('sprint') >= 1, 'Sim F5: semana del ' + ws + ' con ' + inW('golpeo') + ' golpeos y ' + inW('sprint') + ' sprints');
+    ok(inW('golpeo') >= 2 && inW('sprint') + inW('testRend') >= 1, 'Sim F5: semana del ' + ws + ' con ' + inW('golpeo') + ' golpeos y ' + inW('sprint') + ' sprints');
     ok(inW('balon') >= 5, 'Sim F5: semana del ' + ws + ' con balón ' + inW('balon') + ' días');
   }
 }
+
+/* ======================= Fase C (v4.3) ======================= */
+const dayStatus = G('dayStatus'), loadModel = G('loadModel'), readinessBaseline = G('readinessBaseline'), shotsWeek = G('shotsWeek'), sanaShotCap = G('sanaShotCap');
+const dayTargets = G('dayTargets'), slotTargets = G('slotTargets'), habitSkips = G('habitSkips'), buildMenu = G('buildMenu'), WX = G('WX');
+
+/* ---------- M1 · Deuda de sesiones ---------- */
+{
+  const w = plan(WED).day(WED);
+  ok(w.debtFrom === TUE && types(w).includes('fuerzaA') && w.intense, 'M1: el martes sin hacer no se recupera el miércoles: ' + desc(w));
+  ok(w.notes.some(n => /Recuperas la sesión del martes/.test(n)), 'M1: sin nota de la sesión recuperada');
+  const p = plan(WED), wk = p.week.filter(x => x.date >= WED && x.date <= '2026-11-08');
+  const ints = wk.map(x => x.intense);
+  ok(!ints.some((v, i) => v && ints[i + 1]), 'M1: con la deuda quedan intensos seguidos: ' + wk.map(desc).join(' · '));
+  const pained = plan(WED, { checkins: [ci(TUE, { rfPain: 4 }), ci(WED, { rfPain: 0 })] }).day(WED);
+  ok(!pained.debtFrom, 'M1: se recupera una sesión que no se hizo por dolor');
+  const done = plan(WED, { sessions: [{ id: 'd1', date: TUE, type: 'fuerzaA', done: true, minutes: 60, rpe: 7, exercises: [] }] }).day(WED);
+  ok(!done.debtFrom, 'M1: deuda con la sesión hecha');
+  const skipped = plan(WED, { sessions: [{ id: 'nd', date: TUE, type: 'fuerzaA', done: false }] }).day(WED);
+  ok(skipped.debtFrom === TUE, 'M1: «No la hice» sin dolor no deja deuda');
+  ok(freezeTargets(p.week, WED, {})[WED].types.includes('fuerzaA'), 'M1: al registrar, el día no queda con la sesión recuperada');
+}
+
+/* ---------- M4 · Estado contra la línea base ---------- */
+{
+  const hist = []; for (let k = 1; k <= 14; k++) hist.push(ci(addDays(TUE, -k), { sleepH: 9, sleepQ: 5, fatigue: 5, soreness: 5, stress: 5 }));
+  const good = plan(TUE, { checkins: hist.concat([ci(TUE, { sleepH: 9, sleepQ: 5, fatigue: 5, soreness: 5, stress: 5 })]) });
+  ok(dayStatus(good.st, TUE).level === 'verde', 'M4: con todo bien el estado no es verde: ' + dayStatus(good.st, TUE).reasons.join(', '));
+  const low = plan(TUE, { checkins: hist.concat([ci(TUE, { sleepH: 8, sleepQ: 3, fatigue: 3, soreness: 4, stress: 3 })]) });
+  const bl = readinessBaseline(low.st, TUE);
+  ok(bl && bl.low && bl.today >= 50, 'M4: estado ' + (bl && bl.today) + ' con media ' + (bl && bl.mean) + ' no cuenta como bajo para ti');
+  const dl = low.day(TUE), g = ses(dl, 'golpeo');
+  ok(g && g.level <= 4, 'M4: estado bajo para ti y estrena K' + (g && g.level));
+  ok(dayStatus(low.st, TUE).level === 'ambar', 'M4: estado bajo para ti no es ámbar');
+  const histT = []; for (let k = 1; k <= 14; k++) histT.push(ci(addDays(THU, -k), { sleepH: 9, sleepQ: 5, fatigue: 5, soreness: 5, stress: 5 }));
+  const lowT = plan(THU, { checkins: histT.concat([ci(THU, { sleepH: 8, sleepQ: 3, fatigue: 3, soreness: 4, stress: 3 })]) }).day(THU);
+  ok(lowT.sessions.some(s => (s.items || []).some(it => it.cutState)), 'M4: estado bajo para ti sin una serie menos en accesorios: ' + desc(lowT));
+  const red = plan(TUE, { checkins: [ci(TUE, { rfPain: 4 })] });
+  ok(dayStatus(red.st, TUE).level === 'rojo', 'M4: dolor RF 4 no es rojo');
+  const three = hist.slice(3).concat([0, 1, 2].map(k => ci(addDays(TUE, -k), { sleepH: 8, sleepQ: 3, fatigue: 3, soreness: 3, stress: 3 })));
+  const tl = plan(TUE, { checkins: three }).day(TUE), sp = ses(tl, 'sprint');
+  ok(sp && sp.field.reps < SPRINT_REPS[sp.level], 'M4: tres días bajos sin descarga: ' + (sp && sp.field.reps));
+}
+
+/* ---------- M3 · Carga ---------- */
+{
+  const short = plan(TUE);
+  ok(loadModel(short.st, TUE).ratio === null, 'M3: con menos de 4 semanas de registros hay cociente');
+  const old = []; for (let k = 10; k <= 50; k += 2) old.push({ id: 'o' + k, date: addDays(TUE, -k), type: 'prevencion', done: true, minutes: 40, rpe: 4 });
+  const spike = []; for (let k = 1; k <= 6; k++) spike.push({ id: 'sp' + k, date: addDays(TUE, -k), type: 'fuerzaA', done: true, minutes: 90, rpe: 9 });
+  const p = plan(TUE, { sessions: old.concat(spike) });
+  const lm = loadModel(p.st, addDays(TUE, -1));
+  ok(lm.ratio !== null && lm.ratio > 1.5, 'M3: el pico de carga no da cociente alto: ' + lm.ratio);
+  ok(p.day(TUE).notes.some(n => /Carga de los últimos 7 días/.test(n)), 'M3: sin aviso de carga');
+  const noRpe = loadModel(plan(TUE, { sessions: [{ id: 'nr', date: MON, type: 'fuerzaA', done: true, minutes: 60 }] }).st, MON);
+  ok(noRpe.week >= 60 * 4, 'M3: una sesión sin RPE suma 0');
+}
+
+/* ---------- D4 · Remates fuertes con la pierna sana ---------- */
+{
+  const p = plan(MON);
+  const cap = sanaShotCap(p.st.sessions, MON);
+  const planned = p.week.filter(x => x.date >= MON && x.date <= '2026-11-08').reduce((a, x) => a + ((ses(x, 'balon') || {}).shotsPlan || 0), 0);
+  ok(cap >= 30 && cap <= 70 && planned <= cap, 'D4: la semana planifica ' + planned + ' remates con la zurda (tope ' + cap + ')');
+  const many = [{ id: 'zz', date: MON, type: 'balon', done: true, ball: { drills: [{ id: 'zurda_parado', valor: 20, intentos: 36 }] } }];
+  const q = plan(TUE, { sessions: many });
+  const left = q.week.filter(x => x.date >= TUE && x.date <= '2026-11-08').reduce((a, x) => a + ((ses(x, 'balon') || {}).shotsPlan || 0), 0);
+  ok(shotsWeek(q.st.sessions, MON).sana === 36 && left + 36 <= sanaShotCap(q.st.sessions, MON), 'D4: con 36 remates hechos el plan suma ' + left);
+}
+
+/* ---------- M7 · Batería de rendimiento, descarga y énfasis ---------- */
+{
+  const p = plan(MON, { injury: F5, sessions: s6.concat(k8) });
+  const t = ses(p.day(TUE), 'testRend');
+  ok(t && t.field.steps.some(x => x.key === 's10') && !ses(p.day(TUE), 'sprint'), 'M7: F5 sin batería de rendimiento el martes: ' + desc(p.day(TUE)));
+  ok(campoOrder(p.day(TUE))[0] === 'testRend', 'M7: la batería no va primero en la cancha');
+  const done = plan(TUE, { injury: F5, sessions: s6.concat(k8).concat([{ id: 'tr1', date: '2026-10-20', type: 'testRend', done: true, tests: ['s10', 's30'] }]) });
+  ok(!done.week.some(x => x.date >= TUE && x.date <= '2026-11-08' && types(x).includes('testRend')), 'M7: batería a menos de 4 semanas de la anterior');
+  const blocked = plan(TUE, { injury: F5, sessions: s6.concat(k8), checkins: [ci(TUE, { sleepH: 5 })] }).day(TUE);
+  ok(!types(blocked).includes('testRend') && types(blocked).includes('sprint') && blocked.notes.some(n => /Test de rendimiento pospuesto/.test(n)), 'M7: batería con 5 h de sueño: ' + desc(blocked));
+  ok(isIntenseLog({ type: 'testRend', date: TUE, done: true, tests: ['s10'] }), 'M7: la batería no cuenta como intensa');
+  const em = plan(MON, { injury: F5, sessions: s6.concat(k8), profile: { emphasis: 'fuerza' } });
+  ok(types(em.day(THU)).includes('fuerzaMax'), 'M7: énfasis en fuerza sin fuerza máxima el jueves: ' + desc(em.day(THU)));
+  const ev = plan(MON, { injury: F5, sessions: s6.concat(k8), profile: { emphasis: 'velocidad' } });
+  ok(types(ev.day(THU)).includes('sprint') && !types(ev.day(THU)).includes('rt'), 'M7: énfasis en velocidad sin sprint el jueves: ' + desc(ev.day(THU)));
+  // F6: la 4.ª semana del bloque es de descarga
+  const f6 = plan(MON, { injury: { status: 'resuelta' }, profile: { blockStart: addDays(MON, -21) } });
+  const tue6 = f6.day(TUE);
+  ok(tue6.deload && f6.week.some(x => x.notes.some(n => /Semana de descarga/.test(n))), 'M7: F6 sin semana de descarga');
+  const wk6 = f6.week.filter(x => x.date >= MON && x.date <= '2026-11-08'), g6 = wk6.map(x => ses(x, 'golpeo')).filter(Boolean);
+  ok(g6.length && g6.every(g => g.field.target < KICK_TARGET[g.level]), 'M7: la descarga no baja el volumen del golpeo: ' + g6.map(g => g.field.target).join(','));
+  const f6n = plan(MON, { injury: { status: 'resuelta' }, profile: { blockStart: MON } });
+  ok(!f6n.day(TUE).deload, 'M7: descarga en la 1.ª semana del bloque');
+}
+
+/* ---------- M6 · Nutrición adaptativa ---------- */
+{
+  const p = plan(TUE), d = p.day(TUE);
+  const ag = buildAgenda(d, p.st, null);
+  // Carbohidratos alrededor de lo intenso: la merienda antes de la cancha pesa más
+  const T = dayTargets(p.st, TUE, ag), base = slotTargets(ag, T, null, {});
+  const mer = ag.items.find(x => x.key === 'merienda'), col = ag.items.find(x => x.key === 'nocturna') || ag.items.find(x => x.key === 'desayuno');
+  ok(mer && base.merienda && base.merienda.c / T.c > 0.9 * 0.13, 'M6: la merienda antes de la cancha sin más carbohidratos: ' + JSON.stringify(base.merienda));
+  // Lo comido cuenta: si el desayuno fue grande, las comidas que faltan bajan
+  const eaten = { keys: new Set(['desayuno']), tot: { p: 80, c: 200, f: 40 } };
+  const re = slotTargets(ag, T, null, { eaten });
+  ok(re.almuerzo.p < base.almuerzo.p && re.almuerzo.c < base.almuerzo.c, 'M6: con un desayuno grande el almuerzo no baja: ' + JSON.stringify(base.almuerzo) + ' → ' + JSON.stringify(re.almuerzo));
+  const little = slotTargets(ag, T, null, { eaten: { keys: new Set(['desayuno']), tot: { p: 5, c: 10, f: 2 } } });
+  ok(little.almuerzo.p > base.almuerzo.p && little.almuerzo.p <= Math.round(base.almuerzo.p * 1.6), 'M6: con un desayuno chico el almuerzo no sube con límite');
+  // Comidas que se saltan seguido: opción rápida y menos peso
+  const meals = [1, 2, 3].map(k => ({ id: 'sk' + k, date: addDays(TUE, -k), slot: 'desayuno', skipped: true, items: [] }));
+  const hs = habitSkips(meals, TUE);
+  ok(hs.has('desayuno'), 'M6: tres desayunos saltados no cuentan como hábito');
+  const q = buildMenu('desayuno', { p: 30, c: 60, f: 10 }, TUE, 0, true);
+  ok(/Yogur|Leche/.test(q.name) && /salteaste/.test(q.tip), 'M6: sin opción rápida para el desayuno que se salta: ' + q.name);
+  ok(slotTargets(ag, T, null, { habit: hs }).desayuno.p < base.desayuno.p, 'M6: la comida que se salta no pesa menos');
+  // Calor: más agua
+  WX[TUE] = { tmax: 34 };
+  const Th = dayTargets(p.st, TUE, ag);
+  ok(Th.heat && Th.heat.extra > 0 && Th.water > T.water, 'M6: 34 °C sin agua extra');
+  delete WX[TUE];
+  // Meta de peso: −250 kcal en días de carga media o baja, nunca en carga alta
+  const wts = [{ id: 'w1', date: addDays(TUE, -14), kg: 90 }, { id: 'w2', date: addDays(TUE, -7), kg: 90.2 }, { id: 'w3', date: addDays(TUE, -1), kg: 90.3 }];
+  const pw = plan(TUE, { profile: { weightTarget: '88' } }); pw.st.weights = wts; pw.st.weight = 90.3;
+  const agW = buildAgenda(pw.day(WED), pw.st, null), TW = dayTargets(pw.st, WED, agW);
+  ok(TW.weightAdj && TW.weightAdj.kcal === -250, 'M6: meta 88 kg con 90,3 y subiendo sin recorte el miércoles: ' + JSON.stringify(TW.weightAdj));
+  const agT = buildAgenda(pw.day(TUE), pw.st, null), TT = dayTargets(pw.st, TUE, agT);
+  ok(agT.kind !== 'alto' || (TT.weightAdj && TT.weightAdj.kcal === 0), 'M6: recorte de kcal en un día de carga alta');
+  // Día de prueba: comida previa 3-4 h antes y snack 1 h antes; prueba de mañana: despertar 3 h antes
+  const pt = plan('2026-11-16'), dp = pt.day('2026-11-16');
+  const agP = buildAgenda(dp, pt.st, null), club = agP.items.find(x => x.key === 'club'), lunch = agP.items.find(x => x.key === 'almuerzo');
+  ok(club && lunch && club.start - lunch.start >= 180 && club.start - lunch.start <= 240 && /Comida previa/.test(lunch.why), 'M6: día de prueba sin comida previa 3-4 h antes: ' + (club && fmt(club.start)) + ' / ' + (lunch && fmt(lunch.start)));
+  const agAM = buildAgenda(dp, pt.st, { items: { club: { start: 9 * 60 } } });
+  const wk = agAM.items.find(x => x.key === 'wake'), des = agAM.items.find(x => x.key === 'desayuno'), post = agAM.items.find(x => x.key === 'post');
+  ok(wk && wk.start <= 6 * 60 && des && /Comida previa/.test(des.why) && post, 'M6: prueba a las 9:00 sin despertar 3 h antes, desayuno previo o comida después');
+  ok(!agAM.items.some(x => x.key === 'colacion' && x.start >= 8 * 60 && x.start <= 11 * 60), 'M6: media mañana encima de la prueba');
+}
+function fmt(m) { return String(Math.floor(m / 60)).padStart(2, '0') + ':' + String(m % 60).padStart(2, '0'); }
 
 console.log('motor · fallos:', fails.length);
 fails.forEach(f => console.log('  ', f));

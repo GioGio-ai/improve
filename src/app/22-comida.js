@@ -4,7 +4,7 @@
 function viewComida(st, today) {
   if (!S.data.profile) return onboarding();
   const date = UI.foodDate || today;
-  const ag = agendaFor(date), T = nutritionTargets(st.weight || 88, ag.kind, ag);
+  const ag = agendaFor(date), T = dayTargets(st, date, ag);
   const ms = mealsFor(date), tot = sumItems([].concat(...ms.map(m => m.items || [])));
   const nd = nutriDoc(date) || {}, water = (num(nd.water) || 0) / 1000;
   let h = '<div class="aura k-food" aria-hidden="true"></div><div class="page-head"><h1 class="h1 grow">Comida</h1><button class="iconbtn sm" data-act="food-day" data-d="-1" aria-label="Día anterior">' + ic('chevL') + '</button><button class="btn xs" data-act="food-today"' + (date === today ? ' disabled' : '') + '>' + (date === today ? 'Hoy' : fmtDate(date)) + '</button><button class="iconbtn sm" data-act="food-day" data-d="1" aria-label="Día siguiente">' + ic('chev') + '</button></div>';
@@ -12,9 +12,12 @@ function viewComida(st, today) {
   h += '<section class="panel k-food food-sum"><div class="ed-head"><span class="kicker"><span class="d food"></span>' + esc(T.kindN) + '</span>' + chip(fmtNum(T.choKg) + ' g/kg carbos', ag.kind === 'alto' || ag.kind === 'prueba' ? 'load' : 'food') + '</div>' +
     '<div class="kcal"><span class="n grad-text tnum">' + fmtNum(tot.kcal) + '</span><span class="of">/ ' + fmtNum(T.kcal) + ' kcal</span></div>' + meter(tot.kcal, T.kcal, 'prot') +
     '<div class="grid3 macros3">' + macroRow('Proteína', tot.p, T.p, 'prot', 'c-prot') + macroRow('Carbos', tot.c, T.c, 'carb', 'c-carb') + macroRow('Grasas', tot.f, T.f, 'fat', 'c-fat') + '</div>' +
+    (T.weightAdj ? '<div class="sub">' + esc(T.weightAdj.text) + '</div>' : '') +
+    (tot.kcal && ms.some(m => !m.skipped) ? '<div class="sub">Las comidas que faltan se ajustan a lo que ya comiste.</div>' : '') +
     '<div class="grid3"><button class="btn sm" data-act="meal-photo" data-date="' + date + '">' + ic('camera') + 'Foto</button><button class="btn sm" data-act="meal-text" data-date="' + date + '">' + ic('pen') + 'Escribir</button><button class="btn sm" data-act="meal-search" data-date="' + date + '">' + ic('search') + 'Buscar</button></div></section>';
   // Hidratación y suplementos
   h += '<section class="card tight"><div class="water"><div class="ed-head"><span class="kicker">Agua</span><span class="wv"><b class="c-water tnum">' + fmtNum(Math.round(water * 10) / 10) + '</b> / ' + fmtNum(T.water) + ' L</span></div>' + meter(water, T.water, 'water') +
+    (T.heat ? '<div class="sub">' + T.heat.tmax + ' °C de máxima' + (T.heat.extra ? ': +' + fmtNum(T.heat.extra) + ' L por el calor.' : '.') + '</div>' : '') +
     '<div class="cups"><button class="btn sm" data-act="water-add" data-date="' + date + '" data-ml="-250" aria-label="Restar 250 ml">−</button><button class="btn sm" data-act="water-add" data-date="' + date + '" data-ml="250" aria-label="Sumar 250 ml">+250</button><button class="btn sm" data-act="water-add" data-date="' + date + '" data-ml="500" aria-label="Sumar 500 ml">+500</button><button class="btn sm" data-act="water-add" data-date="' + date + '" data-ml="1000" aria-label="Sumar 1 litro">+1 L</button></div>' +
     '</div></section>';
   h += '<div class="grid2 supps">' + suppTile(date, 'creatine', 'Creatina 5 g', nd.creatine, 'lime') + suppTile(date, 'gelatin', 'Gelatina + vit. C', nd.gelatin, 'lime') + '</div>';
@@ -67,7 +70,7 @@ function proteinWeekCard(date, st) {
   let target = 0;
   for (let i = 0; i < 7; i++) {
     const d = addDays(ws, i), t = sumItems([].concat(...mealsFor(d).map(m => m.items || [])));
-    const ag = agendaFor(d), T = nutritionTargets(st.weight || 88, ag.kind, ag); target = T.p;
+    const ag = agendaFor(d), T = dayTargets(st, d, ag); target = T.p;
     rows.push({ label: DOW1[i], value: t.p });
   }
   if (!rows.some(r => r.value)) return '';
@@ -91,7 +94,7 @@ function mealSheetHtml(date, key) {
   const ag = agendaFor(date), m = ag.items.find(x => x.key === key);
   if (!m) return sheetHead('Comida');
   const logged = mealDone(m.slot, date), menu = mealMenuFor(date, m);
-  const tg = slotTargets(ag, nutritionTargets(ST.weight || 88, ag.kind, ag), skippedKeys(date, ag))[key] || {};
+  const tg = mealTargets(date, ag)[key] || {};
   let h = sheetHead(m.title, capFirst(fmtDateLong(date)) + ' · ' + fmtHM(m.start)) + '<div class="sheet-body">';
   ag.warnings.filter(w => w.key === key).forEach(w => { h += note('warn', esc(w.text)); });
   h += '<div class="stats"><div class="stat food"><span class="v">' + (tg.p || '—') + '<small>g</small></span><span class="k">Proteína objetivo</span></div><div class="stat"><span class="v c-carb">' + (tg.c || '—') + '<small>g</small></span><span class="k">Carbohidratos</span></div><div class="stat"><span class="v c-fat">' + (tg.f || '—') + '<small>g</small></span><span class="k">Grasas</span></div></div>';
