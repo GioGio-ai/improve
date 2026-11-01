@@ -139,7 +139,7 @@ function loginHtml() {
     '<div class="field"><label for="lg-pass">Contraseña</label><input class="input" id="lg-pass" name="password" type="password" autocomplete="current-password" enterkeyhint="go" required></div>' +
     '<p class="err" id="lg-err" role="alert" hidden></p><p class="sub" id="lg-ok" role="status" hidden></p>' +
     '<button class="btn primary lg block" type="submit" id="lg-go">Entrar</button>' +
-    '<button class="linkbtn" type="button" id="lg-reset" style="justify-self:center">Olvidé mi contraseña</button>' +
+    '<button class="linkbtn center-self" type="button" id="lg-reset">Olvidé mi contraseña</button>' +
     '</div></div>' +
     '<p class="sub center">Protegido por reCAPTCHA · <a class="c-blue" href="https://policies.google.com/privacy" target="_blank" rel="noopener">Privacidad</a> · <a class="c-blue" href="https://policies.google.com/terms" target="_blank" rel="noopener">Condiciones</a></p>' +
     '</form></div>';

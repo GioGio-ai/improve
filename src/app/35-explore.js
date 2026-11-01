@@ -15,7 +15,7 @@ function exerciseHtml(id) {
   let h = sheetHead(ex.n, esc([LABELS.pat[ex.pat], LABELS.c[ex.c]].filter(Boolean).join(' · '))) + '<div class="sheet-body"><div id="ex-frames" class="frames" hidden></div>';
   if (st.injuryActive) h += allowed ? note('good', 'Permitido en ' + PHASES[st.phase].n + '.') : note('warn', 'Se abre en ' + PHASES[ex.f].n + '. Hoy estás en ' + PHASES[st.phase].n + '.');
   if (ex.cue) h += '<p class="body">' + esc(ex.cue) + '</p>';
-  if (ex.why) h += '<div class="card flat tight"><div class="micro">Por qué</div><p class="small fg2" style="margin-top:4px">' + esc(ex.why) + '</p></div>';
+  if (ex.why) h += '<div class="card flat tight"><div class="micro">Por qué</div><p class="small fg2 mt-1">' + esc(ex.why) + '</p></div>';
   h += '<button class="btn block" data-act="ex-ai" data-id="' + esc(id) + '">' + ic('spark') + 'Cómo se hace, paso a paso (IA)</button>';
   if (lp) h += '<div class="target"><span>Última vez · ' + fmtDate(lp.date) + '</span><b>' + esc(fmtSetsShort(lp.sets)) + '</b></div>';
   h += '<dl class="kv"><dt>Músculos</dt><dd>' + esc(ex.m || '—') + '</dd><dt>Contracción</dt><dd>' + esc(LABELS.c[ex.c] || '—') + '</dd><dt>Zonas</dt><dd>' + esc((ex.z || []).map(z => LABELS.z[z]).filter(Boolean).join(', ') || '—') + '</dd><dt>Fatiga</dt><dd>' + (ex.k || '—') + ' de 5</dd><dt>Equipo</dt><dd>' + esc((ex.eq || []).join(', ') || '—') + '</dd></dl>';
@@ -159,8 +159,8 @@ function fksExplain(st) {
 }
 function breathWidget() {
   const b = UI.breath || {};
-  return '<div class="stack" style="justify-items:center;text-align:center"><div class="ring" style="width:220px;height:220px"><div id="breath-core" style="width:90px;height:90px;border-radius:50%;background:radial-gradient(circle at 35% 30%,#d7cbff,#7650f0 70%);box-shadow:0 0 60px rgba(157,125,255,.6);transition:transform 4s cubic-bezier(.45,0,.55,1)"></div><div class="in"><span class="h2" id="breath-txt">' + (b.running ? esc(b.label || '') : 'Listo') + '</span></div></div>' +
-    '<div class="seg" style="width:100%">' + [6, 7, 8].map(x => '<button type="button" class="' + ((b.ex || 6) === x ? 'on' : '') + '" data-act="breath-ex" data-v="' + x + '">4 / ' + x + ' s</button>').join('') + '</div>' +
+  return '<div class="stack breath"><div class="ring breath-ring"><div id="breath-core"></div><div class="in"><span class="h2" id="breath-txt">' + (b.running ? esc(b.label || '') : 'Listo') + '</span></div></div>' +
+    '<div class="seg full">' + [6, 7, 8].map(x => '<button type="button" class="' + ((b.ex || 6) === x ? 'on' : '') + '" data-act="breath-ex" data-v="' + x + '">4 / ' + x + ' s</button>').join('') + '</div>' +
     '<button class="btn ' + (b.running ? '' : 'primary') + ' lg block" data-act="breath">' + (b.running ? 'Detener' : 'Empezar 5 min') + '</button><span class="sub num" id="breath-left">' + (b.running ? '' : 'Inhala 4 s · exhala ' + (b.ex || 6) + ' s') + '</span></div>';
 }
 function startBreath() {

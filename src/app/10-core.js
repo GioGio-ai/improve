@@ -1,7 +1,7 @@
 /* ============================================================
    NÚCLEO: datos, render, capas (hojas y entrenamiento), avisos
    ============================================================ */
-const VERSION = '3.4.0';
+const VERSION = '4.0.0';
 const COLS = {
   profile: 'single', settings: 'single', weights: 'list', injuries: 'list', tests: 'list', checkins: 'list', sessions: 'list',
   custom: 'list', traducciones: 'list', templates: 'list', agenda: 'list', meals: 'list', nutri: 'list', foods: 'list', molestias: 'list',
@@ -109,8 +109,9 @@ function render() {
 }
 document.addEventListener('focusout', () => { if (deferRender) { deferRender = false; setTimeout(scheduleRender, 60); } });
 function skeletonView() {
-  return '<div class="topbar"><div class="grow"><div class="skel line" style="width:110px"></div><div class="skel line" style="width:180px;height:24px;margin-top:8px"></div></div><div class="skel" style="width:44px;height:44px;border-radius:50%"></div></div>' +
-    '<div class="skel" style="height:62px"></div><div class="skel" style="height:200px;border-radius:30px"></div><div class="skel" style="height:110px"></div><div class="skel" style="height:420px"></div>';
+  return '<div class="section" aria-hidden="true"><div class="topbar"><div class="grow stack-sm"><div class="skel line sk-eyebrow"></div><div class="skel line sk-title"></div></div><div class="skel sk-btn"></div><div class="skel sk-btn"></div><div class="skel circle sk-btn"></div></div>' +
+    '<div class="row nowrap"><div class="skel sk-chip"></div><div class="skel sk-chip"></div><div class="skel sk-chip"></div></div></div>' +
+    '<div class="section" aria-hidden="true"><div class="skel sk-row"></div><div class="skel sk-week"></div><div class="skel sk-hero"></div></div><div class="skel sk-card" aria-hidden="true"></div>';
 }
 function weekPlan(ws) { return buildWeek(ST, ws, todayStr()); }
 function dayPlan(date) { return weekPlan(weekStartOf(date)).find(d => d.date === date); }
@@ -171,7 +172,7 @@ function renderSheet(resetScroll) {
   const old = root.querySelector('.sheet');
   const y = old && !resetScroll ? old.scrollTop : 0;
   const sameSheet = old && old.getAttribute('data-sid') === String(t.id);
-  root.innerHTML = '<div class="scrim" data-act="scrim"' + (sameSheet ? ' style="animation:none"' : '') + '><div class="sheet' + (t.full ? ' full' : '') + '" data-sid="' + esc(t.id) + '" role="dialog" aria-modal="true" aria-labelledby="sheet-title"' + (sameSheet ? ' style="animation:none"' : '') + '>' +
+  root.innerHTML = '<div class="scrim' + (sameSheet ? ' still' : '') + '" data-act="scrim"><div class="sheet' + (t.full ? ' full' : '') + (sameSheet ? ' still' : '') + '" data-sid="' + esc(t.id) + '" role="dialog" aria-modal="true" aria-labelledby="sheet-title">' +
     '<div class="grab-zone" data-grab="1"><div class="grab"></div></div>' + t.render() + '</div></div>';
   document.body.style.overflow = 'hidden';
   const sh = root.querySelector('.sheet'); if (sh) sh.scrollTop = y;

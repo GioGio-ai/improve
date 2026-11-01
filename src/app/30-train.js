@@ -224,7 +224,7 @@ function mountTrain() {
   const root = $('#train-root'), step = curStep();
   TR._lastCur = TR.cur;
   root.innerHTML = '<div class="train enter' + (step.warmup ? ' warm' : '') + '" role="dialog" aria-label="Modo entrenamiento"><div class="train-in">' +
-    '<div class="tbar"><button class="iconbtn" data-act="tr-min" aria-label="Pausar y salir">' + ic('chevL') + '</button><div class="mid"><div class="t">' + esc(TR.title) + '</div><div class="clk num" id="tr-clock" data-timer-clock></div>' + saveStatusHtml() + '</div><button class="btn sm primary" data-act="tr-finish">Terminar</button></div>' +
+    '<div class="tbar"><button class="iconbtn" data-act="tr-min" aria-label="Pausar y salir">' + ic('chevL') + '</button><div class="mid"><div class="t">' + esc(TR.title) + '</div><div class="clk num" id="tr-clock" data-timer-clock></div>' + saveStatusHtml() + '</div><button class="btn sm" data-act="tr-finish">Terminar</button></div>' +
     '<div class="tprog" aria-hidden="true">' + trProgHtml() + '</div>' + trStageHtml(step) +
     '<div class="excard">' + trBody(step) + '</div></div></div>' + trFooter(step) + restOverlay(true);
   hydrateThumbs(root);
@@ -562,7 +562,7 @@ function trFooter(step) {
   const last = TR.cur === TR.steps.length - 1;
   const t = TR.hold || TR.rest;
   let bar = '';
-  if (t && TR.restMin) bar = '<button class="restbar' + (TR.hold ? ' hold' : '') + '" data-act="tr-rest-max">' + timerSpan('v num', t) + '<div class="grow"><div class="h3">' + (TR.hold ? 'Aguanta' : 'Descanso') + '</div><div class="sub" style="color:var(--fg-2)">Toca para ver en grande</div></div>' + (TR.rest ? '<span class="btn xs white" data-act="tr-rest-skip">Saltar</span>' : '') + '</button>';
+  if (t && TR.restMin) bar = '<button class="restbar' + (TR.hold ? ' hold' : '') + '" data-act="tr-rest-max">' + timerSpan('v num', t) + '<div class="grow"><div class="h3">' + (TR.hold ? 'Aguanta' : 'Descanso') + '</div><div class="sub fg2">Toca para ver en grande</div></div>' + (TR.rest ? '<span class="btn xs white" data-act="tr-rest-skip">Saltar</span>' : '') + '</button>';
   const acts = '<div class="acts"><button class="iconbtn" data-act="tr-prev" aria-label="Paso anterior"' + (TR.cur === 0 ? ' disabled' : '') + '>' + ic('chevL') + '</button>' +
     '<button class="btn" data-act="tr-add">' + ic('plus') + 'Añadir</button>' +
     (last ? '<button class="btn lime" data-act="tr-finish">' + ic('check') + 'Terminar</button>' : '<button class="btn primary" data-act="tr-next">Siguiente' + ic('chev') + '</button>') + '</div>';
@@ -846,7 +846,7 @@ function postHtml(date, hadField, intense, strength) {
   }
   h += '<div class="stack-sm"><div class="micro">Ahora</div>';
   if (next) { const menu = mealMenuFor(date, next); h += '<button class="blk" data-act="ag-open" data-date="' + date + '" data-key="' + next.key + '"><span class="c food">' + ic('fork') + '</span><div class="grow"><div class="t">' + esc(next.title) + ' · ' + fmtHM(next.start) + '</div><div class="s">' + esc(menu.name) + ' · ' + menu.totals.p + ' g de proteína</div></div>' + ic('chev') + '</button>'; }
-  h += '<div class="blk"><span class="c" style="color:var(--cyan);background:var(--cyan-soft);border-color:rgba(60,203,242,.32)">' + ic('drop') + '</span><div class="grow"><div class="t">Repón líquido</div><div class="s">Agua o tereré con una pizca de sal. Orina clara antes de la próxima sesión.</div></div><button class="btn xs" data-act="water-add" data-date="' + date + '" data-ml="500">+500 ml</button></div>';
+  h += '<div class="blk"><span class="c water">' + ic('drop') + '</span><div class="grow"><div class="t">Repón líquido</div><div class="s">Agua o tereré con una pizca de sal. Orina clara antes de la próxima sesión.</div></div><button class="btn xs" data-act="water-add" data-date="' + date + '" data-ml="500">+500 ml</button></div>';
   if (strength) h += '<div class="blk"><span class="c sleep">' + ic('moon') + '</span><div class="grow"><div class="t">Sin baños de hielo en las próximas horas</div><div class="s">Frenan la ganancia de fuerza. Beber agua fría no tiene problema.</div></div></div>';
   h += '<button class="blk" data-act="guide" data-g="respiracion"><span class="c sleep">' + ic('wind') + '</span><div class="grow"><div class="t">Respiración 5 min</div><div class="s">Exhala largo: pasa a modo recuperación.</div></div>' + ic('chev') + '</button>';
   if (hadField) h += '<div class="blk"><span class="c pain">' + ic('cal') + '</span><div class="grow"><div class="t">Mañana te pregunto por el recto femoral</div><div class="s">Esa respuesta decide si subes de nivel.</div></div></div>';

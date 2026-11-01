@@ -10,8 +10,8 @@ function openAgendaItem(date, key) {
 }
 function timeAdjustHtml(date, it) {
   const sug = buildAgenda(dayPlan(date), ST, null).items.find(x => x.key === it.key);
-  return '<div class="row nowrap" style="gap:10px"><button class="iconbtn" data-act="ag-shift" data-date="' + date + '" data-key="' + it.key + '" data-d="-15" aria-label="15 minutos antes">' + ic('minus') + '</button>' +
-    '<label class="grow" style="display:grid"><span class="sr">Hora</span><input class="input num" type="time" step="900" value="' + fmtHM(it.start) + '" data-bind="ag-time" data-date="' + date + '" data-key="' + it.key + '"></label>' +
+  return '<div class="row nowrap gap3"><button class="iconbtn" data-act="ag-shift" data-date="' + date + '" data-key="' + it.key + '" data-d="-15" aria-label="15 minutos antes">' + ic('minus') + '</button>' +
+    '<label class="grow dgrid"><span class="sr">Hora</span><input class="input num" type="time" step="900" value="' + fmtHM(it.start) + '" data-bind="ag-time" data-date="' + date + '" data-key="' + it.key + '"></label>' +
     '<button class="iconbtn" data-act="ag-shift" data-date="' + date + '" data-key="' + it.key + '" data-d="15" aria-label="15 minutos después">' + ic('plus') + '</button></div>' +
     (it.moved && sug ? '<button class="linkbtn" data-act="ag-unmove" data-date="' + date + '" data-key="' + it.key + '">' + ic('undo') + 'Volver a la hora sugerida (' + fmtHM(sug.start) + ')</button>' : '');
 }
@@ -35,7 +35,7 @@ function blockSheetHtml(date, key) {
   const b = it.block, today = todayStr(), past = date < today, dn = blockDone(b, date);
   let h = sheetHead(it.title + ' · ' + b.short, capFirst(fmtDateLong(date)) + ' · ' + fmtHM(it.start) + '–' + fmtHM(it.end) + (b.intense ? ' · <span class="c-load">intenso</span>' : '')) + '<div class="sheet-body">';
   ag.warnings.filter(w => w.key === key).forEach(w => { h += note('warn', esc(w.text)); });
-  if (it.kind === 'recup' && date === today) { const left = pendingItems(today).filter(p => p.it.key !== key); if (left.length) h += '<button class="mini-alert blue" data-act="pend-all" style="width:100%"><span class="mini-main">' + ic('info') + '<span class="grow"><span class="t">Antes de dormir: ' + plural(left.length, 'registro pendiente', 'registros pendientes') + '</span><span class="s">' + esc(left.map(pendTitle).join(' · ')) + '</span></span>' + ic('chev') + '</span></button>'; }
+  if (it.kind === 'recup' && date === today) { const left = pendingItems(today).filter(p => p.it.key !== key); if (left.length) h += '<button class="mini-alert blue" data-act="pend-all"><span class="mini-main">' + ic('info') + '<span class="grow"><span class="t">Antes de dormir: ' + plural(left.length, 'registro pendiente', 'registros pendientes') + '</span><span class="s">' + esc(left.map(pendTitle).join(' · ')) + '</span></span>' + ic('chev') + '</span></button>'; }
   h += '<div class="stack-sm">' + b.sessions.map(s => { const log = findLog(date, s.type); return '<button class="blk' + (log && log.done !== false ? ' done' : '') + '" data-act="session" data-date="' + date + '" data-type="' + s.type + '"><span class="c' + (s.intense ? ' load' : '') + '">' + ic(s.icon || 'dumb') + '</span><div class="grow"><div class="t">' + esc(log && log.modified && log.title ? log.title : s.title) + '</div><div class="s">' + esc(log ? logLine(log) : blockSub(s)) + '</div>' + (!log && s.field && s.field.kind === 'balon' ? '<div class="s fg3">' + esc(s.field.drills.map(d => d.n).join(' · ')) + '</div>' : '') + '</div>' + statusMark(log) + '</button>'; }).join('') + '</div>';
   if (b.warmup) h += '<details><summary>' + ic('flame') + 'Calentamiento · ' + b.warmup.min + ' min</summary><div class="in">' + b.warmup.items.map(w => '<div class="lrow"><span class="fg2">' + esc(w.n) + '</span><span class="sub num">' + esc(w.d || '') + '</span></div>').join('') + '</div></details>';
   if (!past || date === today) h += '<div class="field"><span class="lab">¿Dónde?</span><div class="pills">' + PLACES.map(pl => '<button type="button" class="pill' + (b.place === pl ? ' on' : '') + '" data-act="blk-place" data-date="' + date + '" data-key="' + key + '" data-v="' + pl + '" aria-pressed="' + (b.place === pl) + '">' + PLACE_NAMES[pl] + '</button>').join('') + '</div></div>';
@@ -62,7 +62,7 @@ function logLine(log) {
 function openSession(date, type) { openSheet({ id: 'session-' + date + type, full: !!findLog(date, type), render: () => sessionSheetHtml(date, type) }); }
 function itemRow(it, noSwap) {
   const ex = exInfo(it.id, it);
-  return '<div class="exrow">' + thumbHtml(ex) + '<button data-act="ex" data-id="' + esc(it.id) + '" style="text-align:left;min-width:0"><div class="t">' + esc(it.n) + (it.doms ? ' ' + chip('isométrica hoy', 'warn') : '') + '</div><div class="s">' + esc(fmtSpec(it.spec, it.side)) + '</div></button>' +
+  return '<div class="exrow">' + thumbHtml(ex) + '<button class="left mw0" data-act="ex" data-id="' + esc(it.id) + '"><div class="t">' + esc(it.n) + (it.doms ? ' ' + chip('isométrica hoy', 'warn') : '') + '</div><div class="s">' + esc(fmtSpec(it.spec, it.side)) + '</div></button>' +
     (!noSwap && it.slot && SLOT_NAMES[it.slot] ? '<button class="iconbtn sm plain" data-act="swap" data-slot="' + esc(it.slot) + '" data-ex="' + esc(it.id) + '" aria-label="Cambiar ' + esc(it.n) + '">' + ic('swap') + '</button>' : '<span></span>') + '</div>';
 }
 function fieldSummary(s) {
@@ -116,10 +116,10 @@ function setsTableHtml(e) {
   let rows = '';
   if (sided) {
     const dS = sets.filter(x => x.side === 'd'), iS = sets.filter(x => x.side === 'i'), n = Math.max(dS.length, iS.length);
-    for (let i = 0; i < n; i++) rows += '<div class="lrow num small" style="grid-template-columns:30px 1fr 1fr"><span class="fg4">' + (i + 1) + '</span>' + cell(dS[i]) + cell(iS[i]) + '</div>';
-    return '<div><div class="lrow small" style="grid-template-columns:30px 1fr 1fr;border:0"><span></span><span class="micro">Derecha' + (ST.side === 'd' ? ' · les.' : '') + '</span><span class="micro">Izquierda' + (ST.side === 'i' ? ' · les.' : '') + '</span></div>' + rows + '</div>';
+    for (let i = 0; i < n; i++) rows += '<div class="lrow num small c3"><span class="fg4">' + (i + 1) + '</span>' + cell(dS[i]) + cell(iS[i]) + '</div>';
+    return '<div><div class="lrow small c3 nob"><span></span><span class="micro">Derecha' + (ST.side === 'd' ? ' · les.' : '') + '</span><span class="micro">Izquierda' + (ST.side === 'i' ? ' · les.' : '') + '</span></div>' + rows + '</div>';
   }
-  sets.forEach((x, i) => { rows += '<div class="lrow num small" style="grid-template-columns:30px 1fr"><span class="fg4">' + (i + 1) + '</span>' + cell(x) + '</div>'; });
+  sets.forEach((x, i) => { rows += '<div class="lrow num small c2"><span class="fg4">' + (i + 1) + '</span>' + cell(x) + '</div>'; });
   return '<div>' + rows + '</div>';
 }
 function sessionReviewHtml(log, planned) {
@@ -157,7 +157,7 @@ function sessionReviewHtml(log, planned) {
       const trend = delta === null ? '' : delta > 0.5 ? chip('+' + fmtNum(delta) + ' %', 'lime', 'up') : delta < -0.5 ? chip(fmtNum(delta) + ' %', 'warn', 'down') : chip('igual', '');
       const fb = e.fb && FEEDBACK[e.fb] ? chip(FEEDBACK[e.fb].n, e.fb === 'facil' ? 'lime' : e.fb === 'dificil' ? 'load' : e.fb === 'molestia' ? 'pain' : 'blue') : '';
       const pend = (e.sets || []).filter(x => x && x.done === false).length;
-      return '<div class="card flat tight"><div class="stack-sm"><div class="row nowrap">' + thumbHtml(Object.assign({}, ex, { n: e.n || ex.n, img: e.img || ex.img })) + '<div class="grow"><button class="h3" data-act="ex" data-id="' + esc(e.id) + '" style="text-align:left">' + esc(e.n || ex.n || e.id) + '</button><div class="row" style="margin-top:4px">' + trend + fb + (num(e.pain) !== null ? chip('dolor ' + e.pain, painTone(e.pain)) : '') + (e.doneAs ? chip('variante', 'blue', 'swap') : '') + (pend ? chip(pend + ' sin hacer', '') : '') + '</div></div></div>' +
+      return '<div class="card flat tight"><div class="stack-sm"><div class="row nowrap">' + thumbHtml(Object.assign({}, ex, { n: e.n || ex.n, img: e.img || ex.img })) + '<div class="grow"><button class="h3 left" data-act="ex" data-id="' + esc(e.id) + '">' + esc(e.n || ex.n || e.id) + '</button><div class="row mt-1">' + trend + fb + (num(e.pain) !== null ? chip('dolor ' + e.pain, painTone(e.pain)) : '') + (e.doneAs ? chip('variante', 'blue', 'swap') : '') + (pend ? chip(pend + ' sin hacer', '') : '') + '</div></div></div>' +
         setsTableHtml(e) + (pv ? '<div class="sub">Anterior · ' + fmtDate(pv.date) + ' · ' + esc(fmtSetsShort((pv.e.sets || []).filter(x => x && x.done !== false))) + '</div>' : '') + (e.notes ? '<div class="small fg2">“' + esc(e.notes) + '”</div>' : '') + '</div></div>';
     }).join('') + '</div>';
   }

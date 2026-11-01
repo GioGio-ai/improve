@@ -102,13 +102,13 @@ const AI_CACHE = {};
 function exAiHtml(ex) {
   const A = UI.exai || {};
   let h = sheetHead(ex.n, 'Cómo se hace · ' + (ex.m ? esc(ex.m) : 'técnica')) + '<div class="sheet-body"><div id="exai-frames" class="frames" hidden></div>';
-  if (ex.cue) h += '<div class="card flat tight"><div class="micro">Indicación del plan</div><p class="small fg2" style="margin-top:4px">' + esc(ex.cue) + '</p></div>';
-  if (A.busy) h += '<div class="stack-sm"><div class="row"><span class="spinner" style="color:var(--blue-ink)"></span><span class="small fg2">Gemini está preparando la explicación…</span></div><div class="skel" style="height:54px"></div><div class="skel line" style="width:90%"></div><div class="skel line" style="width:80%"></div><div class="skel line" style="width:86%"></div><div class="skel line" style="width:60%"></div></div>';
+  if (ex.cue) h += '<div class="card flat tight"><div class="micro">Indicación del plan</div><p class="small fg2 mt-1">' + esc(ex.cue) + '</p></div>';
+  if (A.busy) h += '<div class="stack-sm"><div class="row"><span class="spinner c-blue"></span><span class="small fg2">Gemini está preparando la explicación…</span></div><div class="skel sk-h54"></div><div class="skel line sk-w90"></div><div class="skel line sk-w80"></div><div class="skel line sk-w86"></div><div class="skel line sk-w60"></div></div>';
   if (A.error) h += note('warn', esc(A.error)) + '<button class="btn sm" data-act="exai-retry" data-id="' + esc(ex.id) + '">' + ic('refresh') + 'Reintentar</button>';
   const d = A.data;
   if (d) {
     h += '<p class="body">' + esc(d.resumen || '') + '</p>';
-    if (d.pasos && d.pasos.length) h += '<div class="stack-sm"><div class="micro">Paso a paso</div><ol class="crit">' + d.pasos.map((p, i) => '<li><span class="mk" style="font:700 12px var(--mono);color:var(--blue-ink);border-color:var(--blue-line)">' + (i + 1) + '</span><div class="small">' + esc(p) + '</div><span></span></li>').join('') + '</ol></div>';
+    if (d.pasos && d.pasos.length) h += '<div class="stack-sm"><div class="micro">Paso a paso</div><ol class="crit">' + d.pasos.map((p, i) => '<li><span class="mk num">' + (i + 1) + '</span><div class="small">' + esc(p) + '</div><span></span></li>').join('') + '</ol></div>';
     if (d.claves && d.claves.length) h += '<div class="stack-sm"><div class="micro">Claves</div>' + d.claves.map(c => '<div class="small fg2">' + ic('check') + ' ' + esc(c) + '</div>').join('') + '</div>';
     if (d.errores && d.errores.length) h += '<div class="stack-sm"><div class="micro">Errores comunes</div>' + d.errores.map(c => '<div class="small fg2">' + ic('x') + ' ' + esc(c) + '</div>').join('') + '</div>';
     if (d.seguridad) h += note('pain', '<b>Tu recto femoral:</b> ' + esc(d.seguridad));
@@ -183,14 +183,14 @@ function coachContext(st, today) {
 const COACH_RULES = 'Eres preparador físico, readaptador y nutricionista deportivo de élite en fútbol profesional. Hablas directamente con el atleta (sus datos están en el JSON). Responde en español neutro, directo, conciso, frío, realista y práctico. Sin relleno. Usa solo los datos del JSON; si falta un dato que cambia la respuesta, dilo en una línea. No diagnostiques: ante dolor que no baja o empeora, deriva a un profesional. Respeta la progresión por criterios: nunca recomiendes saltar niveles de golpeo o sprint ni adelantar fases sin cumplir los criterios. Formato: párrafos cortos o listas breves en texto plano, sin tablas ni markdown pesado. Si pregunta por un tema que ya investigó en la app (aprendizaje.investigaciones), usa esa respuesta y su nivel de evidencia y dilo («según tu investigación del …»); no inventes estudios, autores ni cifras. Lo que marcó en «Lo aplico» son hábitos que adoptó: tenlos en cuenta.';
 function viewCoach(st, today) {
   const C = UI.coach;
-  let h = '<div class="page-head"><a class="iconbtn" href="#hoy" aria-label="Volver">' + ic('chevL') + '</a><h1 class="h1 grow">Coach</h1>' + (C.turns.length ? '<button class="btn xs ghost" data-act="coach-clear">Borrar</button>' : '') + '</div>';
-  h += '<section class="card t-blue"><div class="stack-sm"><p class="body">Gemini lee tus datos (lesión, fase, tests, check-ins, sesiones, agenda y comida de hoy) y responde. Es gratis dentro del límite diario.</p>' +
+  let h = '<div class="aura" aria-hidden="true"></div><div class="page-head"><a class="iconbtn" href="#hoy" aria-label="Volver">' + ic('chevL') + '</a><h1 class="h1 grow">Coach</h1>' + (C.turns.length ? '<button class="btn xs ghost" data-act="coach-clear">Borrar</button>' : '') + '</div>';
+  h += '<section class="card coach-intro"><div class="stack"><p class="body">Lee tu lesión, tests, check-ins, sesiones y comida, y responde.</p>' +
     '<div class="scroll-x">' + [['Analiza mi semana', 'Analiza mi situación y la semana. Dime: 1) estado en 2-3 líneas, 2) riesgos concretos, 3) ajustes para los próximos 7 días (máximo 5), 4) qué datos me faltan registrar.'],
       ['¿Qué ajusto hoy?', '¿Qué ajusto hoy según mi check-in, lo que hice ayer y la agenda de hoy?'], ['¿Qué como ahora?', '¿Qué me conviene comer en la próxima comida según lo que ya comí hoy y lo que entreno?'], ['¿Llego a las pruebas?', '¿Llego a estar listo para las pruebas del 16 de noviembre? ¿Qué es lo que más me puede frenar?']]
       .map(([l, q]) => '<button class="pill" data-act="coach-ask" data-q="' + esc(q) + '" data-l="' + esc(l) + '"' + (C.busy ? ' disabled' : '') + '>' + esc(l) + '</button>').join('') + '</div>' +
     (C.unavailable ? note('warn', 'La IA no está disponible ahora. Revisa la conexión.') : '') + '</div></section>';
   if (C.turns.length) h += '<section class="stack" aria-live="polite">' + C.turns.map(t => '<div class="msg ' + (t.role === 'user' ? 'me' : 'cl') + (t.pending ? ' pending' : '') + '">' + esc(t.show || t.content) + '</div>').join('') + '</section>';
-  h += '<section class="card tight"><div class="stack-sm"><label class="sr" for="coach-q">Pregunta</label><textarea class="input" id="coach-q" data-bind="coach-q" rows="3" placeholder="¿Puedo hacer sentadilla pesada esta semana?">' + esc(C.draft || '') + '</textarea><div class="row between"><button class="btn primary" data-act="coach-send"' + (C.busy ? ' disabled' : '') + '>' + ic('spark') + 'Preguntar</button>' + (C.busy ? '<button class="btn ghost" data-act="coach-stop">Detener</button>' : '') + '</div></div></section>';
+  h += '<section class="composer"><div class="stack-sm"><label class="sr" for="coach-q">Pregunta</label><textarea class="input" id="coach-q" data-bind="coach-q" rows="3" placeholder="¿Puedo hacer sentadilla pesada esta semana?">' + esc(C.draft || '') + '</textarea><div class="row between"><button class="btn primary" data-act="coach-send"' + (C.busy ? ' disabled' : '') + '>' + ic('spark') + 'Preguntar</button>' + (C.busy ? '<button class="btn ghost" data-act="coach-stop">Detener</button>' : '') + '</div></div></section>';
   return h;
 }
 async function coachAsk(text, show) {

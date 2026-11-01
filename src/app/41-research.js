@@ -199,17 +199,17 @@ function invList() { return (S.data.investigaciones || []).filter(x => x && !x.d
 /* ---------- Panel «Investigar» ---------- */
 function researchPanel(st, today) {
   const I = UI.inv, all = invList(), priv = all.filter(x => x.privado), shown = all.filter(x => I.showPriv || !x.privado);
-  let h = '<section class="card t-blue"><div class="stack">' +
-    '<div class="stack-xs"><div class="h2">Investiga un tema</div><p class="sub pretty">Busca metaanálisis y ensayos reales en Europe PMC (que incluye PubMed) y Gemini resume solo lo que dicen esos estudios, citándolos.</p></div>' +
+  let h = '<section class="panel inv-box"><div class="stack">' +
+    '<div class="stack-xs"><div class="h2">Investiga un tema</div><p class="sub pretty">Estudios reales de Europe PMC y PubMed. Gemini resume solo lo que dicen, citándolos.</p></div>' +
     '<div class="field"><label for="inv-q" class="sr">Tema a investigar</label><textarea class="input" id="inv-q" data-bind="inv-q" rows="3" maxlength="300" enterkeyhint="go" placeholder="Ej.: ¿Qué efecto tiene la crioterapia en la recuperación?"' + (I.busy ? ' disabled' : '') + '>' + esc(I.q) + '</textarea></div>' +
     (I.busy ? '' : '<div class="scroll-x">' + INV_EXAMPLES.map(x => '<button class="pill" data-act="inv-example" data-q="' + esc(x) + '">' + esc(x) + '</button>').join('') + '</div>') +
     toggleHtml('inv-priv', I.privado, 'Privada', 'No aparece en la lista ni la usa el coach', '', '') +
     (I.busy ? researchProgress(I) : '<button class="btn primary lg block" data-act="inv-go">' + ic('flask') + 'Investigar</button>') +
     (I.error ? note('warn', esc(I.error)) : '') +
-    '<p class="sub pretty">Usa el límite gratuito de la IA (2 consultas por tema). Solo lee resúmenes, no los artículos completos. Si hay pocos estudios, el informe lo dice primero.</p>' +
+    '<p class="sub pretty">2 consultas del límite gratuito. Lee resúmenes, no artículos completos.</p>' +
     '</div></section>';
-  h += '<div class="sec"><span class="t">Tus investigaciones</span>' + (priv.length ? '<button class="linkbtn" data-act="inv-showpriv">' + ic('lock') + (I.showPriv ? 'Ocultar privadas' : 'Mostrar privadas (' + priv.length + ')') + '</button>' : '') + '</div>';
-  if (!shown.length) h += '<div class="empty"><b>Todavía no investigaste nada</b><span class="small">Escribe una pregunta arriba.</span></div>';
+  h += '<div class="sec mt-2"><span class="t">Tus investigaciones</span>' + (priv.length ? '<button class="linkbtn" data-act="inv-showpriv">' + ic('lock') + (I.showPriv ? 'Ocultar privadas' : 'Mostrar privadas (' + priv.length + ')') + '</button>' : '') + '</div>';
+  if (!shown.length) h += '<div class="empty"><b>Todavía no investigaste nada</b></div>';
   else h += '<div class="stack-sm">' + shown.map(x => '<button class="dt-row" data-act="inv-open" data-id="' + esc(x.id) + '"><span class="dt-tile ' + (x.privado ? 'mute' : 'blue') + '" aria-hidden="true">' + ic(x.privado ? 'lock' : 'flask') + '</span><span class="grow"><span class="t">' + esc(x.titulo || x.tema) + '</span><span class="s">' + esc(fmtDate(x.fecha) + ' · ' + plural((x.stats || {}).estudios || 0, 'estudio', 'estudios') + ' · ' + (x.veredicto || '')) + '</span></span>' + nivelHtml(x.nivel || 'D', true) + '</button>').join('') + '</div>';
   return h;
 }
@@ -240,7 +240,7 @@ function invHtml(id) {
   if (x.mecanismo) h += '<div class="stack-sm"><div class="micro">Por qué pasa</div><p class="small fg2 pretty">' + esc(x.mecanismo) + '</p></div>';
   if ((x.aplicacion || []).length) h += '<div class="stack-sm"><div class="micro">Qué hacer</div><ol class="apply">' + x.aplicacion.map(a => '<li>' + esc(a) + '</li>').join('') + '</ol></div>';
   if ((x.limites || []).length) h += '<div class="stack-sm"><div class="micro">Límites de la evidencia</div>' + note('warn', '<ul class="lims">' + x.limites.map(l => '<li>' + esc(l) + '</li>').join('') + '</ul>') + '</div>';
-  if ((x.mitos || []).length) h += '<div class="stack-sm"><div class="micro">Mitos</div>' + x.mitos.map(m => '<div class="card flat tight"><div class="small"><b>Mito:</b> ' + esc(m.mito) + '</div><div class="small fg2" style="margin-top:4px"><b>Realidad:</b> ' + esc(m.realidad) + ' ' + citeChips(m.ids, ests) + '</div></div>').join('') + '</div>';
+  if ((x.mitos || []).length) h += '<div class="stack-sm"><div class="micro">Mitos</div>' + x.mitos.map(m => '<div class="card flat tight"><div class="small"><b>Mito:</b> ' + esc(m.mito) + '</div><div class="small fg2 mt-1"><b>Realidad:</b> ' + esc(m.realidad) + ' ' + citeChips(m.ids, ests) + '</div></div>').join('') + '</div>';
   if (ests.length) h += '<div class="stack-sm"><div class="micro">Estudios</div>' + ests.map((s, i) => '<a class="study" id="est-' + esc(x.id) + '-' + esc(s.id) + '" href="' + studyUrl(s) + '" target="_blank" rel="noopener"><span class="num-b">' + (i + 1) + '</span><span class="grow"><span class="t">' + esc(s.titulo) + '</span><span class="s">' + esc([s.autores, s.revista, s.anio].filter(Boolean).join(' · ')) + '</span>' + (s.resultado ? '<span class="r">' + esc(s.resultado) + '</span>' : '') + '<span class="tags">' + chip(DESIGN_N[s.design] || 'Estudio', s.design === 'ma' || s.design === 'sr' || s.design === 'rct' ? 'blue' : '') + (s.n ? chip(fmtNum(s.n) + ' personas', '') : '') + (s.poblacion ? chip(s.poblacion, '') : '') + '</span></span>' + ic('ext') + '</a>').join('') + '</div>';
   if ((x.preguntas || []).length) h += '<div class="stack-sm"><div class="micro">Seguir investigando</div><div class="pills">' + x.preguntas.map(p => '<button class="pill" data-act="inv-ask" data-q="' + esc(p) + '">' + esc(p) + '</button>').join('') + '</div></div>';
   h += toggleHtml('inv-setpriv', !!x.privado, 'Privada', 'No aparece en la lista ni la usa el coach', 'data-id="' + esc(x.id) + '"', '');

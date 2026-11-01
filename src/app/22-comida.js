@@ -7,60 +7,60 @@ function viewComida(st, today) {
   const ag = agendaFor(date), T = nutritionTargets(st.weight || 88, ag.kind, ag);
   const ms = mealsFor(date), tot = sumItems([].concat(...ms.map(m => m.items || [])));
   const nd = nutriDoc(date) || {}, water = (num(nd.water) || 0) / 1000;
-  let h = '<div class="page-head"><h1 class="h1 grow">Comida</h1><button class="iconbtn sm" data-act="food-day" data-d="-1" aria-label="Día anterior">' + ic('chevL') + '</button><button class="btn xs" data-act="food-today"' + (date === today ? ' disabled' : '') + '>' + (date === today ? 'Hoy' : fmtDate(date)) + '</button><button class="iconbtn sm" data-act="food-day" data-d="1" aria-label="Día siguiente">' + ic('chev') + '</button></div>';
+  let h = '<div class="aura k-food" aria-hidden="true"></div><div class="page-head"><h1 class="h1 grow">Comida</h1><button class="iconbtn sm" data-act="food-day" data-d="-1" aria-label="Día anterior">' + ic('chevL') + '</button><button class="btn xs" data-act="food-today"' + (date === today ? ' disabled' : '') + '>' + (date === today ? 'Hoy' : fmtDate(date)) + '</button><button class="iconbtn sm" data-act="food-day" data-d="1" aria-label="Día siguiente">' + ic('chev') + '</button></div>';
   const kcalFrac = T.kcal ? tot.kcal / T.kcal : 0;
-  h += '<section class="card t-food"><div class="stack"><div class="row between"><div><div class="micro" style="color:var(--teal-ink)">' + esc(capFirst(fmtDateLong(date))) + '</div><div class="h2">' + esc(T.kindN) + '</div></div>' + chip(fmtNum(T.choKg) + ' g/kg de carbos', ag.kind === 'alto' || ag.kind === 'prueba' ? 'load' : 'food') + '</div>' +
-    '<div class="macro-top">' + ring(kcalFrac, 108, 10, 'lg-prot', tot.kcal, 'de ' + T.kcal + ' kcal') + '<div class="macros">' +
-    macroRow('Proteína', tot.p, T.p, 'prot', 'c-prot') + macroRow('Carbohidratos', tot.c, T.c, 'carb', 'c-carb') + macroRow('Grasas', tot.f, T.f, 'fat', 'c-fat') + '</div></div>' +
-    '<div class="grid3"><button class="btn sm" data-act="meal-photo" data-date="' + date + '">' + ic('camera') + 'Foto</button><button class="btn sm" data-act="meal-text" data-date="' + date + '">' + ic('pen') + 'Escribir</button><button class="btn sm" data-act="meal-search" data-date="' + date + '">' + ic('search') + 'Buscar</button></div></div></section>';
+  h += '<section class="panel k-food food-sum"><div class="ed-head"><span class="kicker"><span class="d food"></span>' + esc(T.kindN) + '</span>' + chip(fmtNum(T.choKg) + ' g/kg carbos', ag.kind === 'alto' || ag.kind === 'prueba' ? 'load' : 'food') + '</div>' +
+    '<div class="kcal"><span class="n grad-text tnum">' + fmtNum(tot.kcal) + '</span><span class="of">/ ' + fmtNum(T.kcal) + ' kcal</span></div>' + meter(tot.kcal, T.kcal, 'prot') +
+    '<div class="grid3 macros3">' + macroRow('Proteína', tot.p, T.p, 'prot', 'c-prot') + macroRow('Carbos', tot.c, T.c, 'carb', 'c-carb') + macroRow('Grasas', tot.f, T.f, 'fat', 'c-fat') + '</div>' +
+    '<div class="grid3"><button class="btn sm" data-act="meal-photo" data-date="' + date + '">' + ic('camera') + 'Foto</button><button class="btn sm" data-act="meal-text" data-date="' + date + '">' + ic('pen') + 'Escribir</button><button class="btn sm" data-act="meal-search" data-date="' + date + '">' + ic('search') + 'Buscar</button></div></section>';
   // Hidratación y suplementos
-  h += '<section class="card tight"><div class="water"><div class="row between"><span class="h3">Agua y líquidos</span><b class="num c-water">' + fmtNum(Math.round(water * 10) / 10) + ' / ' + fmtNum(T.water) + ' L</b></div>' + meter(water, T.water, 'water') +
+  h += '<section class="card tight"><div class="water"><div class="ed-head"><span class="kicker">Agua</span><span class="wv"><b class="c-water tnum">' + fmtNum(Math.round(water * 10) / 10) + '</b> / ' + fmtNum(T.water) + ' L</span></div>' + meter(water, T.water, 'water') +
     '<div class="cups"><button class="btn sm" data-act="water-add" data-date="' + date + '" data-ml="-250" aria-label="Restar 250 ml">−</button><button class="btn sm" data-act="water-add" data-date="' + date + '" data-ml="250" aria-label="Sumar 250 ml">+250</button><button class="btn sm" data-act="water-add" data-date="' + date + '" data-ml="500" aria-label="Sumar 500 ml">+500</button><button class="btn sm" data-act="water-add" data-date="' + date + '" data-ml="1000" aria-label="Sumar 1 litro">+1 L</button></div>' +
-    '<div class="sub">El mate, el tereré y el agua con sal cuentan. En la cancha suma 0,5-1 L por hora.</div></div></section>';
-  h += '<div class="grid2">' + suppTile(date, 'creatine', 'Creatina 5 g', nd.creatine, 'lime') + suppTile(date, 'gelatin', 'Gelatina + vit. C', nd.gelatin, 'food') + '</div>';
+    '</div></section>';
+  h += '<div class="grid2 supps">' + suppTile(date, 'creatine', 'Creatina 5 g', nd.creatine, 'lime') + suppTile(date, 'gelatin', 'Gelatina + vit. C', nd.gelatin, 'lime') + '</div>';
   // Comidas del día según la agenda
-  h += '<div class="sec"><span class="t">Comidas del día</span><a href="#hoy" data-act="hoy-day" data-date="' + date + '">Horario</a></div>';
+  h += '<div class="ed-head"><span class="kicker">Comidas</span><a class="linkbtn" href="#hoy" data-act="hoy-day" data-date="' + date + '">Horario</a></div>';
   const meals = ag.items.filter(x => x.kind === 'meal');
   const slots = new Set(meals.map(m => m.slot));
   h += '<div class="stack-sm">' + meals.map(m => mealSlotCard(date, m)).join('') + '</div>';
   const extra = ms.filter(m => !slots.has(m.slot));
-  if (extra.length) h += '<div class="stack-sm"><div class="micro">Fuera del plan</div>' + extra.map(m => '<div class="card tight">' + mealRowHtml(m) + '</div>').join('') + '</div>';
+  if (extra.length) h += '<div class="stack-sm"><div class="kicker">Fuera del plan</div>' + extra.map(m => mealRowHtml(m)).join('') + '</div>';
   // Semana
   h += proteinWeekCard(date, st);
-  h += '<section class="card tight"><div class="stack-sm"><div class="h3">Tus hábitos</div>' +
+  h += '<section class="card tight"><div class="stack-sm"><div class="kicker">Tus hábitos</div>' +
     '<div class="lrow"><span class="fg2">Mate con cúrcuma por la mañana</span><span class="sub">Hidrata · suma pimienta</span></div>' +
     '<div class="lrow"><span class="fg2">Café después del almuerzo</span><span class="sub">Hasta las 14:00</span></div>' +
-    '<div class="lrow"><span class="fg2">Leche de cabra cruda</span><span class="sub c-pain">Hervir siempre</span></div>' +
+    '<div class="lrow"><span class="fg2">Leche de cabra cruda</span><span class="sub c-load">Hervir siempre</span></div>' +
     '<div class="lrow"><span class="fg2">Huevos caseros</span><span class="sub">Bien cocidos</span></div>' +
     '<div class="lrow"><span class="fg2">Miel silvestre</span><span class="sub">Antes y después de entrenar</span></div>' +
-    '<button class="blk" data-act="guide" data-g="nutricion" style="margin-top:6px"><span class="c food">' + ic('book') + '</span><div class="grow"><div class="t">Nutrición por evidencia</div><div class="s">Qué funciona, qué es preliminar y qué evitar</div></div>' + ic('chev') + '</button></div></section>';
+    '<button class="blk mt-2" data-act="guide" data-g="nutricion"><span class="c food">' + ic('book') + '</span><div class="grow"><div class="t">Nutrición por evidencia</div><div class="s">Qué funciona, qué es preliminar y qué evitar</div></div>' + ic('chev') + '</button></div></section>';
   return h;
 }
 function macroRow(lab, v, t, tone, cls) {
-  return '<div class="macro"><div class="top"><span>' + lab + '</span><b class="' + cls + '">' + v + '<span style="color:var(--fg-4)"> / ' + t + ' g</span></b></div>' + meter(v, t, tone) + '</div>';
+  return '<div class="macro"><span class="k">' + lab + '</span><span class="v ' + cls + '">' + v + '<span class="of"> / ' + t + ' g</span></span>' + meter(v, t, tone) + '</div>';
 }
 function suppTile(date, key, label, on, tone) {
-  return '<button class="tile ' + (on ? tone : '') + '" data-act="supp" data-date="' + date + '" data-key="' + key + '" aria-pressed="' + !!on + '" style="min-height:84px"><span class="c">' + ic(on ? 'check' : 'pill') + '</span><span class="k" style="color:var(--fg)">' + esc(label) + '</span><span class="k">' + (on ? 'Hecho' : key === 'creatine' ? 'Cuando la tengas' : 'Antes de cargar el RF') + '</span></button>';
+  return '<button class="supp' + (on ? ' on' : '') + '" data-act="supp" data-date="' + date + '" data-key="' + key + '" aria-pressed="' + !!on + '"><span class="st0' + (on ? ' done' : '') + '">' + (on ? ic('check') : '') + '</span><span class="grow"><span class="t">' + esc(label) + '</span><span class="s">' + (on ? 'Hecho' : key === 'creatine' ? 'Cuando la tengas' : 'Antes de cargar el RF') + '</span></span></button>';
 }
 function mealSlotCard(date, m) {
   const logged = mealDone(m.slot, date), eaten = logged.filter(x => !x.skipped), skipped = logged.length > 0 && !eaten.length;
   const menu = mealMenuFor(date, m);
-  let h = '<section class="card tight' + (eaten.length ? ' t-food' : '') + (skipped ? ' skipped' : '') + '"><div class="meal"><div class="mh"><span class="tm">' + fmtHM(m.start) + '</span><button class="grow" data-act="ag-open" data-date="' + date + '" data-key="' + m.key + '" style="text-align:left"><div class="h3">' + esc(m.title) + (m.optional ? ' <span class="sub">· opcional</span>' : '') + '</div><div class="sub">' + (skipped ? 'No la comiste' : logged.length ? 'Registrado' : esc(menu.name)) + '</div></button>' + (eaten.length ? '<span class="st0 done">' + ic('check') + '</span>' : skipped ? '<span class="st0">' + ic('x') + '</span>' : '') + '</div>';
+  let h = '<section class="card tight' + (eaten.length ? ' t-food' : '') + (skipped ? ' skipped' : '') + '"><div class="meal"><div class="mh"><button class="grow left" data-act="ag-open" data-date="' + date + '" data-key="' + m.key + '"><span class="tm">' + fmtHM(m.start) + (m.optional ? ' · opcional' : '') + '</span><span class="mt">' + esc(m.title) + '</span><span class="sub">' + (skipped ? 'No la comiste' : logged.length ? 'Registrado' : esc(menu.name)) + '</span></button>' + (eaten.length ? '<span class="st0 done">' + ic('check') + '</span>' : skipped ? '<span class="st0">' + ic('x') + '</span>' : '') + '</div>';
   if (logged.length) h += logged.map(x => mealRowHtml(x, true)).join('');
   else {
     h += '<div class="items">' + menu.items.map(i => '<div class="it"><span>' + esc(i.n) + '</span><span class="q">' + esc(fmtQty(i)) + '</span></div>').join('') + '</div>' +
       '<div class="mtot"><span class="p">' + menu.totals.p + ' g prot</span><span class="c">' + menu.totals.c + ' g carb</span><span class="f">' + menu.totals.f + ' g grasa</span><span class="k">' + menu.totals.kcal + ' kcal</span></div>' +
       (menu.tip ? '<div class="sub">' + esc(menu.tip) + '</div>' : '') +
-      '<div class="row nowrap"><button class="btn sm lime grow" data-act="meal-ate" data-date="' + date + '" data-key="' + m.key + '">' + ic('check') + 'Comí esto</button><button class="iconbtn sm" data-act="meal-photo" data-date="' + date + '" data-slot="' + m.slot + '" aria-label="Registrar con foto">' + ic('camera') + '</button><button class="iconbtn sm" data-act="meal-text" data-date="' + date + '" data-slot="' + m.slot + '" aria-label="Escribir lo que comí">' + ic('pen') + '</button>' + (menu.variants > 1 ? '<button class="iconbtn sm" data-act="menu-var" data-date="' + date + '" data-key="' + m.key + '" aria-label="Otra opción">' + ic('refresh') + '</button>' : '') + '</div>';
+      '<div class="row nowrap"><button class="btn sm grow" data-act="meal-ate" data-date="' + date + '" data-key="' + m.key + '">' + ic('check', 'ok') + 'Comí esto</button><button class="iconbtn sm" data-act="meal-photo" data-date="' + date + '" data-slot="' + m.slot + '" aria-label="Registrar con foto">' + ic('camera') + '</button><button class="iconbtn sm" data-act="meal-text" data-date="' + date + '" data-slot="' + m.slot + '" aria-label="Escribir lo que comí">' + ic('pen') + '</button>' + (menu.variants > 1 ? '<button class="iconbtn sm" data-act="menu-var" data-date="' + date + '" data-key="' + m.key + '" aria-label="Otra opción">' + ic('refresh') + '</button>' : '') + '</div>';
   }
   return h + '</div></section>';
 }
 function mealRowHtml(m, inner) {
   if (m.skipped) return '<div class="blk skipped"><span class="c mute">' + ic('x') + '</span><div class="grow"><div class="t">' + esc(m.title || SLOT_N[m.slot] || 'Comida') + ' · <span class="num">' + esc(m.time || '') + '</span></div><div class="s">No la comiste</div></div><button class="btn xs" data-act="meal-undo" data-id="' + esc(m.id) + '">' + ic('undo') + 'Deshacer</button></div>';
   const t = sumItems(m.items || []);
-  return '<button class="' + (inner ? 'blk' : 'blk') + '" data-act="meal-edit" data-id="' + esc(m.id) + '" style="align-items:flex-start">' + (m.hasImg ? '<span class="photo-thumb" data-mealimg="' + esc(m.id) + '" style="display:block"></span>' : '<span class="c food">' + ic(m.source === 'foto' ? 'camera' : 'fork') + '</span>') +
+  return '<button class="blk top" data-act="meal-edit" data-id="' + esc(m.id) + '">' + (m.hasImg ? '<span class="photo-thumb" data-mealimg="' + esc(m.id) + '"></span>' : '<span class="c food">' + ic(m.source === 'foto' ? 'camera' : 'fork') + '</span>') +
     '<div class="grow"><div class="t">' + esc(m.title || SLOT_N[m.slot] || 'Comida') + ' · <span class="num">' + esc(m.time || '') + '</span></div><div class="s">' + esc((m.items || []).map(i => i.n).slice(0, 4).join(', ') + ((m.items || []).length > 4 ? '…' : '')) + '</div>' +
-    '<div class="mtot" style="margin-top:6px"><span class="p">' + t.p + ' g prot</span><span class="c">' + t.c + ' g carb</span><span class="k">' + t.kcal + ' kcal</span></div></div></button>';
+    '<div class="mtot mt-2"><span class="p">' + t.p + ' g prot</span><span class="c">' + t.c + ' g carb</span><span class="k">' + t.kcal + ' kcal</span></div></div></button>';
 }
 function proteinWeekCard(date, st) {
   const ws = weekStartOf(date), rows = [];
@@ -71,7 +71,7 @@ function proteinWeekCard(date, st) {
     rows.push({ label: DOW1[i], value: t.p });
   }
   if (!rows.some(r => r.value)) return '';
-  return '<section class="card tight"><div class="stack-sm"><div class="row between"><span class="h3">Proteína de la semana</span><span class="sub">meta ' + target + ' g</span></div>' + barChart(rows, { tone: 'prot', ref: target, label: 'Proteína por día', showVal: false }) + '</div></section>';
+  return '<section class="card tight"><div class="stack-sm"><div class="ed-head"><span class="kicker">Proteína de la semana</span><span class="meta">meta ' + target + ' g</span></div>' + barChart(rows, { tone: 'prot', ref: target, label: 'Proteína por día', showVal: false }) + '</div></section>';
 }
 /* Miniaturas de fotos de comida (se cargan aparte) */
 const MEALIMG = {};
@@ -79,7 +79,7 @@ function hydrateMealImgs(root) {
   $$('[data-mealimg]', root || document).forEach(el => {
     const id = el.getAttribute('data-mealimg'); if (el.getAttribute('data-done')) return;
     el.setAttribute('data-done', '1');
-    const set = (src) => { if (src) el.innerHTML = '<img class="photo-thumb" alt="" src="' + src + '" style="border:0">'; };
+    const set = (src) => { if (src) el.innerHTML = '<img class="photo-thumb bare" alt="" src="' + src + '">'; };
     if (MEALIMG[id]) { set(MEALIMG[id]); return; }
     FB.get('mealimg', id).then(d => { if (d && d.data) { MEALIMG[id] = d.data; set(d.data); } }).catch(() => {});
   });
@@ -219,8 +219,8 @@ function mealConfirmHtml() {
   const t = sumItems(D.items);
   let h = sheetHead(D.id ? 'Editar comida' : 'Confirmar comida', esc(capFirst(fmtDateLong(D.date)))) + '<div class="sheet-body">';
   if (D.img) h += '<img class="photo" alt="Foto de la comida" src="' + D.img + '">';
-  else if (D.id && D.hasImg) h += '<span class="photo" data-mealimg="' + esc(D.id) + '" style="display:block;overflow:hidden"></span>';
-  if (D.busy) h += '<div class="stack-sm"><div class="row"><span class="spinner" style="color:var(--teal)"></span><span class="small fg2">Gemini está identificando los alimentos y las cantidades…</span></div><div class="skel" style="height:64px"></div><div class="skel" style="height:64px"></div><div class="skel" style="height:64px"></div></div>';
+  else if (D.id && D.hasImg) h += '<span class="photo photo-box" data-mealimg="' + esc(D.id) + '"></span>';
+  if (D.busy) h += '<div class="stack-sm"><div class="row"><span class="spinner c-prot"></span><span class="small fg2">Gemini está identificando los alimentos y las cantidades…</span></div><div class="skel sk-item"></div><div class="skel sk-item"></div><div class="skel sk-item"></div></div>';
   if (D.error) h += note('warn', esc(D.error));
   if (D.aiNote) h += '<div class="sub">' + ic('spark') + ' ' + esc(D.aiNote) + '</div>';
   if (!D.busy) {
@@ -228,7 +228,7 @@ function mealConfirmHtml() {
       stepperHtml('mi-' + i, it.g, 'meal-g', 'data-i="' + i + '"', it.id && FOOD_INDEX[it.id] && FOOD_INDEX[it.id].ml ? 'ml' : 'g') + '<button class="iconbtn sm plain" data-act="meal-item-del" data-i="' + i + '" aria-label="Quitar ' + esc(it.n) + '">' + ic('x') + '</button></div>').join('') + '</div>';
     h += '<div class="grid2"><button class="btn dash" data-act="meal-add-food">' + ic('plus') + 'Agregar alimento</button><button class="btn dash" data-act="meal-fix-open" aria-expanded="' + !!D.fixOpen + '">' + ic('spark') + 'Corregir con IA</button></div>';
     if (D.fixOpen || D.fixBusy) h += '<div class="card flat tight"><div class="stack-sm"><label for="meal-fix" class="small fg2">Dime qué está mal o qué falta. Gemini corrige la lista y recalcula los totales.</label><textarea class="input" id="meal-fix" data-bind="meal-fix" rows="2" placeholder="No era arroz, era mandioca. Faltó un vaso de leche de cabra." autocapitalize="sentences" autocomplete="off">' + esc(D.fix || '') + '</textarea><button class="btn primary" data-act="meal-fix-go"' + (D.fixBusy ? ' disabled' : '') + '>' + (D.fixBusy ? '<span class="spinner"></span>Corrigiendo' : ic('spark') + 'Corregir') + '</button></div></div>';
-    h += '<div class="card flat tight"><div class="mtot" style="font-size:14px"><span class="p">' + t.p + ' g prot</span><span class="c">' + t.c + ' g carb</span><span class="f">' + t.f + ' g grasa</span><span class="k">' + t.kcal + ' kcal</span></div></div>';
+    h += '<div class="mtot lg"><span class="p">' + t.p + ' g prot</span><span class="c">' + t.c + ' g carb</span><span class="f">' + t.f + ' g grasa</span><span class="k">' + t.kcal + ' kcal</span></div>';
     h += '<div class="grid2"><div class="field"><label for="meal-time">Hora' + (D.photoTime ? ' (de la foto)' : '') + '</label><input class="input num" type="time" id="meal-time" data-bind="meal-time" value="' + esc(D.time) + '"></div>' +
       '<div class="field"><label for="meal-slot">Comida</label><select class="input" id="meal-slot" data-bind="meal-slot">' + Object.entries(SLOT_N).map(([k, v]) => '<option value="' + k + '"' + (k === D.slot ? ' selected' : '') + '>' + v + '</option>').join('') + '</select></div></div>';
     h += '<div class="field"><label for="meal-note">Nota</label><input class="input" id="meal-note" data-bind="meal-note" value="' + esc(D.note || '') + '" placeholder="Opcional" autocomplete="off"></div>';
@@ -273,13 +273,13 @@ function foodListHtml() {
   const q = normTxt(UI.foodQ || '');
   const list = FOODS.filter(f => !q || normTxt(f.n + ' ' + f.alias.join(' ')).includes(q)).slice(0, 40);
   const raw = (UI.foodQ || '').trim();
-  const aiRow = raw.length >= 2 ? '<button class="exrow ai-add" data-act="food-ai" style="grid-template-columns:44px minmax(0,1fr) auto"' + (UI.foodAI ? ' disabled' : '') + '><span class="c" style="width:44px;height:44px;border-radius:14px;display:grid;place-items:center;background:var(--blue-soft);color:var(--blue-ink)">' + (UI.foodAI ? '<span class="spinner"></span>' : ic('spark')) + '</span><div style="min-width:0"><div class="t">' + (UI.foodAI ? 'Calculando «' + esc(raw) + '»…' : (list.length ? '¿No está? ' : '') + 'Agregar «' + esc(raw) + '» con IA') + '</div><div class="s">Gemini calcula porción y macros. Queda guardado en tu lista.</div></div>' + ic('plus') + '</button>' : '';
+  const aiRow = raw.length >= 2 ? '<button class="exrow ai-add ic44" data-act="food-ai"' + (UI.foodAI ? ' disabled' : '') + '><span class="ic-tile blue">' + (UI.foodAI ? '<span class="spinner"></span>' : ic('spark')) + '</span><div class="mw0"><div class="t">' + (UI.foodAI ? 'Calculando «' + esc(raw) + '»…' : (list.length ? '¿No está? ' : '') + 'Agregar «' + esc(raw) + '» con IA') + '</div><div class="s">Gemini calcula porción y macros. Queda guardado en tu lista.</div></div>' + ic('plus') + '</button>' : '';
   if (UI.foodAIErr) return aiRow + note('warn', esc(UI.foodAIErr)) + list.map(foodRowHtml).join('');
   if (!list.length) return aiRow || '<div class="empty small">Escribe un alimento.</div>';
   return aiRow + list.map(foodRowHtml).join('');
 }
 function foodRowHtml(f) {
-  const g = f.ug || 100, m = foodMacros(f, g); return '<button class="exrow" data-act="food-pick" data-id="' + f.id + '" style="grid-template-columns:44px minmax(0,1fr) auto"><span class="c food" style="width:44px;height:44px;border-radius:14px;display:grid;place-items:center;background:var(--teal-soft);color:var(--teal)">' + ic('fork') + '</span><div style="min-width:0"><div class="t">' + esc(f.n) + '</div><div class="s num">' + (f.unit ? '1 ' + f.unit + ' (' + g + (f.ml ? ' ml' : ' g') + ')' : '100 g') + ' · ' + Math.round(m.p) + ' P · ' + Math.round(m.c) + ' C · ' + m.kcal + ' kcal</div></div>' + ic('plus') + '</button>';
+  const g = f.ug || 100, m = foodMacros(f, g); return '<button class="exrow ic44" data-act="food-pick" data-id="' + f.id + '"><span class="ic-tile food">' + ic('fork') + '</span><div class="mw0"><div class="t">' + esc(f.n) + '</div><div class="s num">' + (f.unit ? '1 ' + f.unit + ' (' + g + (f.ml ? ' ml' : ' g') + ')' : '100 g') + ' · ' + Math.round(m.p) + ' P · ' + Math.round(m.c) + ' C · ' + m.kcal + ' kcal</div></div>' + ic('plus') + '</button>';
 }
 /* Guarda en tu base los alimentos que calculó la IA */
 function rememberFoods(items, alias) {

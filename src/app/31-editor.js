@@ -92,8 +92,8 @@ function edRow(it, i, n) {
   const ex = exInfo(it.id, it);
   const done = (it.sets || []).filter(x => x.done !== false);
   const sum = done.length ? fmtSetsShort(done) : (it.sets || []).length ? 'Sin marcar como hechas' : (fmtSpec(it.spec, it.side) || 'Sin series');
-  return '<div class="exrow" style="grid-template-columns:52px minmax(0,1fr) auto">' + thumbHtml(Object.assign({}, ex || {}, { n: it.n, img: it.img || (ex && ex.img) })) + '<button data-act="ed-sets" data-i="' + i + '" style="text-align:left;min-width:0"><div class="t">' + esc(it.n) + (it.warmup ? ' · <span class="c-load">calentamiento</span>' : '') + (it.group ? ' · <span class="c-blue">S' + esc(it.group) + '</span>' : '') + '</div><div class="s">' + esc(sum) + '</div></button>' +
-    '<div class="row nowrap" style="gap:2px"><button class="iconbtn sm plain" data-act="ed-move" data-i="' + i + '" data-d="-1" aria-label="Subir"' + (i === 0 ? ' disabled' : '') + '>' + ic('up') + '</button><button class="iconbtn sm plain" data-act="ed-move" data-i="' + i + '" data-d="1" aria-label="Bajar"' + (i === n - 1 ? ' disabled' : '') + '>' + ic('down') + '</button><button class="iconbtn sm plain" data-act="ed-del-ex" data-i="' + i + '" aria-label="Quitar">' + ic('x') + '</button></div></div>';
+  return '<div class="exrow ed-row">' + thumbHtml(Object.assign({}, ex || {}, { n: it.n, img: it.img || (ex && ex.img) })) + '<button class="left mw0" data-act="ed-sets" data-i="' + i + '"><div class="t">' + esc(it.n) + (it.warmup ? ' · <span class="c-load">calentamiento</span>' : '') + (it.group ? ' · <span class="c-blue">S' + esc(it.group) + '</span>' : '') + '</div><div class="s">' + esc(sum) + '</div></button>' +
+    '<div class="row nowrap g2"><button class="iconbtn sm plain" data-act="ed-move" data-i="' + i + '" data-d="-1" aria-label="Subir"' + (i === 0 ? ' disabled' : '') + '>' + ic('up') + '</button><button class="iconbtn sm plain" data-act="ed-move" data-i="' + i + '" data-d="1" aria-label="Bajar"' + (i === n - 1 ? ' disabled' : '') + '>' + ic('down') + '</button><button class="iconbtn sm plain" data-act="ed-del-ex" data-i="' + i + '" aria-label="Quitar">' + ic('x') + '</button></div></div>';
 }
 function openSetEditor(i) { UI.ed.cur = i; openSheet({ id: 'setedit', render: setEditHtml }); }
 function setEditHtml() {
@@ -230,13 +230,13 @@ function pickListHtml() {
   else if (P.tab === 'banco') rows = BANK.filter(e => match(e.n + ' ' + (e.m || '') + ' ' + (LABELS.pat[e.pat] || '')));
   else if (P.tab === 'mios') rows = (S.data.custom || []).map(customNorm).filter(e => match(e.n));
   else if (P.tab === 'biblioteca') {
-    if (!LIB.data) return '<div class="skel" style="height:68px"></div><div class="skel" style="height:68px"></div><div class="skel" style="height:68px"></div>';
+    if (!LIB.data) return '<div class="skel sk-row"></div><div class="skel sk-row"></div><div class="skel sk-row"></div>';
     const tr = {}; (S.data.traducciones || []).forEach(t => { tr[t.id] = t.n; });
     rows = LIB.data.filter(x => match(x.n + ' ' + (tr[x.id] || '') + ' ' + (x.pm || []).map(m => (LIB_ES.muscles[m] || '') + ' ' + m).join(' ')) && (!P.mg || (x.pm || []).some(m => LIB_MG[m] === P.mg || (P.mg === 'deltoides_lat' && m === 'shoulders')))).slice(0, 60).map(x => exInfo(x.id));
   }
   if (P.mg) rows = rows.filter(ex => ex && exHasGroup(ex, P.mg));
   if (!rows.length) return '<div class="empty small">' + (P.tab === 'recientes' ? 'Todavía no hay ejercicios recientes. Busca en Banco o Biblioteca.' : 'Sin resultados.') + '</div>';
-  return rows.slice(0, 60).map(ex => '<button class="exrow" data-act="pick" data-id="' + esc(ex.id) + '">' + thumbHtml(ex) + '<div style="min-width:0"><div class="t">' + esc(ex.n) + '</div><div class="s">' + esc([LABELS.pat[ex.pat], (ex.z || []).slice(0, 2).map(z => LABELS.z[z]).filter(Boolean).join(', ')].filter(Boolean).join(' · ')) + '</div></div><span class="f">' + (ST.injuryActive && (ex.f || 1) > ST.phase ? 'F' + ex.f + '+' : '') + '</span></button>').join('');
+  return rows.slice(0, 60).map(ex => '<button class="exrow" data-act="pick" data-id="' + esc(ex.id) + '">' + thumbHtml(ex) + '<div class="mw0"><div class="t">' + esc(ex.n) + '</div><div class="s">' + esc([LABELS.pat[ex.pat], (ex.z || []).slice(0, 2).map(z => LABELS.z[z]).filter(Boolean).join(', ')].filter(Boolean).join(' · ')) + '</div></div><span class="f">' + (ST.injuryActive && (ex.f || 1) > ST.phase ? 'F' + ex.f + '+' : '') + '</span></button>').join('');
 }
 function updatePickList() { const el = $('#pick-list'); if (el) { el.innerHTML = pickListHtml(); hydrateThumbs(el); } }
 function pickItem(id) {
@@ -261,7 +261,7 @@ function openSwap(slot, currentId, target) {
   const alts = slotAlternatives(slot, { bank: ST.bank, phase: ST.phase, injuryActive: ST.injuryActive, equipmentOff: ST.equipmentOff });
   const choices = (S.data.settings && S.data.settings.choices) || {};
   openSheet({ id: 'swap', render: () => sheetHead('Cambiar ejercicio', esc(SLOT_NAMES[slot] || slot) + (ST.injuryActive ? ' · permitidos en ' + PHASES[ST.phase].n : '')) + '<div class="sheet-body"><div class="exlist">' +
-    alts.map(e => '<button class="exrow" data-act="' + (target === 'tr' ? 'tr-swap-pick' : 'choose') + '" data-slot="' + esc(slot) + '" data-id="' + esc(e.id) + '">' + thumbHtml(e) + '<div style="min-width:0"><div class="t">' + esc(e.n) + (e.id === currentId ? ' · <span class="c-blue">actual</span>' : '') + '</div><div class="s">' + esc((e.cue || '').slice(0, 80)) + ((e.cue || '').length > 80 ? '…' : '') + '</div></div><span class="f">F' + (e.f || 1) + '+</span></button>').join('') + '</div>' +
+    alts.map(e => '<button class="exrow" data-act="' + (target === 'tr' ? 'tr-swap-pick' : 'choose') + '" data-slot="' + esc(slot) + '" data-id="' + esc(e.id) + '">' + thumbHtml(e) + '<div class="mw0"><div class="t">' + esc(e.n) + (e.id === currentId ? ' · <span class="c-blue">actual</span>' : '') + '</div><div class="s">' + esc((e.cue || '').slice(0, 80)) + ((e.cue || '').length > 80 ? '…' : '') + '</div></div><span class="f">F' + (e.f || 1) + '+</span></button>').join('') + '</div>' +
     (target !== 'tr' && choices[slot] ? '<button class="btn sm ghost block" data-act="unchoose" data-slot="' + esc(slot) + '">Volver a la elección automática</button>' : '') +
     (target !== 'tr' ? '<p class="sub">Tu elección se usa en todas las sesiones con este hueco.</p>' : '') + '</div>' });
 }
