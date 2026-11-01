@@ -4,7 +4,6 @@ button.card, a.card { display: block; width: 100%; text-align: left; }
 .card + .card { padding-top: var(--s-8); background: var(--grad-line) top / 100% 1px no-repeat; }
 .stack > .card + .card, .stack-sm > .card + .card, .sheet-body .card + .card { padding-top: var(--s-6); }
 .card.t-blue { --tone: var(--blue); --tone-ink: var(--blue-ink); }
-.card.t-lime { --tone: var(--lime); --tone-ink: var(--lime-ink); }
 .card.t-load { --tone: var(--amber); --tone-ink: var(--amber-ink); }
 .card.t-pain { --tone: var(--red); --tone-ink: var(--red-ink); }
 .card.t-sleep { --tone: var(--violet); --tone-ink: var(--violet-ink); }
@@ -13,23 +12,22 @@ button.card, a.card { display: block; width: 100%; text-align: left; }
 /* Barra de acento solo en avisos (dolor de ayer, «¿Sigue?») */
 .alerts > .card:is(.t-blue, .t-lime, .t-load, .t-pain, .t-sleep, .t-food)::before { content: ''; position: absolute; left: 0; top: 0; bottom: 0; width: 2px; border-radius: 1px; background: var(--tone); }
 
-/* ---------- Figura de inicio: panel con degradado del contexto, titular grande con degradado ---------- */
-.hero {
-  --g1: rgba(70, 110, 255, 0.34); --g2: rgba(140, 96, 255, 0.22); --dot: var(--blue); --tint: #CFDBFF;
-  position: relative; isolation: isolate; overflow: hidden; min-width: 0;
-  display: flex; flex-direction: column; gap: var(--s-3); padding: var(--s-6) var(--s-5) var(--s-5);
-  border-radius: var(--r-xl);
+/* ---------- Paneles con degradado (figura de inicio, paneles, portada, ficha): color del contexto en --g1/--g2 ---------- */
+.hero, .panel, .cover, .dato-hero { position: relative; isolation: isolate; overflow: hidden; min-width: 0; padding: var(--s-6) var(--s-5) var(--s-5); border-radius: var(--r-xl);
   background: radial-gradient(110% 80% at 100% 0%, var(--g1), transparent 62%), radial-gradient(90% 70% at 0% 100%, var(--g2), transparent 64%), linear-gradient(165deg, rgba(255, 255, 255, 0.07), rgba(255, 255, 255, 0.015));
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.09), 0 24px 60px -30px rgba(0, 0, 0, 0.8);
-}
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.09), 0 24px 60px -30px rgba(0, 0, 0, 0.8); }
+/* Tonos del contexto: tiñen el panel, la aurora de la pantalla y la cifra del dato */
+.k-campo { --g2: rgba(40, 200, 180, 0.16); }
+.k-meal, .k-food { --g1: rgba(40, 210, 180, 0.28); --g2: rgba(70, 120, 255, 0.18); --dot: var(--teal); --tint: #C6F4EA; --tone: var(--teal-ink); --tone-c: var(--teal); }
+.k-rest, .k-sleep { --g1: rgba(140, 96, 255, 0.34); --g2: rgba(70, 90, 230, 0.2); --dot: var(--violet); --tint: #DDD3FF; --tone: var(--violet-ink); --tone-c: var(--violet); }
+.k-done, .k-lime { --g1: rgba(170, 235, 80, 0.2); --g2: rgba(40, 200, 180, 0.16); --dot: var(--lime); --tint: #E6FBC0; --tone: var(--lime-ink); --tone-c: var(--lime); }
+.k-load { --g1: rgba(255, 160, 50, 0.22); --g2: rgba(140, 96, 255, 0.14); --tone: var(--amber-ink); --tone-c: var(--amber); }
+.k-water { --g1: rgba(60, 190, 240, 0.24); --g2: rgba(70, 110, 255, 0.14); --tone: var(--cyan-ink); --tone-c: var(--cyan); }
+.k-mute { --g1: rgba(255, 255, 255, 0.07); --g2: rgba(140, 96, 255, 0.1); --tone: var(--fg-2); --tone-c: var(--fg-3); }
+.hero { display: flex; flex-direction: column; gap: var(--s-3); }
 /* Foto (si hay): arriba del panel, se funde con el degradado */
 .hero > img { position: absolute; inset: 0 0 auto; width: 100%; max-width: none; height: 75%; object-fit: cover; z-index: -1; opacity: 0; pointer-events: none;
   -webkit-mask-image: linear-gradient(180deg, #000 0%, rgba(0, 0, 0, 0.5) 50%, transparent 100%); mask-image: linear-gradient(180deg, #000 0%, rgba(0, 0, 0, 0.5) 50%, transparent 100%); filter: saturate(0.8) brightness(0.75); }
-.hero.k-campo { --g1: rgba(60, 120, 255, 0.34); --g2: rgba(40, 200, 180, 0.16); }
-.hero.k-meal { --g1: rgba(40, 210, 180, 0.3); --g2: rgba(70, 120, 255, 0.2); --dot: var(--teal); --tint: #C6F4EA; }
-.hero.k-rest { --g1: rgba(140, 96, 255, 0.34); --g2: rgba(70, 90, 230, 0.2); --dot: var(--violet); --tint: #DDD3FF; }
-.hero.k-done { --g1: rgba(170, 235, 80, 0.22); --g2: rgba(40, 200, 180, 0.18); --dot: var(--lime); --tint: #E6FBC0; }
-.hero.k-pend { --g1: rgba(70, 110, 255, 0.3); --g2: rgba(140, 96, 255, 0.2); }
 .hero .tag { align-self: flex-start; display: inline-flex; align-items: center; gap: var(--s-2); font-size: var(--fs-1); font-weight: var(--fw-2); letter-spacing: 0.08em; text-transform: uppercase; color: var(--fg-2); font-variant-numeric: tabular-nums; }
 .hero .tag .d { width: 7px; height: 7px; border-radius: 50%; background: var(--dot); flex: none; box-shadow: 0 0 10px var(--dot); }
 .hero .tag .d.load { --dot: var(--amber); background: var(--amber); } .hero .tag .d.done { --dot: var(--lime); background: var(--lime); } .hero .tag .d.rest { --dot: var(--violet); background: var(--violet); } .hero .tag .d.food { --dot: var(--teal); background: var(--teal); }
@@ -45,16 +43,6 @@ button.card, a.card { display: block; width: 100%; text-align: left; }
 .btn.sq { width: 48px; padding: 0; }
 .btn.sq.lg { width: 56px; }
 
-/* ---------- Panel con degradado (dato del día y bloques destacados): sin borde, color del contexto ---------- */
-.panel { --p1: rgba(70, 110, 255, 0.26); --p2: rgba(140, 96, 255, 0.16); position: relative; overflow: hidden; padding: var(--s-6) var(--s-5) var(--s-5); border-radius: var(--r-xl);
-  background: radial-gradient(110% 80% at 100% 0%, var(--p1), transparent 62%), radial-gradient(90% 70% at 0% 100%, var(--p2), transparent 64%), linear-gradient(165deg, rgba(255, 255, 255, 0.06), rgba(255, 255, 255, 0.015));
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08); }
-.panel.k-food { --p1: rgba(40, 210, 180, 0.24); --p2: rgba(70, 120, 255, 0.14); }
-.panel.k-sleep { --p1: rgba(140, 96, 255, 0.28); --p2: rgba(70, 90, 230, 0.14); }
-.panel.k-water { --p1: rgba(60, 190, 240, 0.24); --p2: rgba(70, 110, 255, 0.14); }
-.panel.k-load { --p1: rgba(255, 160, 50, 0.22); --p2: rgba(140, 96, 255, 0.14); }
-.panel.k-lime { --p1: rgba(170, 235, 80, 0.18); --p2: rgba(40, 200, 180, 0.14); }
-.panel.k-mute { --p1: rgba(255, 255, 255, 0.07); --p2: rgba(140, 96, 255, 0.1); }
 
 /* ---------- Botones: píldoras; primario azul sólido, secundario con contorno, lima solo «hecho» ---------- */
 .btn {
@@ -206,7 +194,6 @@ body.training .tabbar, body.locked .tabbar { transform: translateY(100%); opacit
 /* ---------- Cabeceras ---------- */
 .topbar { display: flex; align-items: flex-start; gap: var(--s-1); min-height: 52px; }
 .topbar .grow { display: grid; gap: var(--s-1); padding-top: var(--s-1); }
-.topbar .eyebrow { font-size: var(--fs-1); color: var(--fg-3); font-weight: var(--fw-2); letter-spacing: 0.08em; text-transform: uppercase; }
 .page-head { display: flex; align-items: center; gap: var(--s-1); min-height: 52px; }
 .avatar { position: relative; width: 40px; height: 40px; margin: 2px 0 0 var(--s-1); border-radius: 50%; overflow: hidden; flex: none; border: 1px solid var(--line-2); background: var(--surface-3); }
 .avatar::before { content: ''; position: absolute; inset: 0; background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%238B91A0' stroke-width='1.8' stroke-linecap='round'%3E%3Ccircle cx='12' cy='9' r='3.6'/%3E%3Cpath d='M5.5 19.5c1.4-3 3.8-4.4 6.5-4.4s5.1 1.4 6.5 4.4'/%3E%3C/svg%3E") center / 20px no-repeat; }
@@ -421,13 +408,6 @@ details > .in { padding: 0 0 var(--s-5); display: grid; gap: var(--s-3); }
 /* Coach: tus mensajes en burbuja neutra; las respuestas, en tarjeta */
 .msg { padding: var(--s-3) 14px; border-radius: var(--r-lg); font-size: var(--fs-3); line-height: 1.55; white-space: pre-wrap; max-width: 92%; }
 .msg.me { justify-self: end; color: var(--on-blue); background: var(--grad-primary); border-bottom-right-radius: 6px; box-shadow: var(--glow-primary); }
-.lrow.c3 { grid-template-columns: 30px 1fr 1fr; } .lrow.c2 { grid-template-columns: 30px 1fr; } .lrow.nob { border: 0; }
-.seg.full { width: 100%; }
-button.mini-alert { width: 100%; text-align: left; }
-/* Respiración guiada: un núcleo violeta que crece al inhalar */
-.breath { justify-items: center; text-align: center; }
-.breath-ring { width: 220px; height: 220px; }
-#breath-core { width: 90px; height: 90px; border-radius: 50%; background: radial-gradient(circle at 35% 30%, #DDD3FF, #7A5CF0 70%); box-shadow: 0 0 60px rgba(164, 139, 255, 0.6); transition: transform 4s cubic-bezier(0.45, 0, 0.55, 1); }
 .msg.cl { justify-self: start; color: var(--fg); background: linear-gradient(165deg, rgba(91, 140, 255, 0.12), rgba(255, 255, 255, 0.03)); border-bottom-left-radius: 6px; }
 .msg.cl.pending { color: var(--fg-3); animation: pulse 1.4s ease-in-out infinite; }
 
@@ -441,6 +421,13 @@ button.mini-alert { width: 100%; text-align: left; }
 
 /* Hoja que se vuelve a pintar (mismo contenido): sin animación de entrada */
 .scrim.still, .sheet.still { animation: none; }
+.lrow.c3 { grid-template-columns: 30px 1fr 1fr; } .lrow.c2 { grid-template-columns: 30px 1fr; } .lrow.nob { border: 0; }
+.seg.full { width: 100%; }
+button.mini-alert { width: 100%; text-align: left; }
+/* Respiración guiada: un núcleo violeta que crece al inhalar */
+.breath { justify-items: center; text-align: center; }
+.breath-ring { width: 220px; height: 220px; }
+#breath-core { width: 90px; height: 90px; border-radius: 50%; background: radial-gradient(circle at 35% 30%, #DDD3FF, #7A5CF0 70%); box-shadow: 0 0 60px rgba(164, 139, 255, 0.6); transition: transform 4s cubic-bezier(0.45, 0, 0.55, 1); }
 
 /* Esqueleto de carga: misma geometría que Hoy */
 .sk-eyebrow { width: 112px; }

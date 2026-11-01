@@ -119,6 +119,13 @@
   --grad-line: linear-gradient(90deg, rgba(255, 255, 255, 0), rgba(255, 255, 255, 0.11) 18%, rgba(255, 255, 255, 0.11) 82%, rgba(255, 255, 255, 0));
   --glow-primary: 0 10px 28px -10px rgba(74, 98, 255, 0.75);
   --glow-lime: 0 10px 28px -12px rgba(190, 242, 90, 0.6);
+  /* Tono del contexto por defecto (azul-violeta); las clases .k-* lo cambian */
+  --g1: rgba(70, 110, 255, 0.34);
+  --g2: rgba(140, 96, 255, 0.22);
+  --dot: var(--blue);
+  --tint: #CFDBFF;
+  --tone: var(--blue-ink);
+  --tone-c: var(--blue);
 
   /* ---- Espaciado (base 4) ---- */
   --s-1: 4px;
