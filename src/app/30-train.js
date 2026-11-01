@@ -60,7 +60,7 @@ function exStepFromItem(it, date, sess) {
     kind: 'ex', sess: sess || null, id: it.id, n: it.n || ex.n, slot: it.slot || null, spec: it.spec || { s: 3, r: [8, 10] }, side: !!it.side,
     rest: it.rest !== undefined ? it.rest : restFor(ex, it.spec, it.slot), mode: specMode(it.spec), sets: sg.sets, note: sg.note,
     lastDate: lp ? fmtDate(lp.date) : '', lastTxt: lp ? fmtSetsShort(lp.sets) : '', lastNote: lp && lp.notes ? lp.notes : '', lastFb: lp ? lp.fb : null,
-    pain: null, notes: '', fb: null, group: it.group || null, tags: it.tags || null, img: ex.img || it.img || null, rf: (ex.z || []).includes('rf'), inc: incFor(ex), eq: ex.eq || [], doms: !!it.doms,
+    pain: null, notes: '', fb: null, group: it.group || null, tags: it.tags || null, img: ex.img || it.img || null, rf: (ex.z || []).includes('rf'), inc: incFor(ex), eq: ex.eq || [], doms: !!it.doms, isoTrial: !!it.isoTrial,
   };
 }
 function warmStep(w) {
@@ -345,6 +345,7 @@ function trExHtml(s) {
   if (s.warmup && s.note && s.note !== presc) h += '<div class="excue">' + esc(s.note) + '</div>';
   else if (ex.cue) h += '<div class="excue">' + esc(ex.cue.length > 170 ? ex.cue.slice(0, 167).trim() + '…' : ex.cue) + '</div>';
   if (s.doms) h += note('warn', 'Hoy va en isométrica por el dolor muscular del check-in.');
+  else if (s.isoTrial) h += note('warn', 'Hoy va en isométrica: la prueba es en 2 días.');
   const molS = molForStep(s);
   if (molS && !s.warmup) h += '<div class="note pain">' + ic('warn') + '<div>Dolor ' + molS.nivelAct + '/10 en ' + esc(zoneName(molS.zona, molS.lado).toLowerCase()) + ': este ejercicio carga la zona. Mejor saltarlo hoy.<div><button class="btn sm" data-act="tr-skip">' + ic('chev') + 'Saltar este ejercicio</button></div></div></div>';
   if (s.doneAs) h += note('blue', 'Variante de hoy en lugar de ' + esc((exInfo(s.doneAs.from) || {}).n || s.doneAs.from) + '.');

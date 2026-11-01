@@ -563,11 +563,14 @@ function ballFootLabel(foot) { return { ambos: 'Ambos pies', izq: 'Zurda', der: 
 function effLevels(st) {
   return { k: Math.min(st.kick.level, st.injuryActive ? (KCAP[st.phase] || 0) : 8), s: Math.min(st.sprint.level, st.injuryActive ? (SCAP[st.phase] || 0) : 6) };
 }
-function ballEligible(d, st) {
+function ballEligible(d, st, opts) {
   if ((d.minPhase || 1) > st.phase) return false;
   const L = effLevels(st);
-  if (d.kRight && L.k < d.kRight) return false;
+  const k = opts && opts.capK ? Math.min(L.k, opts.capK) : L.k;
+  if (d.kRight && k < d.kRight) return false;
   if (d.sMin && L.s < d.sMin) return false;
+  /* Molestia en la pierna sana: hoy sin remates con ella (foot 'izq' = pierna sana en el banco) */
+  if (opts && opts.noSanaShots && d.foot === 'izq') return false;
   return true;
 }
 /* Valor de una estación registrada (formato nuevo y registros viejos) */
@@ -589,9 +592,9 @@ function ballHeaderCount(sessions, weekStart) {
 }
 function ballDose(d, ph) { return Math.max(1, Math.round((d.n0 || 6) * (BALL_DOSE_MULT[clamp(ph, 1, 6)] || 1))); }
 /* Estaciones del día: foco del día por etiquetas, minutos del día y tope de cabeceo */
-function ballPlanFor(date, st, hdrLeft) {
+function ballPlanFor(date, st, hdrLeft, opts) {
   const F = BALL_FOCUS[weekday(date)] || BALL_FOCUS[0];
-  const pool = BALL_DRILLS.filter(d => ballEligible(d, st) && (d.header !== 'alta' || hdrLeft >= 3));
+  const pool = BALL_DRILLS.filter(d => ballEligible(d, st, opts) && (d.header !== 'alta' || hdrLeft >= 3));
   const picks = [], used = new Set();
   let mins = 0;
   const tryAdd = (d) => {
@@ -688,6 +691,21 @@ function makeItem(ex, slot, spec) {
   const side = ex.lat === 'U' && !(spec && spec.min);
   return { slot: slot || null, slotName: slot ? (SLOT_NAMES[slot] || slot) : '', id: ex.id, n: ex.n, spec, side, rest: restFor(ex, spec, slot), prio: PRIO[slot] || 3, mode: specMode(spec) };
 }
+/* Isométrico en lugar de un excéntrico o pliométrico, que se pueda hacer en el lugar.
+   Devuelve el mismo ítem si no hace falta cambiarlo y null si no hay reemplazo. */
+function isoFor(it, st, ctx, note, maxSets, used) {
+  const ex = BANK_INDEX[it.id];
+  if (!ex || !['exc', 'pliom'].includes(ex.c)) return it;
+  const free = (e) => e && e.c === 'iso' && e.id !== it.id && !(used && used.has(e.id)) && exEligible(e, ctx);
+  const sw = DOMS_SWAP[it.slot];
+  let alt = sw && free(BANK_INDEX[sw[0]]) ? BANK_INDEX[sw[0]] : null;
+  if (!alt) { const mg = exMg(ex), groups = Object.keys(mg).filter(g => mg[g] >= 1); alt = (st.bank || BANK).find(e => free(e) && groups.some(g => (e.mg || {})[g] >= 1)) || null; }
+  if (!alt) return null;
+  if (used) used.add(alt.id);
+  const base = sw ? sw[2] : { s: 3, t: [20, 30] };
+  const slot = sw && (alt.s || []).includes(sw[1]) ? sw[1] : ((alt.s || []).includes(it.slot) ? it.slot : null);
+  return makeItem(alt, slot, Object.assign({}, base, { s: Math.min(maxSets || base.s, base.s), note }));
+}
 
 /* Superseries automáticas: pares de ejercicios opuestos, el descanso va tras el par */
 function autoSupersets(items) {
@@ -738,6 +756,10 @@ function makeSession(type, date, st, opts) {
       s.items.push(makeItem(ex, slot, spec));
     }
     if (UPPER_TYPES.includes(type)) { autoSupersets(s.items); capSession(s, st, 55); }
+    /* P-2 de una prueba: nada excéntrico ni pliométrico, solo isométricos */
+    if (opts.isoOnly) { const ids = new Set(s.items.map(x => x.id)); s.items = s.items.map(it => { const ni = isoFor(it, st, ctx, 'isométrica: la prueba es en 2 días', 2, ids); if (ni && ni !== it) ni.isoTrial = true; return ni; }).filter(Boolean); }
+    /* Semana de la prueba (P-4 y P-3): misma intensidad, una serie menos (los principales solo si tienen 4 o más) */
+    if (opts.taper) for (const it of s.items) if (it.spec && (it.prio >= 2 ? it.spec.s > 2 : it.spec.s >= 4)) { it.spec = Object.assign({}, it.spec, { s: it.spec.s - 1 }); it.taper = true; }
     s.short = T.short;
   }
   if (STRENGTH_TYPES.includes(type)) s.intense = true;
@@ -746,6 +768,7 @@ function makeSession(type, date, st, opts) {
   if (type === 'golpeo' || type === 'golpeoTec') {
     const tec = type === 'golpeoTec';
     let L = Math.min(st.kick.level, KCAP[ph] || 0);
+    const capPh = Math.max(1, L);
     if (tec || opts.capLight) L = Math.min(L, 3);
     if (opts.capK) L = Math.min(L, opts.capK);
     L = Math.max(1, L);
@@ -755,28 +778,37 @@ function makeSession(type, date, st, opts) {
       s.intense = L >= 4;
       if (st.kick.top && L === 8) s.notes.push('K8 completado: mantenimiento.');
       else if (L === st.kick.level) s.notes.push('Para subir: ' + Math.max(0, KICK_REQ[L] - st.kick.streak) + ' sesión(es) limpia(s): dolor ≤ 2 durante y 0 al día siguiente.');
+      else if (L < capPh) s.notes.push(opts.trialCap && opts.capK === L ? 'Semana de la prueba: repites ' + KICK[L].n + ', sin estrenar nivel.' : 'Nivel limitado hoy.');
       else if (L < st.kick.level) s.notes.push('Nivel limitado por la fase ' + PHASES[ph].n + '.');
+      if (opts.taper) { s.field.target = Math.max(5, Math.ceil(KICK_TARGET[L] * 0.6)); s.notes.push('Semana de la prueba: ' + s.field.target + ' golpeos en lugar de ' + KICK_TARGET[L] + '.'); }
     } else s.notes.push('Técnica: no cuenta para subir de nivel.');
   }
   if (type === 'sprint') {
     let L = Math.max(1, Math.min(st.sprint.level, SCAP[ph] || 1));
+    if (ph >= 5 && st.sprint.top) L = 6;
+    const capPh = L;
+    /* Los topes del día (molestia, día rebajado, semana de la prueba) van después del nivel de fase */
     if (opts.capLight) L = Math.min(L, 2);
     if (opts.capS) L = Math.min(L, opts.capS);
-    if (ph >= 5 && st.sprint.top) L = 6;
     s.level = L; s.title = 'Sprint · ' + SPRINT[L].n; s.short = 'Sprint ' + SPRINT[L].n; s.intense = L >= 3;
     s.field = { kind: 'sprint', level: L, reps: SPRINT_REPS[L], rest: 90 };
     if (L === st.sprint.level && !(st.sprint.top && L === 6)) s.notes.push('Para subir: ' + Math.max(0, SPRINT_REQ[L] - st.sprint.streak) + ' sesión(es) limpia(s).');
+    else if (L < capPh && opts.trialCap && opts.capS === L) s.notes.push('Semana de la prueba: repites ' + SPRINT[L].n + ', sin estrenar nivel.');
+    if (opts.taper) { s.field.reps = Math.max(3, Math.ceil(SPRINT_REPS[L] * 0.6)); s.notes.push('Semana de la prueba: ' + s.field.reps + ' sprints en lugar de ' + SPRINT_REPS[L] + '.'); }
   }
   if (type === 'rt') {
     const lv = RT_LEVELS[st.rt.idx];
     const [r, ser] = lv.split('x').map(Number);
-    s.level = lv; s.title = 'Circuito RT · ' + lv.replace('x', '×'); s.short = 'RT ' + lv.replace('x', '×');
-    s.field = { kind: 'rt', level: lv, reps: r, series: ser, rest: 150 };
+    const series = opts.taper ? Math.max(2, ser - 1) : ser;
+    s.level = lv; s.title = 'Circuito RT · ' + r + '×' + series; s.short = 'RT ' + r + '×' + series;
+    s.field = { kind: 'rt', level: lv, reps: r, series, rest: 150 };
     s.notes.push('Sube tras 2 sesiones al mismo nivel con RPE ≤ 7.');
+    if (series < ser) s.notes.push('Semana de la prueba: ' + series + ' series en lugar de ' + ser + '.');
   }
   if (type === 'balon') {
     const hdrLeft = opts.hdrLeft !== undefined ? opts.hdrLeft : BALL_HEADER_CAP - ballHeaderCount(st.sessions, weekStartOf(date));
-    const P = ballPlanFor(date, st, hdrLeft);
+    const P = ballPlanFor(date, st, hdrLeft, opts);
+    if (opts.taper) { let m = P.mins; const lim = Math.round(P.focus.min * 0.6) + 2; P.picks = P.picks.slice(); while (P.picks.length > 1 && m > lim) m -= P.picks.pop().min; P.mins = m; }
     const rightSoft = st.injuryActive;
     const drills = P.picks.map(d => {
       let target = ballDose(d, ph);
@@ -792,10 +824,14 @@ function makeSession(type, date, st, opts) {
     s.headersPlan = drills.filter(d => d.header === 'alta').reduce((a, d) => a + d.target, 0);
     if (s.headersPlan) s.notes.push('Cabeceo con salto: ' + s.headersPlan + ' cabezazos de fuerza alta (tope ' + BALL_HEADER_CAP + ' por semana).');
     if (rightSoft) s.notes.push('Derecha: dominio, control y pase con interior. El empeine fuerte va solo en el golpeo, según la escalera K' + (effLevels(st).k >= 7 ? '.' : '; voleas y centros con la derecha desde K7.'));
+    if (opts.noSanaShots) s.notes.push('Hoy sin remates con la ' + (st.side === 'i' ? 'derecha' : 'zurda') + ' por la molestia.');
+    if (opts.taper) s.notes.push('Semana de la prueba: balón más corto.');
     if (!drills.length) s.notes.push('Sin estaciones habilitadas en ' + PHASES[ph].n + '.');
   }
   if (type === 'juego') { s.intense = true; s.field = { kind: 'list', steps: [{ n: 'Juego reducido 4c4 o 5c5', d: '4 × 4 min con 2 min de pausa. Con remates y duelos.', min: 24 }] }; }
   if (type === 'test') {
+    /* Esfuerzo máximo de la pierna lesionada (8RM, saltos, Reverse Nordic): cuenta como intenso */
+    s.intense = true;
     s.field = { kind: 'test', steps: TEST_STEPS.filter(t => !t.minPhase || ph >= t.minPhase).map(t => Object.assign({}, t)) };
     s.notes.push('Cada resultado se guarda al escribirlo. Lo que no midas hoy se toma del último test.');
   }
@@ -903,6 +939,8 @@ function rfLoad(s) {
 function isIntenseLog(s) {
   if (!s || s.done === false || s.deleted) return false;
   if (['partido', 'prueba', 'juego'].includes(s.type)) return true;
+  /* Test de control: 8RM, saltos o Reverse Nordic son esfuerzo máximo (un test solo de palpación o estiramiento, no) */
+  if (s.type === 'test') return !Array.isArray(s.tests) || s.tests.some(k => ['ext8', 'hop1', 'hop3', 'rn'].includes(k));
   if (s.kick && Number(s.kick.level) >= 4) return true;
   if (s.spr && Number(s.spr.level) >= 3) return true;
   const ex = (s.exercises || []).filter(e => exTags(e));
@@ -933,14 +971,18 @@ function mdTypes(date, prof) {
 function templateTypes(date, st) {
   const ph = st.phase, prof = st.profile || {};
   const trials = prof.trials || [];
+  const rest = prof.restDay === undefined || prof.restDay === null ? 6 : Number(prof.restDay);
   if (trials.includes(date)) return { md: 'Prueba', types: ['prueba'], trial: true };
   if (trials.includes(addDays(date, 1))) return { md: 'P-1', types: ['activacion'] };
-  if (trials.includes(addDays(date, 2))) return { md: 'P-2', types: ['balon', 'prevencion'] };
+  if (trials.includes(addDays(date, 2))) {
+    /* Un día libre antes de la prueba: si el descanso cae en P-2 o lo ocupa la activación de P-1, P-2 es descanso */
+    if (weekday(date) === rest || weekday(addDays(date, 1)) === rest) return { md: 'P-2', types: ['descanso'] };
+    return { md: 'P-2', types: ['balon', 'prevencion'], isoOnly: true };
+  }
   if (trials.includes(addDays(date, -1))) return { md: 'P+1', types: ['recuperacion'] };
   const hasCalendar = (prof.matchDays && prof.matchDays.length) || (prof.teamDays && prof.teamDays.length);
   if (ph >= 5 && hasCalendar) return mdTypes(date, prof);
   const tpl = TEMPLATES[ph <= 4 ? ph : 'off'] || TEMPLATES.off;
-  const rest = prof.restDay === undefined || prof.restDay === null ? 6 : Number(prof.restDay);
   const idx = (weekday(date) - (rest + 1) + 14) % 7;
   let types = tpl[idx].slice();
   // F4 con sprint y golpeo completos: el sábado el sprint pasa a juego reducido
@@ -948,7 +990,7 @@ function templateTypes(date, st) {
   return { md: '', types };
 }
 function typesIntenseApprox(types, st) {
-  return types.some(t => STRENGTH_TYPES.includes(t) || ['partido', 'prueba', 'juego'].includes(t)
+  return types.some(t => STRENGTH_TYPES.includes(t) || ['partido', 'prueba', 'juego', 'test'].includes(t)
     || (t === 'golpeo' && Math.min(st.kick.level, KCAP[st.phase] || 8) >= 4)
     || (t === 'sprint' && Math.min(st.sprint.level, SCAP[st.phase] || 6) >= 3));
 }
@@ -973,10 +1015,12 @@ function buildDaySessions(d, st, sim, today, opts) {
     const o = t === 'balon' && sim.hdr !== undefined ? Object.assign({}, opts, { hdrLeft: sim.hdr }) : opts;
     const s = makeSession(t, d.date, stx, o);
     if (t === 'balon' && sim.hdr !== undefined && !(d.date === today && st.sessions.some(x => x.date === today && x.ball))) sim.hdr -= s.headersPlan || 0;
-    const projected = future && ((t === 'golpeo' && sim.kick.level !== st.kick.level) || (t === 'sprint' && sim.sprint.level !== st.sprint.level) || (t === 'rt' && sim.rt.idx !== st.rt.idx));
+    /* Previsto solo si el nivel planificado supera el actual (con tope de fase o del día, no es previsto) */
+    const projected = future && ((t === 'golpeo' && s.level > Math.min(st.kick.level, KCAP[st.phase] || 0)) || (t === 'sprint' && s.level > Math.min(st.sprint.level, SCAP[st.phase] || 0) && !(st.phase >= 5 && st.sprint.top)) || (t === 'rt' && sim.rt.idx !== st.rt.idx));
     if (projected) { s.projected = true; s.notes.unshift('Nivel previsto: se confirma si la sesión anterior sale limpia.'); }
-    if (t === 'golpeo') stepLadder(sim.kick, KICK_REQ, 8, KCAP[st.phase] || 0);
-    if (t === 'sprint') stepLadder(sim.sprint, SPRINT_REQ, 6, SCAP[st.phase] || 0);
+    /* Solo avanza la escalera prevista si la sesión es del nivel actual: una sesión con tope no cuenta para subir */
+    if (t === 'golpeo' && s.level >= sim.kick.level) stepLadder(sim.kick, KICK_REQ, 8, KCAP[st.phase] || 0);
+    if (t === 'sprint' && s.level >= sim.sprint.level) stepLadder(sim.sprint, SPRINT_REQ, 6, SCAP[st.phase] || 0);
     if (t === 'rt') { sim.rt.streak = (sim.rt.streak || 0) + 1; if (sim.rt.streak >= 2 && sim.rt.idx < RT_LEVELS.length - 1) { sim.rt.idx++; sim.rt.streak = 0; } }
     return s;
   });
@@ -1003,19 +1047,24 @@ function accelerateTypes(types, st, sim) {
 /* Reglas del día según el check-in y el dolor del día siguiente */
 function painToday(st, date) {
   const ci = (st.checkins || []).find(c => c.date === date);
-  let rest = ci ? num(ci.rfPain) || 0 : 0;
-  for (const m of activeMolestias(st, date)) if (m.zona === 'recto_femoral' && m.lado === (st.side || 'd') && m.tipo === 'dolor' && !(m.noAdjust || []).includes(date)) rest = Math.max(rest, m.nivelAct);
+  let rest = ci ? num(ci.rfPain) || 0 : 0, carried = false;
+  /* Sin check-in del día, el dolor ≥ 3 del día anterior sigue hasta confirmarlo (falla cerrada) */
+  if (!ci) { const y = (st.checkins || []).find(c => c.date === addDays(date, -1)), yp = y ? num(y.rfPain) || 0 : 0; if (yp >= 3) { rest = yp; carried = true; } }
+  for (const m of activeMolestias(st, date)) if (m.zona === 'recto_femoral' && m.lado === (st.side || 'd') && m.tipo === 'dolor' && !(m.noAdjust || []).includes(date)) { if (m.nivelAct > rest) carried = false; rest = Math.max(rest, m.nivelAct); }
   const prev = st.sessions.filter(s => s.date === addDays(date, -1) && s.done !== false).map(s => s.kick || s.spr).filter(Boolean).map(k => num(k.pn) || 0);
   const next = prev.length ? Math.max.apply(null, prev) : 0;
-  return { rest, next, ci };
+  return { rest, next, ci, carried };
 }
 function readinessTypes(types, st, date) {
   const p = painToday(st, date), notes = [];
   const worst = Math.max(p.rest, p.next);
   if (worst >= 3) {
-    const out = downgradeTypes(types.filter(t => !['golpeo', 'golpeoTec', 'sprint', 'rt', 'juego'].includes(t)));
-    notes.push('Dolor ' + worst + '/10 ' + (p.rest >= 3 ? 'en reposo' : 'al día siguiente') + ': hoy nada intenso para el recto femoral. Si no baja en 48 h, consulta.');
-    return { types: out.length ? out : ['movilidad'], notes, locked: true };
+    /* Igual que el dolor marcado en el mapa: sin cancha (tampoco balón) y nada que cargue el recto femoral */
+    const out = downgradeTypes(types.filter(t => !['golpeo', 'golpeoTec', 'sprint', 'rt', 'juego', 'balon'].includes(t)));
+    notes.push(p.carried && p.next < 3
+      ? 'Último dolor del recto femoral: ' + worst + '/10 y falta el check-in de este día: nada intenso ni cancha para el recto femoral hasta confirmarlo.'
+      : 'Dolor ' + worst + '/10 ' + (p.rest >= 3 ? 'en reposo' : 'al día siguiente') + ': hoy nada intenso ni cancha para el recto femoral. Si no baja en 48 h, consulta.');
+    return { types: out.length ? out : ['movilidad'], notes, locked: true, rfPain: worst };
   }
   // Menos de 5 h de sueño: sin cargas máximas en el gimnasio (la fuerza y la potencia bajan; el riesgo de lesión sube)
   const sl = sleepOf(st, date);
@@ -1036,11 +1085,15 @@ function adjustSessionsForState(sessions, st, date) {
     let n = 0;
     for (const s of sessions) {
       if (!['prevencion', 'fuerzaA', 'fuerzaMax', 'potencia'].includes(s.type)) continue;
+      /* El reemplazo tiene que poder hacerse en el lugar del bloque (gimnasio, cancha o casa) */
+      const ctx = { bank: st.bank, phase: st.phase, injuryActive: st.injuryActive, place: s.place, profile: st.profile, avoid: s.avoid || null };
       s.items = s.items.map(it => {
         const sw = DOMS_SWAP[it.slot]; const ex = BANK_INDEX[it.id];
         if (!sw || !ex || ex.c === 'iso') return it;
-        const alt = BANK_INDEX[sw[0]]; if (!alt) return it;
-        n++; const ni = makeItem(alt, sw[1], Object.assign({}, sw[2])); ni.doms = true; return ni;
+        const pref = BANK_INDEX[sw[0]];
+        const alt = pref && exEligible(pref, ctx) ? pref : (st.bank || BANK).find(e => e.c === 'iso' && e.id !== it.id && (e.s || []).includes(sw[1]) && exEligible(e, ctx));
+        if (!alt) return it;
+        n++; const ni = makeItem(alt, (alt.s || []).includes(sw[1]) ? sw[1] : it.slot, Object.assign({}, sw[2])); ni.doms = true; return ni;
       });
       if (n) s.est = estimateSession(s);
     }
@@ -1057,7 +1110,9 @@ function adjustSessionsForState(sessions, st, date) {
 function plural(n, a, b) { return n + ' ' + (n === 1 ? a : b); }
 
 /* ---------- Molestias (mapa del cuerpo) ---------- */
-/* Vigentes desde que se reportan hasta el día siguiente del último «¿Sigue?», salvo «Ya no» */
+/* Vigentes desde que se reportan hasta el día siguiente del último «¿Sigue?», salvo «Ya no».
+   Dolor ≥ 3 o carga ≥ 7 sin respuesta: siguen activas «sin confirmar» hasta 7 días (falla cerrada). */
+const MOL_UNCONFIRMED_DAYS = 7;
 function activeMolestias(st, date) {
   const out = [];
   for (const m of (st.molestias || [])) {
@@ -1066,8 +1121,15 @@ function activeMolestias(st, date) {
     const ups = (m.updates || []).filter(u => u.fecha <= date).sort((a, b) => (a.fecha < b.fecha ? -1 : 1));
     const last = ups.length ? ups[ups.length - 1] : null;
     const touch = last ? last.fecha : m.fecha;
-    if (diffDays(date, touch) > 1) continue;
-    out.push(Object.assign({}, m, { nivelAct: last && num(last.nivel) !== null ? num(last.nivel) : num(m.nivel) || 1, last }));
+    const nivelAct = last && num(last.nivel) !== null ? num(last.nivel) : num(m.nivel) || 1;
+    const gap = diffDays(date, touch);
+    if (gap > 1) {
+      const severe = (m.tipo === 'dolor' && nivelAct >= 3) || (m.tipo !== 'dolor' && nivelAct >= 7);
+      if (!severe || gap > MOL_UNCONFIRMED_DAYS) continue;
+      out.push(Object.assign({}, m, { nivelAct, last, sinConfirmar: true }));
+      continue;
+    }
+    out.push(Object.assign({}, m, { nivelAct, last }));
   }
   return out;
 }
@@ -1083,11 +1145,14 @@ const MOL_LEG_ZONES = MOL_SPRINT_ZONES.concat(['aductor', 'tibial']);
 function molLabel(m) { return zoneName(m.zona, m.lado) + ' (' + m.tipo + ' ' + (m.nivelAct || m.nivel) + '/10)'; }
 /* Reglas del día por molestia: qué tipos se quitan o se limitan y si lo intenso se mueve.
    Una nota por zona (los dos lados juntos) y una regla de fatiga general cuando cargan varias zonas de las piernas. */
-function molestiaDayRules(st, date) {
-  const R = { remove: [], capK: null, capS: null, avoidIntense: false, avoid: [], list: [], notes: [], fatiga: null };
-  const byZone = {};
-  for (const m of activeMolestias(st, date)) {
-    if ((m.noAdjust || []).includes(date)) continue;
+function molestiaDayRules(st, date, opts) {
+  const R = { remove: [], capK: null, capS: null, noSanaShots: false, avoidIntense: false, avoid: [], list: [], notes: [], fatiga: null };
+  const byZone = {}, injSide = st.side || 'd';
+  const mols = activeMolestias(st, date).filter(m => !(m.noAdjust || []).includes(date));
+  /* Dolor del recto femoral por check-in o al día siguiente: misma regla que si se marca en el mapa */
+  if (opts && opts.rfPain >= 3 && !mols.some(m => m.zona === 'recto_femoral' && (m.lado || injSide) === injSide && molSeverity(m) === 'dolor'))
+    mols.push({ id: 'rf-checkin', zona: 'recto_femoral', lado: injSide, tipo: 'dolor', nivel: opts.rfPain, nivelAct: opts.rfPain, synthetic: true });
+  for (const m of mols) {
     const sev = molSeverity(m); if (sev === 'ninguna') continue;
     const groups = (BODY_ZONES[m.zona] || { g: [] }).g, what = [];
     R.list.push({ m, sev, groups });
@@ -1096,7 +1161,12 @@ function molestiaDayRules(st, date) {
       else { R.remove.push('sprint'); what.push('sin sprint'); }
     }
     if (MOL_KICK_ZONES.includes(m.zona)) {
-      if (sev === 'moderada') { R.capK = Math.min(R.capK || 8, 3); what.push('golpeo hasta K3'); }
+      /* Moderada: el lado importa. Pierna lesionada → escalera K hasta K3; pierna sana → sin remates con ella en Balón */
+      const lados = m.lado ? [m.lado] : ['d', 'i'];
+      if (sev === 'moderada') {
+        if (lados.includes(injSide)) { R.capK = Math.min(R.capK || 8, 3); what.push('golpeo hasta K3'); }
+        if (lados.some(l => l !== injSide)) { R.noSanaShots = true; what.push('sin remates con la ' + (injSide === 'i' ? 'derecha' : 'zurda')); }
+      }
       else { R.remove.push('golpeo', 'juego'); what.push('sin golpeo'); }
     }
     if (sev === 'alta' || sev === 'dolor') {
@@ -1106,20 +1176,24 @@ function molestiaDayRules(st, date) {
       if (sev === 'alta') what.push('nada que cargue la zona hoy');
       else what.push('nada intenso en la zona');
     } else what.push('una serie menos e isométricos en la zona');
+    if (m.synthetic) continue; // la nota ya la da la regla del dolor del recto femoral
     const k = m.zona + '|' + sev + '|' + m.tipo;
-    const g = byZone[k] || (byZone[k] = { ids: [], lados: [], what, sev, tipo: m.tipo, zona: m.zona, nivel: 0 });
+    const g = byZone[k] || (byZone[k] = { ids: [], lados: [], what, sev, tipo: m.tipo, zona: m.zona, nivel: 0, sinConf: false });
     g.ids.push(m.id); g.lados.push(m.lado); g.nivel = Math.max(g.nivel, num(m.nivelAct) || num(m.nivel) || 1);
+    if (m.sinConfirmar) g.sinConf = true;
+    if (g.what !== what) what.forEach(w => { if (!g.what.includes(w)) g.what.push(w); });
   }
   for (const g of Object.values(byZone)) {
     const both = g.lados.includes('d') && g.lados.includes('i');
     const label = both ? zoneName(g.zona) + ' (ambos lados)' : zoneName(g.zona, g.lados[0]);
-    let txt = 'Molestia en ' + label + ' (' + g.tipo + ' ' + g.nivel + '/10): ' + g.what.join(', ') + '.';
+    let txt = 'Molestia en ' + label + ' (' + g.tipo + ' ' + g.nivel + '/10' + (g.sinConf ? ', sin confirmar' : '') + '): ' + g.what.join(', ') + '.';
+    if (g.sinConf) txt += ' Responde «¿Sigue?» para actualizar el plan.';
     if (g.sev === 'dolor' && g.zona === 'isquio') txt += ' Si apareció de golpe al esprintar o rematar, para y consulta.';
     if (g.sev === 'dolor' && g.zona === 'recto_femoral') txt += ' Rige la regla del recto femoral.';
     R.notes.push({ id: g.ids[0], ids: g.ids, text: txt, sev: g.sev, tipo: g.tipo, label });
   }
   // Fatiga general en piernas: 3 o más zonas, o 2 zonas en ambos lados
-  const legs = R.list.filter(x => MOL_LEG_ZONES.includes(x.m.zona));
+  const legs = R.list.filter(x => MOL_LEG_ZONES.includes(x.m.zona) && !x.m.synthetic);
   const keys = new Set(legs.map(x => x.m.zona + ':' + x.m.lado));
   const bilat = new Set(legs.map(x => x.m.zona).filter(z => keys.has(z + ':d') && keys.has(z + ':i')));
   if (keys.size >= 3 || bilat.size >= 2) {
@@ -1229,86 +1303,159 @@ function projectedPhaseOn(st, date, today) {
   for (const k of [3, 4, 5]) if (k > p && proj.phases[k] && proj.phases[k] <= date) p = k;
   return p;
 }
+/* Motivo para no hacer el test de control ese día (null si se puede): necesita la pierna fresca y sin dolor */
+function testBlockReason(st, date, ctx) {
+  const p = painToday(st, date);
+  if (Math.max(p.rest, p.next) >= 3) return 'dolor del recto femoral';
+  if (ctx && ctx.downgraded) return 'día con carga reducida';
+  if (ctx && ctx.prevIntense) return 'el día anterior fue intenso';
+  const sl = sleepOf(st, date); if (sl && sl.h !== null && sl.h < 6) return 'dormiste poco';
+  const sc = p.ci ? readinessScore(p.ci) : null; if (sc !== null && sc < 50) return 'estado bajo';
+  if (activeMolestias(st, date).some(m => !(m.noAdjust || []).includes(date) && MOL_LEG_ZONES.includes(m.zona) && molSeverity(m) !== 'ninguna')) return 'molestia en las piernas';
+  return null;
+}
+/* Días a congelar cuando se registra algo en `date`: ese día y, si su sesión intensa se movió, el día que la recibe.
+   El receptor queda como «auto»: se recalcula con las reglas de su día (dolor, molestias, intensidad), pero no se pierde. */
+function freezeTargets(week, date, plan) {
+  plan = plan || {};
+  const out = {}, d = (week || []).find(x => x.date === date);
+  if (!d) return out;
+  if (!plan[date] || plan[date].auto) out[date] = Object.assign({ types: d.types.slice() }, d.swapTo ? { swapTo: d.swapTo } : {});
+  if (d.swapTo && d.moved && (!plan[d.swapTo] || plan[d.swapTo].auto)) out[d.swapTo] = { types: d.moved.slice(), auto: true, from: date };
+  return out;
+}
 function buildWeekCore(st, weekStart, today, carry) {
   const plan = (st.settings && st.settings.plan) || {};
+  const trials = (st.profile && st.profile.trials) || [];
+  /* Días hasta la próxima prueba (0 = el día de la prueba) */
+  const toTrial = (date) => { let k = null; for (const t of trials) { const x = diffDays(t, date); if (x >= 0 && (k === null || x < k)) k = x; } return k; };
+  const nearTrial = (date, n) => { const k = toTrial(date); return k !== null && k <= n; };
+  const afterTrial = (date) => trials.includes(addDays(date, -1));
+  const tomorrow = addDays(today, 1);
   const days = [];
   for (let i = 0; i < 7; i++) {
     const date = addDays(weekStart, i);
-    const ov = plan[date];
     const ph = projectedPhaseOn(st, date, today);
     const sD = ph === st.phase ? st : Object.assign({}, st, { phase: ph, projectedPhase: true });
-    const tt = ov && Array.isArray(ov.types) ? { md: '', types: ov.types.slice() } : templateTypes(date, sD);
+    const tpl = templateTypes(date, sD);
+    let ov = plan[date];
+    /* Un receptor automático nunca tapa una prueba ni sus días previos */
+    if (ov && ov.auto && /^P/.test(tpl.md || '')) ov = null;
+    const auto = !!(ov && ov.auto);
+    const tt = ov && Array.isArray(ov.types) ? { md: '', types: ov.types.slice() } : tpl;
     const notes = [];
     if (ph !== st.phase && date > today && projectedPhaseOn(st, addDays(date, -1), today) !== ph) notes.push('Previsto: ' + PHASES[ph].n + ' · ' + PHASES[ph].t + ' desde hoy si se cumplen los criterios.');
-    days.push({ date, md: tt.md || '', types: tt.types.slice(), override: !!ov, trial: !!tt.trial, notes, st: sD, phase: ph });
+    if (ov && date >= today && ov.auto && ov.from) notes.push('Recibe la sesión intensa del ' + DOW_LONG[weekday(ov.from)] + '.');
+    if (ov && date >= today && !ov.auto && ov.swapTo) notes.push('Lo intenso pasa al ' + DOW_LONG[weekday(ov.swapTo)] + '.');
+    days.push({ date, md: tt.md || '', types: tt.types.slice(), override: !!ov && !auto, auto, trial: !!tt.trial, isoOnly: !!tt.isoOnly, notes, st: sD, phase: ph });
   }
   if (st.phase >= 5 && days.some(d => d.md && d.md.startsWith('MD')) && !days.some(d => d.types.includes('fuerzaMax'))) {
     const d2 = days.find(d => d.md === 'MD-2' && !d.override);
     if (d2) d2.types = d2.types.map(t => (t === 'prevencion' ? 'fuerzaCorta' : t));
   }
+  /* Test de control semanal: un día de fuerza, nunca a 3 días o menos de una prueba ni el día después */
   let lastTest = carry && carry.lastTest ? carry.lastTest : st.lastTestDate;
+  const lastTestPrev = lastTest;
+  let testsDone = 0;
+  const testOkDay = (date) => !nearTrial(date, 3) && !afterTrial(date);
   if (st.phase >= 2 && st.injury) {
     const weekEnd = addDays(weekStart, 6);
     const doneTests = st.sessions.filter(s => s.type === 'test' && s.date >= weekStart && s.date <= weekEnd && s.done !== false).map(s => s.date).sort();
+    testsDone = doneTests.length;
     if (doneTests.length) { if (!lastTest || doneTests[doneTests.length - 1] > lastTest) lastTest = doneTests[doneTests.length - 1]; }
-    else {
-      const sd = days.find(d => d.date >= today && !d.override && !d.types.includes('test') && d.types.some(t => t === 'fuerzaA' || t === 'fuerzaMax')
+    else if (!days.some(d => d.date >= today && d.types.includes('test'))) {
+      const sd = days.find(d => d.date >= today && !d.override && d.types.some(t => t === 'fuerzaA' || t === 'fuerzaMax') && testOkDay(d.date)
         && (!lastTest || diffDays(d.date, lastTest) >= (d.phase >= 5 ? 28 : 7)));
       if (sd) { sd.types.unshift('test'); lastTest = sd.date; }
     }
   }
+  /* Semana de la prueba: sin estrenar niveles (tope = el mejor nivel ya hecho limpio) */
+  const bestClean = (type, f) => { let b = 0; for (const s of st.sessions) if (s.type === type && s.done !== false && s[f] && outcome(s[f].pd, s[f].pn, s[f].partial) === 'clean') b = Math.max(b, Number(s[f].level) || 0); return Math.max(1, b); };
+  const trialK = trials.length ? bestClean('golpeo', 'kick') : 8, trialS = trials.length ? bestClean('sprint', 'spr') : 6;
   const realIntense = (date) => st.sessions.some(s => s.date === date && isIntenseLog(s));
   const doneOn = (date) => st.sessions.some(s => s.date === date && s.done !== false);
   let prevIntense = carry ? carry.lastIntense : realIntense(addDays(weekStart, -1));
-  let count = 0;
+  let count = 0, testCarry = null;
   const sim = carry ? cloneSim(carry.sim) : { kick: Object.assign({}, st.kick), sprint: Object.assign({}, st.sprint), rt: Object.assign({}, st.rt) };
   sim.hdr = BALL_HEADER_CAP - ballHeaderCount(st.sessions, weekStart);
   const out = [];
   for (let i = 0; i < 7; i++) {
     const d = days[i];
     const past = d.date < today;
-    let sessions, intense;
+    let sessions, intense, rLocked = false;
     const sD = d.st;
     if (past) {
       sessions = d.types.map(t => makeSession(t, d.date, sD));
       intense = realIntense(d.date);
     } else {
-      let rLocked = false;
-      if (!d.override) {
-        if (d.date === today) { const r = readinessTypes(d.types, st, d.date); d.types = r.types; d.notes.push(...r.notes); rLocked = r.locked; }
-        if (!rLocked) { const a = accelerateTypes(d.types, sD, sim); d.types = a.types; d.notes.push(...a.notes); }
+      /* Test pospuesto: va al próximo día de fuerza apto de la semana */
+      if (testCarry && !d.override && !d.types.includes('test') && d.types.some(t => t === 'fuerzaA' || t === 'fuerzaMax') && testOkDay(d.date)) { d.types.unshift('test'); d.testIn = testCarry; testCarry = null; }
+      d.baseTypes = d.types.slice();
+      const near = d.date === today || d.date === tomorrow;
+      let rfPain = 0;
+      /* Dolor y sueño mandan siempre, también sobre un día cambiado a mano */
+      if (near) {
+        const before = d.types.join();
+        const r = readinessTypes(d.types, st, d.date);
+        d.types = r.types; d.notes.push(...r.notes); rLocked = r.locked; rfPain = r.rfPain || 0;
+        if (d.override && before !== d.types.join()) d.notes.push('Tu cambio de este día se ajusta por esto.');
       }
-      const molR = (d.date === today || d.date === addDays(today, 1)) ? molestiaDayRules(st, d.date) : null;
+      if (!d.override && !rLocked) { const a = accelerateTypes(d.types, sD, sim); d.types = a.types; d.notes.push(...a.notes); }
+      const molR = near ? molestiaDayRules(st, d.date, rfPain >= 3 ? { rfPain } : null) : null;
+      const molFilter = (types) => { if (!molR || !molR.list.length) return types; const kept = types.filter(t => !molR.remove.includes(t)); return kept.length ? kept : ['movilidad']; };
       if (molR && molR.list.length) {
-        const kept = d.types.filter(t => !molR.remove.includes(t));
-        d.types = kept.length ? kept : ['movilidad'];
-        d.molOpts = { capK: molR.capK, capS: molR.capS, avoid: molR.avoid.length ? molR.avoid : null };
+        d.types = molFilter(d.types);
+        d.molOpts = { capK: molR.capK, capS: molR.capS, avoid: molR.avoid.length ? molR.avoid : null, noSanaShots: molR.noSanaShots || null };
         d.molAdj = molR.notes;
         d.notes.push(...molR.notes.map(x => x.text));
       }
+      /* Semana de la prueba: sin estrenar nivel a ≤ 5 días; P-4 y P-3 con ~40 % menos volumen; P-2 solo isométricos */
+      const k = toTrial(d.date);
+      if (k !== null && k >= 1 && k <= 5) {
+        const o = d.molOpts || (d.molOpts = {});
+        o.capK = Math.min(o.capK || 8, trialK); o.capS = Math.min(o.capS || 6, trialS); o.trialCap = true;
+        if (k === 3 || k === 4) { o.taper = true; d.notes.push('Semana de la prueba: mismo nivel y ~40 % menos volumen.'); }
+      }
+      if (d.isoOnly) (d.molOpts || (d.molOpts = {})).isoOnly = true;
       const snap = cloneSim(sim);
       sessions = buildDaySessions(d, sD, sim, today);
       intense = sessions.some(s => s.intense);
       const locked = rLocked || d.override || d.types.some(t => FIXED_TYPES.includes(t)) || (d.date === today && doneOn(today));
       const molMove = !!(molR && molR.avoidIntense) && sessions.some(s => s.intense);
+      let downgraded = false;
       if (intense && (prevIntense || count >= 3 || molMove) && !locked) {
         const why = molMove ? 'molestia en ' + molR.list.filter(x => x.sev === 'alta' || x.sev === 'dolor').map(x => zoneName(x.m.zona, x.m.lado)).join(', ') : prevIntense ? 'el día anterior fue intenso' : 'ya hay 3 días intensos esta semana';
         const nx = days[i + 1];
         let fixed = false;
-        if (nx && !nx.override && !nx.types.includes('descanso') && !nx.types.some(t => FIXED_TYPES.includes(t)) && !typesIntenseApprox(nx.types, sD)) {
-          const a = d.types; d.types = nx.types; nx.types = a;
+        /* Nunca a la prueba, a sus dos días previos ni al día siguiente */
+        if (nx && !nx.override && !nearTrial(nx.date, 2) && !afterTrial(nx.date) && !nx.types.includes('descanso') && !nx.types.some(t => FIXED_TYPES.includes(t)) && !typesIntenseApprox(nx.types, sD)) {
+          const a = d.types, nxOrig = nx.types, base = d.baseTypes;
+          d.types = molFilter(nxOrig); nx.types = a;
           restoreSim(sim, snap);
           sessions = buildDaySessions(d, sD, sim, today);
-          if (!sessions.some(s => s.intense)) { fixed = true; d.notes.push('Ajustado: ' + why + '. Lo intenso pasa al ' + DOW_LONG[weekday(nx.date)] + '.'); nx.notes.push('Recibe la sesión intensa del ' + DOW_LONG[weekday(d.date)] + '.'); }
-          else { const b = d.types; d.types = nx.types; nx.types = b; }
+          if (!sessions.some(s => s.intense)) {
+            fixed = true; d.swapTo = nx.date; d.moved = base.slice(); nx.swapFrom = d.date;
+            d.notes.push('Ajustado: ' + why + '. Lo intenso pasa al ' + DOW_LONG[weekday(nx.date)] + '.'); nx.notes.push('Recibe la sesión intensa del ' + DOW_LONG[weekday(d.date)] + '.');
+          } else { d.types = a; nx.types = nxOrig; }
         }
         if (!fixed) {
           restoreSim(sim, snap);
-          d.types = downgradeTypes(d.types);
+          d.types = molFilter(downgradeTypes(d.types));
           sessions = buildDaySessions(d, sD, sim, today, { capLight: true });
           d.notes.push('Carga reducida: ' + why + '.');
+          downgraded = true;
         }
         intense = sessions.some(s => s.intense);
+      }
+      /* El test de control necesita la pierna fresca y sin dolor: si no, pasa al próximo día de fuerza apto */
+      if (d.types.includes('test')) {
+        const why = testBlockReason(st, d.date, { prevIntense, downgraded });
+        if (why) {
+          d.types = d.types.filter(t => t !== 'test'); sessions = sessions.filter(s => s.type !== 'test');
+          if (!d.types.length) { d.types = ['movilidad']; sessions = [makeSession('movilidad', d.date, sD, d.molOpts || {})]; }
+          testCarry = why; d.notes.push('Test de control pospuesto: ' + why + '.');
+          intense = sessions.some(s => s.intense);
+        } else if (d.testIn) d.notes.push('Recibe el test de control pospuesto (' + d.testIn + ').');
       }
       if (d.date === today && realIntense(today)) intense = true;
       if (d.date === today) d.notes.push(...adjustSessionsForState(sessions, st, today));
@@ -1317,9 +1464,12 @@ function buildWeekCore(st, weekStart, today, carry) {
     d.notes.push(...trimFieldForBudget(sessions));
     if (intense) count++;
     prevIntense = intense;
-    out.push({ date: d.date, md: d.md, sessions, intense, notes: d.notes, override: d.override, past, trial: d.trial, types: d.types.slice(), phase: d.phase, projectedPhase: !past && d.phase !== st.phase, molAdj: d.molAdj || null });
+    out.push({ date: d.date, md: d.md, sessions, intense, notes: d.notes, override: d.override, auto: !!d.auto, past, trial: d.trial, types: d.types.slice(), phase: d.phase, projectedPhase: !past && d.phase !== st.phase, molAdj: d.molAdj || null,
+      swapTo: d.swapTo || null, swapFrom: d.swapFrom || null, moved: d.moved || null, rLock: rLocked });
   }
   if (addDays(weekStart, 6) >= today) fillGaps(out, st, today);
+  /* Si el test programado no quedó en ningún día, el próximo vuelve a contar desde el último hecho */
+  if (!testsDone && lastTest !== lastTestPrev && !out.some(x => x.date >= today && x.types.includes('test'))) lastTest = lastTestPrev;
   out.carry = { sim: cloneSim(sim), lastIntense: prevIntense, lastTest };
   return out;
 }
@@ -1465,8 +1615,11 @@ function fillGaps(days, st, today) {
   const gaps = groupGaps(led, st.phase).filter(x => x.need >= 1.5).sort((a, b) => b.need - a.need);
   if (!gaps.length) return;
   const hosts = [];
+  /* Sin rellenos con dolor del recto femoral ni de P-4 al día después de una prueba (afinamiento) */
+  const trials = (st.profile && st.profile.trials) || [];
+  const quiet = (date) => trials.some(t => { const x = diffDays(t, date); return x >= -1 && x <= 4; });
   for (const d of days) {
-    if (d.date < today || (d.notes || []).some(n => /^Dolor/.test(n))) continue;
+    if (d.date < today || d.rLock || quiet(d.date)) continue;
     for (const s of d.sessions) if (GYM_TYPES.includes(s.type) && !['movilidad', 'recuperacion', 'activacion'].includes(s.type) && !st.sessions.some(x => x.date === d.date && x.type === s.type)) hosts.push({ d, s });
   }
   for (const gp of gaps) {
@@ -1642,6 +1795,9 @@ function dayKind(day, prof) {
   const trials = (prof && prof.trials) || [];
   if (types.includes('partido') || types.includes('prueba') || day.trial) return 'prueba';
   if (trials.includes(addDays(day.date, 1)) || day.md === 'MD-1') return 'prueba';
+  /* Dos días antes de una prueba (aunque sea descanso) y el día después: carbohidratos al menos de carga media
+     (llegar con el glucógeno lleno; tras un partido tarda más de 48 h en reponerse) */
+  if (trials.includes(addDays(day.date, 2)) || trials.includes(addDays(day.date, -1))) return day.intense ? 'alto' : 'moderado';
   if (!types.length || types.every(t => t === 'descanso')) return 'descanso';
   if (day.intense) return 'alto';
   if (types.every(t => ['movilidad', 'recuperacion', 'descanso', 'prevencion', 'superior', 'superiorA', 'superiorB', 'activacion'].includes(t))) return 'bajo';
@@ -1670,7 +1826,10 @@ function deriveState(data, today) {
   const custom = (data.customExercises || []);
   const bank = BANK.concat(custom);
   const recentPain = sessions.some(s => s.date >= addDays(today, -13) && ['kick', 'spr'].some(f => s[f] && ((num(s[f].pd) || 0) >= 3 || (num(s[f].pn) || 0) >= 3)))
-    || (data.checkins || []).some(c => c.date >= addDays(today, -13) && (num(c.rfPain) || 0) >= 3);
+    || (data.checkins || []).some(c => c.date >= addDays(today, -13) && (num(c.rfPain) || 0) >= 3)
+    /* También el dolor ≥ 3 marcado en el mapa (al reportarlo o en un «¿Sigue?») en el recto femoral lesionado */
+    || (data.molestias || []).some(m => m && !m.deleted && m.zona === 'recto_femoral' && (m.lado || side) === side && m.tipo === 'dolor'
+      && [{ fecha: m.fecha, nivel: m.nivel }].concat(m.updates || []).some(u => u && u.fecha >= addDays(today, -13) && u.fecha <= today && (num(u.nivel) || 0) >= 3));
   const phaseSince = injury && injury.phaseLog && injury.phaseLog.length ? injury.phaseLog[injury.phaseLog.length - 1].date : null;
   const checkins = (data.checkins || []).slice().sort(byDate);
   const molestias = (data.molestias || []).filter(m => m && !m.deleted).slice().sort(byDate);

@@ -35,11 +35,17 @@ const baseTypes = base.day.sessions.map(s => s.type);
 }
 // 2) Cargado 1-3: sin cambios
 { const p = plan([mol({ zona: 'aductor', lado: 'i', tipo: 'cargado', nivel: 2 })], B); ok(JSON.stringify(p.day.sessions.map(s => s.type)) === JSON.stringify(baseTypes) && !(p.day.molAdj || []).length, 'cargado 2 cambió el plan'); }
-// 3) Cargado 4-6 en aductor: golpeo ≤ K3 y −1 serie en lo que trabaja el aductor
+// 3) Cargado 4-6 en aductor: el lado importa (v4.1). Lado lesionado (derecho) → golpeo ≤ K3; lado sano → golpeo igual y sin remates
+//    con la zurda en Balón. En los dos, −1 serie en lo que trabaja el aductor.
 {
+  const pr = plan([mol({ zona: 'aductor', lado: 'd', tipo: 'cargado', nivel: 5 })], B);
+  const gr = pr.day.sessions.find(s => s.type === 'golpeo'), gb = base.day.sessions.find(s => s.type === 'golpeo');
+  if (baseTypes.includes('golpeo')) ok(gr && gr.level <= 3, 'aductor derecho 5: golpeo K' + (gr && gr.level));
   const p = plan([mol({ zona: 'aductor', lado: 'i', tipo: 'cargado', nivel: 5 })], B);
   const g = p.day.sessions.find(s => s.type === 'golpeo');
-  if (baseTypes.includes('golpeo')) ok(g && g.level <= 3, 'aductor 5: golpeo K' + (g && g.level));
+  if (baseTypes.includes('golpeo')) ok(g && gb && g.level === gb.level, 'aductor izquierdo 5: cambió el golpeo derecho a K' + (g && g.level));
+  const zurda = p.day.sessions.filter(s => s.type === 'balon').flatMap(s => s.field.drills).filter(x => x.foot === 'izq');
+  ok(!zurda.length, 'aductor izquierdo 5: quedan remates con la zurda');
   const bs = base.day.sessions.flatMap(s => loads(s, ['aductores'])), ms = p.day.sessions.flatMap(s => loads(s, ['aductores']));
   bs.forEach(b => { const m = ms.find(x => x.id === b.id); if (m && b.spec && b.spec.s > 1) ok(m.spec.s === b.spec.s - 1, 'aductor 5: ' + b.id + ' sin −1 serie'); });
   ok((p.day.molAdj || []).length === 1, 'aductor 5: sin nota de ajuste');

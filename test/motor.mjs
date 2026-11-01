@@ -1,0 +1,261 @@
+// Motor v4.1: reglas de seguridad, sesiones movidas y semana de la prueba. Sin navegador ni fixture externo.
+// node test/motor.mjs
+import { createRequire } from 'node:module';
+import fs from 'node:fs';
+import path from 'node:path';
+const require = createRequire(import.meta.url);
+const { loadEngine } = require('./engine-run.js');
+const ROOT = path.join(path.dirname(new URL(import.meta.url).pathname), '..', 'src', 'app');
+const E = loadEngine(fs.readdirSync(ROOT).filter(f => /^0\d-/.test(f)).sort());
+const G = E.get;
+const BANK_INDEX = G('BANK_INDEX'), exMg = G('exMg'), isIntenseLog = G('isIntenseLog'), SPRINT_REPS = G('SPRINT_REPS'), KICK_TARGET = G('KICK_TARGET');
+const freezeTargets = (() => { try { return G('freezeTargets'); } catch (e) { return null; } })();
+const fails = [], ok = (c, m) => { if (!c) fails.push(m); };
+const clone = (o) => JSON.parse(JSON.stringify(o));
+const addDays = E.addDays;
+
+/* ---------- Datos sintéticos: RF derecho en F3, K5 0/2, S3, prueba el lunes 16 nov ---------- */
+function fixture() {
+  const sessions = [];
+  let n = 0;
+  const S = (o) => sessions.push(Object.assign({ id: 'f-' + (++n), done: true, source: 'entreno', createdAt: 1700000000000 + n }, o));
+  const ex = (id, slot, sets, side) => ({ id, slot, sets: Array.from({ length: sets * (side ? 2 : 1) }, (_, i) => ({ side: side ? (i % 2 ? 'i' : 'd') : undefined, kg: 20, reps: 8, done: true })), fb: 'justo', pain: 0 });
+  [['2026-10-14', 1], ['2026-10-16', 2], ['2026-10-20', 3], ['2026-10-23', 3], ['2026-10-27', 4]].forEach(([date, level]) => S({ date, type: 'golpeo', kick: { level, pd: 0, pn: 0 }, minutes: 25, rpe: 5 }));
+  [['2026-10-15', 1], ['2026-10-22', 2], ['2026-10-28', 1]].forEach(([date, level]) => S({ date, type: 'sprint', spr: { level, pd: 0, pn: 0 }, minutes: 20, rpe: 6 }));
+  ['2026-10-20', '2026-10-24', '2026-10-27', '2026-10-31'].forEach(date => S({ date, type: 'fuerzaA', minutes: 70, est: 60, rpe: 7, exercises: [
+    ex('iso_rf_zancada', 'rf_iso_largo', 4, true), ex('rev_nordic_asist', 'rf_exc', 3), ex('ext_uni_exc', 'ext_uni', 4, true), ex('bulgara_rf_atras', 'uni_sent', 3, true), ex('nordic', 'isquio_exc', 3), ex('copenhagen', 'aductor', 3, true)] }));
+  return {
+    profile: { weight: 88, height: 196, restDay: 6, trials: ['2026-11-16'], matchDays: [], teamDays: [], schedule: {} },
+    settings: { plan: {}, choices: {} },
+    weights: [{ id: 'w-1', date: '2026-10-25', kg: 88 }],
+    injuries: [{ id: 'inj-1', date: '2026-09-02', status: 'activa', side: 'd', phase: 3, kickStart: 1, sprintStart: 1,
+      phaseLog: [{ phase: 1, date: '2026-09-02' }, { phase: 2, date: '2026-09-20' }, { phase: 3, date: '2026-10-14' }] }],
+    tests: [{ id: 't-1', date: '2026-10-25', ext8: { d: 40, i: 43 }, hop1: { d: 150, i: 162 }, hop3: { d: 480, i: 520 }, stretch: { d: 3, i: 1 }, rn: 'completo', rnPain: 0, palp: 0 }],
+    checkins: [], sessions, molestias: [],
+  };
+}
+const BASE = fixture();
+function plan(today, patch) {
+  const d = clone(BASE); patch = patch || {};
+  if (patch.injury) Object.assign(d.injuries[0], patch.injury);
+  if (patch.profile) Object.assign(d.profile, patch.profile);
+  if (patch.sessions) d.sessions = d.sessions.concat(patch.sessions);
+  if (patch.checkins) d.checkins = d.checkins.concat(patch.checkins);
+  if (patch.molestias) d.molestias = patch.molestias;
+  if (patch.plan) d.settings.plan = patch.plan;
+  const st = E.deriveState({ profile: d.profile, settings: d.settings, weights: d.weights, injuries: d.injuries, tests: d.tests, checkins: d.checkins, sessions: d.sessions, agenda: patch.agenda || [], molestias: d.molestias, customExercises: [] }, today);
+  const ws = E.weekStartOf(today);
+  const week = E.buildWeek(st, ws, today).concat(E.buildWeek(st, addDays(ws, 7), today));
+  return { st, week, day: (dt) => week.find(x => x.date === dt) };
+}
+const types = (day) => day.sessions.map(s => s.type);
+const desc = (day) => day ? day.sessions.map(s => s.type + (s.level ? '(' + s.level + ')' : '')).join('+') + (day.intense ? ' [INT]' : '') : '—';
+const ses = (day, t) => day.sessions.find(s => s.type === t) || null;
+const ci = (date, o) => Object.assign({ id: date, date, sleepH: 9, sleepQ: 4, fatigue: 4, soreness: 4, stress: 4, rfPain: 0 }, o);
+let molN = 0;
+const mol = (o) => Object.assign({ id: 'mol-' + (++molN), hora: '10:00', resuelta: false, updates: [] }, o);
+const match = (date) => ({ id: 'match-' + date, date, type: 'partido', done: true, minutes: 90, rpe: 8 });
+const s6 = [{ id: 's6a', date: '2026-10-21', type: 'sprint', done: true, spr: { level: 6, pd: 0, pn: 0 } }, { id: 's6b', date: '2026-10-23', type: 'sprint', done: true, spr: { level: 6, pd: 0, pn: 0 } }];
+const MON = '2026-11-02', TUE = '2026-11-03', WED = '2026-11-04', THU = '2026-11-05', SAT = '2026-11-07';
+const rfItems = (day) => day.sessions.flatMap(s => s.items || []).filter(it => (exMg(BANK_INDEX[it.id]) || {}).recto_femoral >= 1);
+const hasRF = (day) => rfItems(day).length > 0;
+
+/* ---------- E1 · Lo movido aparece al día siguiente ---------- */
+{
+  const p1 = plan(TUE, { sessions: [match(MON)] });
+  const d = p1.day(TUE);
+  ok(d.swapTo === WED, 'E1: el martes tras partido no mueve lo intenso al miércoles (' + desc(d) + ')');
+  ok(typeof freezeTargets === 'function', 'E1: falta freezeTargets en el motor');
+  if (freezeTargets) {
+    const F = freezeTargets(p1.week, TUE, {});
+    ok(F[TUE] && F[WED], 'E1: no congela el día receptor');
+    ok(F[WED] && F[WED].auto && F[WED].types.includes('fuerzaA'), 'E1: el receptor no lleva la Fuerza A movida');
+    const logs = d.sessions.filter(s => s.type !== 'descanso').map(s => ({ id: 'l-' + s.type, date: TUE, type: s.type, done: true, minutes: s.est, rpe: 5 }));
+    const p2 = plan(WED, { sessions: [match(MON)].concat(logs), plan: F });
+    const w = p2.day(WED);
+    ok(w.sessions.some(s => s.type === 'fuerzaA') && w.sessions.some(s => s.type === 'golpeo') && w.intense, 'E1: el miércoles no aparece lo movido: ' + desc(w));
+    ok(!w.override, 'E1: el día receptor queda bloqueado como cambio manual');
+    // Con molestia el martes, resuelta el miércoles
+    const mq = mol({ fecha: TUE, zona: 'cuadriceps', lado: 'd', tipo: 'cargado', nivel: 8 });
+    const q1 = plan(TUE, { molestias: [mq] });
+    const Fq = freezeTargets(q1.week, TUE, {});
+    ok(Fq[WED] && Fq[WED].types.includes('fuerzaA'), 'E1: con molestia, el receptor no lleva la sesión movida');
+    const mq2 = Object.assign(clone(mq), { resuelta: true, resueltaEn: WED, updates: [{ fecha: WED, estado: 'ya_no' }] });
+    const q2 = plan(WED, { molestias: [mq2], plan: Fq, sessions: q1.day(TUE).sessions.filter(s => s.type !== 'descanso').map(s => ({ id: 'q-' + s.type, date: TUE, type: s.type, done: true, minutes: s.est, rpe: 5 })) });
+    ok(q2.day(WED).sessions.some(s => s.type === 'fuerzaA'), 'E1: molestia resuelta y el miércoles sin lo movido: ' + desc(q2.day(WED)));
+  }
+}
+
+/* ---------- E3 · Dolor y sueño también en días modificados ---------- */
+{
+  const pl = {}; pl[TUE] = { types: ['fuerzaA', 'sprint', 'golpeo'] };
+  const r = plan(TUE, { plan: pl, checkins: [ci(TUE, { rfPain: 4 })] }).day(TUE);
+  ok(!types(r).some(t => ['sprint', 'golpeo', 'fuerzaA'].includes(t)) && !r.intense, 'E3: día modificado con dolor RF 4 sigue intenso: ' + desc(r));
+  ok(r.notes.some(n => /Dolor 4\/10/.test(n)), 'E3: sin nota de dolor en el día modificado');
+  const s = plan(TUE, { plan: pl, checkins: [ci(TUE, { sleepH: 4.5, bedTime: '02:00', wakeTime: '06:30' })] }).day(TUE);
+  ok(!types(s).includes('fuerzaA'), 'E3: día modificado con 4,5 h de sueño mantiene Fuerza A: ' + desc(s));
+}
+
+/* ---------- E4 · El test se pospone y cuenta como intenso ---------- */
+{
+  const base = plan(TUE).day(TUE);
+  ok(types(base).includes('test'), 'E4: la línea base no tiene test el martes (' + desc(base) + ')');
+  const cases = [
+    ['dolor RF 4 (check-in)', { checkins: [ci(TUE, { rfPain: 4 })] }],
+    ['dolor RF 4 (mapa)', { molestias: [mol({ fecha: TUE, zona: 'recto_femoral', lado: 'd', tipo: 'dolor', nivel: 4 })] }],
+    ['RF cargado 8 activo', { molestias: [mol({ fecha: MON, zona: 'recto_femoral', lado: 'd', tipo: 'cargado', nivel: 8, updates: [{ fecha: TUE, estado: 'igual', nivel: 8 }] })] }],
+    ['4,5 h de sueño', { checkins: [ci(TUE, { sleepH: 4.5, bedTime: '02:00', wakeTime: '06:30' })] }],
+    ['sin check-in tras dolor 4 ayer', { checkins: [ci(MON, { rfPain: 4 })] }],
+    ['partido ayer', { sessions: [match(MON)], plan: { [WED]: { types: ['partido'] } } }],
+  ];
+  for (const [label, patch] of cases) {
+    const p = plan(TUE, patch), d = p.day(TUE);
+    ok(!types(d).includes('test'), 'E4: test con ' + label + ': ' + desc(d));
+  }
+  // Pospuesto: aparece más adelante en la semana
+  const p = plan(TUE, { checkins: [ci(TUE, { rfPain: 4 })] });
+  const later = p.week.filter(x => x.date > TUE && x.date <= addDays(E.weekStartOf(TUE), 6) && types(x).includes('test'));
+  ok(later.length === 1, 'E4: el test pospuesto no aparece una vez más adelante (' + later.map(x => x.date).join(',') + ')');
+  ok(isIntenseLog({ type: 'test', date: TUE, done: true, tests: ['ext8', 'hop1'] }), 'E4: el test no cuenta como intenso');
+  ok(!isIntenseLog({ type: 'test', date: TUE, done: true, tests: ['palp'] }), 'E4: un test solo de palpación cuenta como intenso');
+  // Un solo test por semana aunque haya un día modificado con test
+  const pl = {}; pl[TUE] = { types: ['test', 'fuerzaA', 'sprint', 'golpeo', 'balon'] };
+  const q = plan(TUE, { plan: pl });
+  const nTests = q.week.filter(x => x.date >= TUE && x.date <= addDays(E.weekStartOf(TUE), 6) && types(x).includes('test')).length;
+  ok(nTests === 1, 'E4: ' + nTests + ' tests en la semana');
+}
+
+/* ---------- E5 · Con dolor RF ≥ 3 no queda carga del recto femoral ---------- */
+{
+  const d = plan(TUE, { checkins: [ci(TUE, { rfPain: 4 })] }).day(TUE);
+  ok(!hasRF(d), 'E5: con dolor RF 4 quedan ejercicios de RF: ' + rfItems(d).map(i => i.id).join(','));
+  ok(!types(d).includes('balon'), 'E5: con dolor RF 4 queda Balón (check-in y mapa deben dar lo mismo)');
+  const m = plan(TUE, { molestias: [mol({ fecha: TUE, zona: 'recto_femoral', lado: 'd', tipo: 'dolor', nivel: 4 })] }).day(TUE);
+  ok(JSON.stringify(types(d)) === JSON.stringify(types(m)), 'E5: dolor por check-in (' + desc(d) + ') y por mapa (' + desc(m) + ') dan planes distintos');
+}
+
+/* ---------- E6 · F5: los topes de sprint se respetan ---------- */
+{
+  const inj = { phase: 5, sprintStart: 6, kickStart: 8 };
+  const m = plan(TUE, { injury: inj, sessions: s6, molestias: [mol({ fecha: TUE, zona: 'isquio', lado: 'd', tipo: 'cargado', nivel: 5 })] }).day(TUE);
+  const sp = ses(m, 'sprint');
+  ok(!sp || sp.level <= 2, 'E6: F5 con isquio cargado 5 → sprint S' + (sp && sp.level));
+  const c = plan(TUE, { injury: inj, sessions: s6.concat([match(MON)]), plan: { [WED]: { types: ['partido'] } } }).day(TUE);
+  const sc = ses(c, 'sprint');
+  ok(!sc || sc.level <= 2, 'E6: F5 entre dos partidos → sprint S' + (sc && sc.level));
+}
+
+/* ---------- E7 · Tras el intercambio, las molestias siguen mandando ---------- */
+{
+  const d = plan(TUE, { molestias: [mol({ fecha: TUE, zona: 'recto_femoral', lado: 'd', tipo: 'cargado', nivel: 8 })] }).day(TUE);
+  ok(!types(d).some(t => ['balon', 'golpeo', 'sprint', 'rt'].includes(t)), 'E7: RF cargado 8 y el día tiene ' + desc(d));
+}
+
+/* ---------- E8 · Las molestias miran el lado ---------- */
+{
+  const base = plan(TUE).day(TUE), kBase = (ses(base, 'golpeo') || {}).level;
+  const zurdas = (d) => ((ses(d, 'balon') || { field: { drills: [] } }).field.drills || []).filter(x => x.foot === 'izq');
+  ok(zurdas(base).length > 0, 'E8: la línea base del martes no tiene zurda');
+  for (const m of [mol({ fecha: TUE, zona: 'aductor', lado: 'i', tipo: 'cargado', nivel: 5 }), mol({ fecha: TUE, zona: 'flexor_cadera', lado: 'i', tipo: 'dolor', nivel: 2 })]) {
+    const d = plan(TUE, { molestias: [m] }).day(TUE);
+    ok((ses(d, 'golpeo') || {}).level === kBase, 'E8: ' + m.zona + ' izquierdo baja el golpeo derecho a K' + (ses(d, 'golpeo') || {}).level);
+    ok(!zurdas(d).length, 'E8: ' + m.zona + ' izquierdo mantiene remates de zurda: ' + zurdas(d).map(x => x.id).join(','));
+  }
+  const r = plan(TUE, { molestias: [mol({ fecha: TUE, zona: 'aductor', lado: 'd', tipo: 'cargado', nivel: 5 })] }).day(TUE);
+  ok((ses(r, 'golpeo') || {}).level <= 3, 'E8: aductor derecho no baja el golpeo');
+  ok(zurdas(r).length > 0, 'E8: aductor derecho quita la zurda');
+}
+
+/* ---------- E9 · El criterio de F5 mira el dolor del mapa ---------- */
+{
+  const p = plan(TUE, { injury: { phase: 5, phaseLog: [{ phase: 5, date: '2026-10-10' }] }, molestias: [mol({ fecha: '2026-10-30', zona: 'recto_femoral', lado: 'd', tipo: 'dolor', nivel: 5 })] });
+  ok(p.st.recentPain === true, 'E9: recentPain ignora el dolor RF del mapa');
+}
+
+/* ---------- E10 · Sin respuesta no es sin dolor ---------- */
+{
+  const m = mol({ fecha: TUE, zona: 'isquio', lado: 'd', tipo: 'dolor', nivel: 6 });
+  const d = plan(THU, { molestias: [m] }).day(THU);
+  ok(!types(d).includes('sprint'), 'E10: isquio dolor 6 sin respuesta y el jueves hay sprint: ' + desc(d));
+  const act = G('activeMolestias')(plan(THU, { molestias: [m] }).st, THU);
+  ok(act.length === 1 && act[0].sinConfirmar, 'E10: la molestia sin respuesta no queda «sin confirmar»');
+  const late = G('activeMolestias')(plan('2026-11-12', { molestias: [m] }).st, '2026-11-12');
+  ok(!late.length, 'E10: la molestia sin respuesta no vence a los 7 días');
+  const mod = G('activeMolestias')(plan(THU, { molestias: [mol({ fecha: TUE, zona: 'isquio', lado: 'd', tipo: 'cargado', nivel: 5 })] }).st, THU);
+  ok(!mod.length, 'E10: una carga moderada sin respuesta no debería seguir activa');
+  const c = plan(TUE, { checkins: [ci(MON, { rfPain: 4 })] }).day(TUE);
+  ok(!types(c).some(t => ['sprint', 'golpeo', 'test'].includes(t)) && !c.intense, 'E10: sin check-in tras dolor 4 ayer: ' + desc(c));
+  ok(c.notes.some(n => /check-in/.test(n)), 'E10: sin nota que pida el check-in');
+}
+
+/* ---------- E15 · El nivel previsto no cuenta sesiones con tope ---------- */
+{
+  const p = plan(TUE, { injury: { phase: 4, phaseLog: [{ phase: 4, date: '2026-10-30' }] }, molestias: [mol({ fecha: TUE, zona: 'aductor', lado: 'd', tipo: 'cargado', nivel: 5 })] });
+  const sat = ses(p.day(SAT), 'golpeo');
+  ok(sat && sat.level === 5, 'E15: el sábado figura K' + (sat && sat.level) + ' (debería repetir K5)');
+}
+
+/* ---------- Semana de la prueba (lunes 16 nov; descanso el domingo) ---------- */
+{
+  const p = plan('2026-11-09');
+  const cleanMax = (type, f) => Math.max(0, ...p.st.sessions.filter(s => s.type === type && s[f] && G('outcome')(s[f].pd, s[f].pn, s[f].partial) === 'clean').map(s => Number(s[f].level)));
+  const kMax = cleanMax('golpeo', 'kick'), sMax = cleanMax('sprint', 'spr');
+  for (const dt of ['2026-11-11', '2026-11-12', '2026-11-13', '2026-11-14', '2026-11-15']) {
+    const d = p.day(dt), g = ses(d, 'golpeo'), s = ses(d, 'sprint');
+    ok(!g || g.level <= Math.max(kMax, 1), 'Prueba: ' + dt + ' estrena K' + (g && g.level) + ' (máx limpio K' + kMax + ')');
+    ok(!s || s.level <= Math.max(sMax, 1), 'Prueba: ' + dt + ' estrena S' + (s && s.level) + ' (máx limpio S' + sMax + ')');
+  }
+  const p2 = p.day('2026-11-14'), p1 = p.day('2026-11-15');
+  ok(types(p2).join() === 'descanso', 'Prueba: P-2 debería ser descanso cuando el descanso cae en P-1 (' + desc(p2) + ')');
+  ok(types(p1).includes('activacion'), 'Prueba: P-1 sin activación');
+  ok(!p.week.filter(x => x.date >= '2026-11-14' && x.date <= '2026-11-16').some(x => x.sessions.some(s => (s.items || []).some(it => it.fill))), 'Prueba: rellenos de series en P-2, P-1 o P');
+  const p4 = p.day('2026-11-12'), sp4 = ses(p4, 'sprint'), g4 = ses(p4, 'golpeo');
+  ok(sp4 && sp4.field.reps < SPRINT_REPS[sp4.level], 'Prueba: P-4 sin menos volumen de sprint');
+  ok(g4 && g4.field.target < KICK_TARGET[g4.level], 'Prueba: P-4 sin menos volumen de golpeo');
+  ok(p4.notes.some(n => /Semana de la prueba/.test(n)), 'Prueba: P-4 sin nota');
+  // Prueba un miércoles: P-2 (lunes) con prevención solo isométrica
+  const q = plan('2026-11-16', { profile: { trials: ['2026-11-18'] } });
+  const q2 = q.day('2026-11-16');
+  const exc = q2.sessions.flatMap(s => s.items || []).filter(it => BANK_INDEX[it.id] && ['exc', 'pliom'].includes(BANK_INDEX[it.id].c));
+  ok(types(q2).includes('prevencion') && !exc.length, 'Prueba: P-2 con excéntricos: ' + exc.map(x => x.id).join(','));
+  ok((ses(q2, 'prevencion') || { items: [] }).items.some(it => it.isoTrial), 'Prueba: P-2 sin marcar los isométricos que reemplazan');
+  const dayKind = G('dayKind');
+  ok(dayKind(p2, p.st.profile) === 'moderado', 'Prueba: P-2 en descanso con carbohidratos de «' + dayKind(p2, p.st.profile) + '»');
+  const p1d = plan('2026-11-16').day('2026-11-17');
+  ok(dayKind(p1d, p.st.profile) === 'moderado', 'Prueba: P+1 con carbohidratos de «' + dayKind(p1d, p.st.profile) + '»');
+  ok(!q.day('2026-11-15') || types(q.day('2026-11-15')).includes('descanso'), 'Prueba: el descanso de P-3 cambió');
+}
+
+/* ---------- Simulación: 3 semanas día por día, con partido el lunes 2 y congelando como la app ---------- */
+if (freezeTargets) {
+  const d = clone(BASE); d.sessions.push(match(MON));
+  let id = 0; const moved = [];
+  for (let i = 0; i < 21; i++) {
+    const today = addDays(TUE, i);
+    const st = E.deriveState({ profile: d.profile, settings: d.settings, weights: d.weights, injuries: d.injuries, tests: d.tests, checkins: d.checkins, sessions: d.sessions, agenda: [], molestias: [], customExercises: [] }, today);
+    const week = E.buildWeek(st, E.weekStartOf(today), today);
+    const day = week.find(x => x.date === today);
+    Object.assign(d.settings.plan, freezeTargets(week, today, d.settings.plan));
+    if (day.swapTo) moved.push(day.swapTo);
+    for (const s of day.sessions) {
+      if (s.type === 'descanso') continue;
+      const L = { id: 'sim-' + (++id), date: today, type: s.type, done: true, minutes: s.est || 30, rpe: s.intense ? 8 : 5, est: s.est, source: 'entreno' };
+      if (s.field && s.field.kind === 'golpeo') L.kick = { level: s.level, pd: 0, pn: 0 };
+      if (s.field && s.field.kind === 'sprint') L.spr = { level: s.level, pd: 0, pn: 0 };
+      if (s.field && s.field.kind === 'rt') L.rt = { level: s.level };
+      if (s.type === 'test') { L.tests = ['ext8', 'hop1', 'hop3', 'rn', 'palp']; d.tests.push({ id: 't-' + today, date: today, ext8: { d: 48, i: 50 }, hop1: { d: 160, i: 165 }, hop3: { d: 510, i: 520 }, rn: 'completo', rnPain: 0, palp: 0 }); }
+      if (s.items && s.items.length) L.exercises = s.items.map(it => ({ id: it.id, slot: it.slot, sets: Array.from({ length: (it.spec && it.spec.s) || 0 }, () => ({ kg: 20, reps: 8, done: true })) }));
+      d.sessions.push(L);
+    }
+  }
+  const intenseOn = (dt) => d.sessions.some(s => s.date === dt && isIntenseLog(s));
+  for (const dt of moved) ok(intenseOn(dt), 'Simulación: lo movido al ' + dt + ' no se hizo');
+  for (let i = 0; i < 20; i++) { const a = addDays(TUE, i), b = addDays(TUE, i + 1); ok(!(intenseOn(a) && intenseOn(b)), 'Simulación: dos días intensos seguidos ' + a + ' y ' + b); }
+  const wk = {}; for (let i = 0; i < 21; i++) { const a = addDays(TUE, i); if (intenseOn(a)) wk[E.weekStartOf(a)] = (wk[E.weekStartOf(a)] || 0) + 1; }
+  Object.entries(wk).forEach(([w, n]) => ok(n <= 3, 'Simulación: ' + n + ' días intensos en la semana del ' + w));
+  ok(moved.length > 0, 'Simulación: no hubo ningún movimiento para comprobar');
+}
+
+console.log('motor · fallos:', fails.length);
+fails.forEach(f => console.log('  ', f));
+process.exit(fails.length ? 1 : 0);

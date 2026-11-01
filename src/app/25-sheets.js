@@ -62,7 +62,7 @@ function logLine(log) {
 function openSession(date, type) { openSheet({ id: 'session-' + date + type, full: !!findLog(date, type), render: () => sessionSheetHtml(date, type) }); }
 function itemRow(it, noSwap) {
   const ex = exInfo(it.id, it);
-  return '<div class="exrow">' + thumbHtml(ex) + '<button class="left mw0" data-act="ex" data-id="' + esc(it.id) + '"><div class="t">' + esc(it.n) + (it.doms ? ' ' + chip('isométrica hoy', 'warn') : '') + '</div><div class="s">' + esc(fmtSpec(it.spec, it.side)) + '</div></button>' +
+  return '<div class="exrow">' + thumbHtml(ex) + '<button class="left mw0" data-act="ex" data-id="' + esc(it.id) + '"><div class="t">' + esc(it.n) + (it.doms || it.isoTrial ? ' ' + chip('isométrica hoy', 'warn') : '') + '</div><div class="s">' + esc(fmtSpec(it.spec, it.side)) + '</div></button>' +
     (!noSwap && it.slot && SLOT_NAMES[it.slot] ? '<button class="iconbtn sm plain" data-act="swap" data-slot="' + esc(it.slot) + '" data-ex="' + esc(it.id) + '" aria-label="Cambiar ' + esc(it.n) + '">' + ic('swap') + '</button>' : '<span></span>') + '</div>';
 }
 function fieldSummary(s) {
@@ -282,11 +282,13 @@ function plannedToLogExercises(s, date) {
     return e;
   });
 }
+/* Al registrar algo en un día, su plan queda fijo; si su sesión intensa se movió al día siguiente,
+   ese día la recibe (como «auto», para que no se pierda al recalcular) */
 function freezeDay(date) {
-  const st = S.data.settings || {}, plan = st.plan || {};
-  if (plan[date]) return Promise.resolve();
-  const d = dayPlan(date); if (!d) return Promise.resolve();
-  return setPlanDay(date, d.types.slice());
+  const plan = ((S.data.settings || {}).plan) || {};
+  const targets = freezeTargets(weekPlan(weekStartOf(date)), date, plan);
+  if (!Object.keys(targets).length) return Promise.resolve();
+  return setPlanDays(targets);
 }
 function saveQuickDone() {
   const q = UI.qd, ss = q.types.map(t => findPlanned(q.date, t)).filter(Boolean);
@@ -332,6 +334,14 @@ function moveHtml(date, type) {
 function setPlanDay(date, types) {
   const s = clone(S.data.settings || {}); delete s.id; s.plan = s.plan || {};
   if (types) s.plan[date] = { types: types.length ? types : ['descanso'] }; else delete s.plan[date];
+  const today = todayStr();
+  Object.keys(s.plan).forEach(k => { if (k < addDays(today, -60)) delete s.plan[k]; });
+  return put('settings', 'main', s);
+}
+/* Varios días en una sola escritura: { fecha: { types, auto?, from?, swapTo? } } */
+function setPlanDays(map) {
+  const s = clone(S.data.settings || {}); delete s.id; s.plan = s.plan || {};
+  Object.keys(map).forEach(d => { const v = map[d]; s.plan[d] = Object.assign({}, v, { types: v.types && v.types.length ? v.types.slice() : ['descanso'] }); });
   const today = todayStr();
   Object.keys(s.plan).forEach(k => { if (k < addDays(today, -60)) delete s.plan[k]; });
   return put('settings', 'main', s);
