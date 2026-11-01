@@ -68,6 +68,24 @@ for (const t of ['amber', 'red']) for (const s of ['--surface-1', '--bg']) add('
 add('--fg-3', ['--bg', '--tabbar-bg'], 4.5, 'pestaña inactiva');
 add('--fg', ['--bg', '--tabbar-bg'], 4.5, 'pestaña activa');
 add('--on-blue', '--blue-fill', 4.5, 'badge de pendientes');
+// Degradados de acción: se comprueban los dos extremos
+for (const end of ['#3A6CF6', '#5A4FE6']) add('--on-blue', end, 4.5, 'botón primario, serie en curso, mensaje propio');
+for (const end of ['#D8FB72', '#ADE73E']) add('--on-accent', end, 4.5, 'botón lima, serie hecha');
+// Paneles con degradado: la zona más intensa (blanco 7 % + tono --g1 del contexto) sobre el fondo y sobre la hoja.
+// Dentro de los paneles el texto usa --fg-2-tint y --fg-3-tint (un paso más claros); la cifra usa la tinta del tono.
+const comp = fs.readFileSync(path.join(ROOT, 'src', 'styles', '20-components.css'), 'utf8');
+const PANELS = [{ g1: T['--g1'], ink: T['--tone'] }].concat([...comp.matchAll(/(\.k-[a-z]+[^{]*)\{([^}]*--g1:[^}]*)\}/g)].map(m => ({ g1: (/--g1:\s*(rgba\([^)]*\))/.exec(m[2]) || [])[1], ink: (/--tone:\s*(var\(--[a-z0-9-]+\))/.exec(m[2]) || [])[1] || T['--tone'] })));
+for (const { g1, ink } of PANELS) for (const base of ['--bg', '--surface-2']) {
+  const L = [base, 'rgba(255, 255, 255, 0.07)', g1];
+  add('--fg', L, 4.5, 'titular en panel ' + g1); add('--fg-2-tint', L, 4.5, 'texto en panel'); add('--fg-3-tint', L, 4.5, 'antetítulo en panel');
+  add(ink.replace(/^var\((.*)\)$/, '$1'), L, 4.5, 'cifra del tono en panel');
+  if (base === '--bg') for (const t of ['blue', 'lime', 'amber']) add('--' + t + '-ink', L, 4.5, 'estado ' + t + ' en panel');
+}
+// Auroras: arriba de cada pantalla, del modo entrenamiento, del descanso y de las hojas
+add('--fg-3', ['--bg', 'rgba(70, 110, 255, 0.34)'], 4.5, 'texto sobre la aurora del entrenamiento');
+add('--fg-3', ['--bg', 'rgba(255, 160, 50, 0.2)'], 4.5, 'texto sobre la aurora del calentamiento');
+add('--fg-3', ['--surface-2', 'rgba(70, 110, 255, 0.16)'], 4.5, 'texto sobre la aurora de la hoja');
+for (const [ink, glow] of [['--blue-ink', 'rgba(91, 140, 255, 0.24)'], ['--amber-ink', 'rgba(255, 160, 50, 0.22)']]) add(ink, ['--bg', glow], 4.5, 'cifra del descanso');
 
 let fails = 0;
 const rows = [];

@@ -63,6 +63,9 @@
   --fg-2: #BEC3D0;
   --fg-3: #959BAB;
   --fg-4: #545A67;
+  /* Dentro de paneles con degradado: un paso más claros para mantener 4,5:1 sobre el tono */
+  --fg-2-tint: #D4D8E1;
+  --fg-3-tint: #BEC4D0;
   --on-blue: #FFFFFF;
   --on-accent: #0A0B0F;
 

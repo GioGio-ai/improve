@@ -13,12 +13,12 @@ button.card, a.card { display: block; width: 100%; text-align: left; }
 .alerts > .card:is(.t-blue, .t-lime, .t-load, .t-pain, .t-sleep, .t-food)::before { content: ''; position: absolute; left: 0; top: 0; bottom: 0; width: 2px; border-radius: 1px; background: var(--tone); }
 
 /* ---------- Paneles con degradado (figura de inicio, paneles, portada, ficha): color del contexto en --g1/--g2 ---------- */
-.hero, .panel, .cover, .dato-hero { position: relative; isolation: isolate; overflow: hidden; min-width: 0; padding: var(--s-6) var(--s-5) var(--s-5); border-radius: var(--r-xl);
+.hero, .panel, .cover, .dato-hero { --fg-2: var(--fg-2-tint); --fg-3: var(--fg-3-tint); position: relative; isolation: isolate; overflow: hidden; min-width: 0; padding: var(--s-6) var(--s-5) var(--s-5); border-radius: var(--r-xl);
   background: radial-gradient(110% 80% at 100% 0%, var(--g1), transparent 62%), radial-gradient(90% 70% at 0% 100%, var(--g2), transparent 64%), linear-gradient(165deg, rgba(255, 255, 255, 0.07), rgba(255, 255, 255, 0.015));
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.09), 0 24px 60px -30px rgba(0, 0, 0, 0.8); }
 /* Tonos del contexto: tiñen el panel, la aurora de la pantalla y la cifra del dato */
 .k-campo { --g2: rgba(40, 200, 180, 0.16); }
-.k-meal, .k-food { --g1: rgba(40, 210, 180, 0.28); --g2: rgba(70, 120, 255, 0.18); --dot: var(--teal); --tint: #C6F4EA; --tone: var(--teal-ink); --tone-c: var(--teal); }
+.k-meal, .k-food { --g1: rgba(40, 210, 180, 0.24); --g2: rgba(70, 120, 255, 0.18); --dot: var(--teal); --tint: #C6F4EA; --tone: var(--teal-ink); --tone-c: var(--teal); }
 .k-rest, .k-sleep { --g1: rgba(140, 96, 255, 0.34); --g2: rgba(70, 90, 230, 0.2); --dot: var(--violet); --tint: #DDD3FF; --tone: var(--violet-ink); --tone-c: var(--violet); }
 .k-done, .k-lime { --g1: rgba(170, 235, 80, 0.2); --g2: rgba(40, 200, 180, 0.16); --dot: var(--lime); --tint: #E6FBC0; --tone: var(--lime-ink); --tone-c: var(--lime); }
 .k-load { --g1: rgba(255, 160, 50, 0.22); --g2: rgba(140, 96, 255, 0.14); --tone: var(--amber-ink); --tone-c: var(--amber); }
@@ -38,7 +38,7 @@ button.card, a.card { display: block; width: 100%; text-align: left; }
 .hero .meta span { display: inline-flex; align-items: center; gap: 6px; }
 .hero .meta .ic { width: 16px; height: 16px; color: var(--fg-3); }
 .hero .cta { display: flex; gap: var(--s-2); margin-top: var(--s-2); }
-.hero .cta .btn { flex: 1; }
+.hero .cta .btn { flex: 1; white-space: nowrap; padding: 0 var(--s-4); }
 .hero .cta .btn.sq, .hero .cta .btn.auto { flex: 0 0 auto; }
 .btn.sq { width: 48px; padding: 0; }
 .btn.sq.lg { width: 56px; }

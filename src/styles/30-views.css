@@ -258,7 +258,7 @@ body.locked #view, body.locked #nav { display: none; }
 
 /* ---------- Mapa del cuerpo ---------- */
 .bmap { display: block; width: 100%; height: auto; overflow: visible; }
-.bmap polygon { fill: rgba(255, 255, 255, 0.07); stroke: rgba(255, 255, 255, 0.16); stroke-width: 0.35; stroke-linejoin: round; transition: fill var(--t-fast) var(--ease); }
+.bmap polygon { fill: rgba(255, 255, 255, 0.07); stroke: rgba(255, 255, 255, 0.16); stroke-width: 0.35; stroke-linejoin: round; }
 .bmap polygon.hd { fill: rgba(255, 255, 255, 0.04); }
 .bmap.m-select polygon.z { cursor: pointer; }
 .bmap.m-select polygon.z:hover { fill: rgba(74, 133, 255, 0.28); }
@@ -313,7 +313,7 @@ body.locked #view, body.locked #nav { display: none; }
 .sleep-times .lab2 .ic { width: 14px; height: 14px; }
 .sleep-times .input { min-height: 48px; }
 .sleep-sum { display: flex; align-items: baseline; gap: 8px; margin-top: 10px; font-size: 13px; color: var(--fg-3); }
-.sleep-sum b { font: 650 20px/1 var(--mono); letter-spacing: -0.02em; color: var(--violet-ink); }
+.sleep-sum b { flex: none; white-space: nowrap; font: var(--fw-3) 20px/1 var(--mono); letter-spacing: -0.02em; color: var(--violet-ink); }
 .sleep-sum b.short { color: var(--amber); }
 
 /* ---------- Reorganizar sesión ---------- */
@@ -365,8 +365,7 @@ body.locked #view, body.locked #nav { display: none; }
 .mol-tools .pill .ic { width: 16px; height: 16px; }
 .mol-hint { text-align: center; text-wrap: pretty; padding: 0 8px; }
 .mol-list { display: grid; gap: 6px; }
-.mol-row { display: flex; align-items: stretch; min-height: 52px; border-radius: 16px; background: rgba(255, 255, 255, 0.04); border: 1px solid var(--line); overflow: hidden;
-  transition: border-color var(--t) var(--ease), background var(--t); }
+.mol-row { display: flex; align-items: stretch; min-height: 52px; border-radius: 16px; background: rgba(255, 255, 255, 0.04); border: 1px solid var(--line); overflow: hidden; }
 .mol-row.on { border-color: rgba(255, 255, 255, 0.42); background: rgba(255, 255, 255, 0.07); box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.06); }
 .mol-pick { flex: 1; min-width: 0; display: flex; align-items: center; gap: 12px; padding: 8px 6px 8px 14px; text-align: left; }
 .mol-pick:active { background: rgba(255, 255, 255, 0.05); }

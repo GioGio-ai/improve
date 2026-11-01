@@ -61,7 +61,7 @@
 .dato-hero { display: grid; gap: var(--s-1); }
 .dato-hero .row { margin-top: var(--s-3); gap: var(--s-2); }
 .study { display: flex; align-items: flex-start; gap: var(--s-3); padding: var(--s-4) 0; border-bottom: 1px solid var(--hair); color: var(--fg);
-  transition: transform var(--dur-1) var(--ease-out), background var(--dur-2); scroll-margin: 90px; }
+  transition: transform var(--dur-1) var(--ease-out); scroll-margin: 90px; }
 .study:active { transform: scale(0.99); }
 .study:focus-visible { outline: 2px solid var(--blue); outline-offset: 2px; }
 .study.flash { background: var(--blue-soft); box-shadow: 0 0 0 8px var(--blue-soft); }
