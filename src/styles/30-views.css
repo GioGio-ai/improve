@@ -229,15 +229,16 @@
 
 /* ---------- Acceso ---------- */
 .login { min-height: 100dvh; display: grid; place-items: center; padding: calc(24px + var(--safe-t)) 20px calc(24px + var(--safe-b)); }
-.login .box { width: 100%; max-width: 400px; display: grid; gap: 20px; animation: viewIn var(--t-slow) var(--ease) both; }
-.login .logo { display: grid; justify-items: center; gap: 14px; margin-bottom: 8px; }
-.login .logo .mk { width: 76px; height: 76px; border-radius: 24px; display: grid; place-items: center; background: linear-gradient(140deg, #6b9dff 0%, #2457f5 55%, #1a3bb8 100%);
-  box-shadow: 0 24px 60px -20px rgba(36, 87, 245, 0.95), inset 0 1px 0 rgba(255, 255, 255, 0.35); }
+.login .box { width: 100%; max-width: 400px; display: grid; gap: var(--s-8); animation: viewIn var(--dur-3) var(--ease-out) both; }
+.login .logo { display: grid; justify-items: center; gap: var(--s-4); }
+.login .logo .mk { width: 80px; height: 80px; border-radius: 26px; display: grid; place-items: center; background: var(--grad-primary);
+  box-shadow: 0 24px 60px -18px rgba(74, 98, 255, 0.9), inset 0 1px 0 rgba(255, 255, 255, 0.3); }
 .login .logo .mk svg { width: 40px; height: 40px; }
-.login .logo .wm { font-size: 28px; font-weight: 780; letter-spacing: 0.22em; padding-left: 0.22em; }
-.login .logo .tag { font-size: 14px; color: var(--fg-3); text-align: center; text-wrap: balance; }
+.login .logo .wm { font-size: 30px; font-weight: var(--fw-3); letter-spacing: 0.22em; padding-left: 0.22em; background: linear-gradient(180deg, #FFFFFF 30%, #CFDBFF 100%); -webkit-background-clip: text; background-clip: text; color: transparent; }
+.login .logo .tag { font-size: var(--fs-3); color: var(--fg-3); text-align: center; text-wrap: balance; }
+.login .input { background: var(--fill-1); }
 .boot { min-height: 100dvh; display: grid; place-items: center; }
-.boot .mk { width: 64px; height: 64px; border-radius: 20px; background: linear-gradient(140deg, #6b9dff 0%, #2457f5 55%, #1a3bb8 100%); animation: pulse 1.6s ease-in-out infinite; box-shadow: 0 24px 60px -20px rgba(36, 87, 245, 0.95); }
+.boot .mk { width: 64px; height: 64px; border-radius: 20px; background: var(--grad-primary); animation: pulse 1.6s ease-in-out infinite; box-shadow: 0 24px 60px -18px rgba(74, 98, 255, 0.9); }
 
 /* Fotos privadas: aparecen con un fundido cuando cargan */
 .hero > img, .cover > img { opacity: 0; transition: opacity 600ms var(--ease-out); }
