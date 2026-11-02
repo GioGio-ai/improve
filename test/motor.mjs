@@ -610,6 +610,122 @@ function fmt(m) { return String(Math.floor(m / 60)).padStart(2, '0') + ':' + Str
   ok(normBed(17 * 60) === 17 * 60 && normBed(23 * 60) === 23 * 60 && normBed(31 * 60) === 30 * 60, 'normBed: noche mal normalizada');
 }
 
+/* ---------- v4.5 · Lo que se hace de más cambia el plan ---------- */
+{
+  const isLegExercise = G('isLegExercise'), extraLoad = G('extraLoad'), carryRule = G('carryRule'), campoMaxFromText = G('campoMaxFromText'), parseTrainText = G('parseTrainText'), campoFromAi = G('campoFromAi');
+  const SUN = '2026-11-01', MON2 = '2026-11-02', TUE2 = '2026-11-03', WED2 = '2026-11-04', THU2 = '2026-11-05';
+  const heavy = (o, c) => Object.assign({ id: 'free-sun', date: SUN, type: 'cancha', done: true, source: 'ia', minutes: 120, rpe: 8, title: 'Definición', campo: Object.assign({ side: 'd', bloques: [
+    { id: 'cl_def_ambas', n: 'Definición', cat: 'remate', min: 65, pies: 'ambos', int: 'alta' }, { id: 'cl_tiros_libres', n: 'Tiros libres', cat: 'balon_parado', min: 15, pies: 'der', int: 'alta' }, { id: 'cl_1v1', n: '1 contra 1', cat: 'duelo', min: 20, pies: 'ambos', int: 'alta' }, { id: 'cl_cambio_frente', n: 'Cambios de frente', cat: 'pase_largo', min: 20, pies: 'ambos', int: 'alta' }],
+    golpes: { der: 'muchos', izq: 'muchos' }, cabezazos: 'no', sprints: 'varios', companeros: 1, pd: 0, pn: 0 }, c || {}) }, o || {});
+  const fieldTypes = (d) => d.sessions.filter(s => ['sprint', 'rt', 'golpeo', 'golpeoTec', 'juego', 'balon', 'testRend'].includes(s.type)).map(s => s.type);
+
+  /* Domingo pesado → lunes sin cancha, con rodillo, sin rellenos de piernas y con el tren superior intacto */
+  const base = plan(MON2), p = plan(MON2, { sessions: [heavy()] });
+  const m0 = base.day(MON2), m = p.day(MON2);
+  ok(fieldTypes(m0).length > 0, 'v4.5: sin sesión extra el lunes debería tener cancha: ' + desc(m0));
+  ok(fieldTypes(m).length === 0, 'v4.5: tras 2 h fuertes el domingo, el lunes sigue con cancha: ' + desc(m));
+  ok(types(m).includes('recupPiernas') && types(m).includes('superiorA'), 'v4.5: el lunes debería ser tren superior + rodillo y movilidad: ' + desc(m));
+  ok(ses(m, 'recupPiernas').items.some(it => it.id === 'foam_piernas'), 'v4.5: la recuperación no trae el rodillo de tren inferior');
+  ok(ses(m, 'superiorA').items.every(it => !it.taper), 'v4.5: la carga de piernas no debería recortar el tren superior');
+  ok(!(m.notes.join(' ').match(/Se suma/)), 'v4.5: el día de recuperación recibe rellenos: ' + m.notes.join(' | '));
+  ok(/fuera del plan/.test(m.notes.join(' ')) && /48 h/.test(m.notes.join(' ')), 'v4.5: el lunes no explica el ajuste: ' + m.notes.join(' | '));
+  ok(m.recover && E.dayKind(m, p.st.profile, p.st.sessions) === 'moderado', 'v4.5: el día después de mucha carga debería comer como carga media: ' + E.dayKind(m, p.st.profile, p.st.sessions));
+
+  /* Martes (48 h): vuelve el golpeo, con menos volumen y sin el test */
+  const t = p.day(TUE2);
+  ok(types(t).includes('golpeo'), 'v4.5: a las 48 h debería volver el golpeo: ' + desc(t));
+  ok(ses(t, 'golpeo').field.target < KICK_TARGET[ses(t, 'golpeo').level], 'v4.5: el martes no baja el volumen de golpeo');
+  ok(!types(t).includes('test') && /Test de control pospuesto/.test(t.notes.join(' ')), 'v4.5: el test debería pasar a otro día: ' + desc(t));
+  ok(!/Semana de la prueba/.test(t.sessions.flatMap(s => s.notes).join(' ')), 'v4.5: la nota habla de la semana de la prueba sin que haya prueba cerca');
+
+  /* Con el plan congelado al registrar algo hoy: también se ajusta y no se pierde lo registrado */
+  const frozen = plan(MON2, { sessions: [heavy(), { id: 'sup', date: MON2, type: 'superiorA', done: true, minutes: 79, rpe: 4, source: 'entreno' }], plan: { [MON2]: { types: ['superiorA', 'sprint', 'balon', 'rt'] } } });
+  ok(fieldTypes(frozen.day(MON2)).length === 0 && types(frozen.day(MON2)).includes('superiorA'), 'v4.5: el día congelado no se ajusta: ' + desc(frozen.day(MON2)));
+  const donePart = plan(MON2, { sessions: [heavy(), { id: 'b', date: MON2, type: 'balon', done: true, minutes: 30, rpe: 5 }], plan: { [MON2]: { types: ['superiorA', 'balon', 'rt'] } } });
+  ok(types(donePart.day(MON2)).includes('balon') && !types(donePart.day(MON2)).includes('rt'), 'v4.5: se quitó un bloque ya registrado o quedó el RT: ' + desc(donePart.day(MON2)));
+
+  /* Una extra hoy cambia lo que queda de hoy */
+  const today = plan(MON2, { sessions: [heavy({ date: MON2, id: 'free-mon' })] });
+  ok(fieldTypes(today.day(MON2)).length === 0, 'v4.5: una extra pesada hoy no quita la cancha de la tarde: ' + desc(today.day(MON2)));
+
+  /* Extra moderada: mismo día, menos volumen */
+  const mid = plan(MON2, { sessions: [{ id: 'mid', date: SUN, type: 'libre', done: true, minutes: 50, rpe: 6, title: 'Sesión libre' }] });
+  ok(mid.day(MON2).notes.some(n => /40 % menos volumen/.test(n)) && types(mid.day(MON2)).includes('rt'), 'v4.5: la extra moderada debería bajar el volumen sin quitar la cancha: ' + desc(mid.day(MON2)));
+  ok(ses(mid.day(MON2), 'balon').field.min < ses(m0, 'balon').field.min, 'v4.5: la extra moderada no baja el balón');
+  /* Extra suave o de tren superior: no cambia nada */
+  const soft = plan(MON2, { sessions: [{ id: 'sf', date: SUN, type: 'libre', done: true, minutes: 30, rpe: 3 }] });
+  ok(desc(soft.day(MON2)) === desc(m0), 'v4.5: una extra suave no debería cambiar el lunes: ' + desc(soft.day(MON2)));
+  const upper = plan(MON2, { sessions: [{ id: 'up', date: SUN, type: 'superiorB', done: true, minutes: 90, rpe: 9 }] });
+  ok(!carryRule(upper.st, MON2, MON2), 'v4.5: una extra de tren superior no debería contar para las piernas');
+  const upperLibre = { id: 'ul', date: SUN, type: 'libre', done: true, minutes: 90, rpe: 8, exercises: [{ id: 'press_mancuernas', sets: [{ kg: 20, reps: 8, done: true }] }, { id: 'remo_mancuerna', sets: [{ kg: 20, reps: 8, done: true }] }] };
+  ok(!carryRule(plan(MON2, { sessions: [upperLibre] }).st, MON2, MON2), 'v4.5: una sesión libre de tren superior no debería contar para las piernas');
+  /* Sesión libre sin bloques, dura y larga: cuenta como intensa y como carga */
+  const plain = { id: 'pl', date: SUN, type: 'libre', done: true, minutes: 120, rpe: 9, title: 'Sesión libre' };
+  ok(isIntenseLog(plain), 'v4.5: 120 min RPE 9 sin bloques no cuenta como intensa');
+  ok(fieldTypes(plan(MON2, { sessions: [plain] }).day(MON2)).every(t => t === 'balon'), 'v4.5: la sesión libre sin bloques no cambia el lunes');
+  /* Lo planificado no es extra; lo planificado que se reemplaza, tampoco */
+  const planned = plan(WED2, { sessions: [{ id: 'fa', date: TUE2, type: 'fuerzaA', done: true, minutes: 70, rpe: 7 }, { id: 'kk', date: TUE2, type: 'golpeo', done: true, minutes: 25, rpe: 5, kick: { level: 5, pd: 0, pn: 0 } }, { id: 'sp', date: TUE2, type: 'sprint', done: true, minutes: 25, rpe: 6, spr: { level: 3, pd: 0, pn: 0 } }, { id: 'bb', date: TUE2, type: 'balon', done: true, minutes: 20, rpe: 5 }] });
+  ok(extraLoad(planned.st, TUE2).net === 0 && !carryRule(planned.st, WED2, WED2), 'v4.5: un día hecho como estaba planificado cuenta como extra: ' + JSON.stringify(extraLoad(planned.st, TUE2)));
+  const replaced = plan(WED2, { sessions: [{ id: 'rp', date: TUE2, type: 'cancha', done: true, minutes: 60, rpe: 6, campo: { side: 'd', bloques: [{ n: 'Rondo', cat: 'juego', min: 60, pies: 'ambos', int: 'media' }], golpes: { der: 'no', izq: 'no' }, cabezazos: 'no', sprints: 'no' } }] });
+  ok(!carryRule(replaced.st, WED2, WED2), 'v4.5: una sesión libre que reemplaza a la del plan no es carga de más');
+
+  /* 48 h entre días de golpeo fuerte, también con lo planificado */
+  const kk = plan(WED2, { sessions: [{ id: 'k5', date: TUE2, type: 'golpeo', done: true, minutes: 25, rpe: 5, kick: { level: 5, pd: 0, pn: 0 } }] });
+  const wball = ses(kk.day(WED2), 'balon');
+  ok(wball && wball.field.drills.every(d => d.foot !== 'izq' && d.foot !== 'der' && !/Definición|Voleas/.test(d.n)), 'v4.5: el día después de patear fuerte quedan remates en Balón: ' + (wball ? wball.field.drills.map(d => d.n).join(', ') : '—'));
+  ok(!types(kk.day(WED2)).includes('golpeo'), 'v4.5: golpeo dos días seguidos');
+  for (let w = 0; w < 2; w++) { const days = plan(MON2).week; for (let i = 1; i < days.length; i++) { const a = ses(days[i - 1], 'golpeo'), b = ses(days[i], 'golpeo'); ok(!(a && a.level >= 4 && b), 'v4.5: golpeo fuerte seguido de golpeo el ' + days[i].date); } }
+
+  /* Cuarto día intenso en 7, contando el domingo */
+  const sat = p.day(SAT);
+  ok(sat.intense && sat.notes.some(n => /4 días intensos en 7/.test(n)), 'v4.5: el sábado no cuenta el domingo intenso: ' + sat.notes.join(' | '));
+  ok(!plan(MON2).day(SAT).notes.some(n => /días intensos en 7/.test(n)), 'v4.5: una semana normal no debería tocar el tope de 7 días');
+
+  /* Golpeo demostrado en cancha: pendiente, limpio, al 100 %, con dolor */
+  const kLevel0 = plan(MON2).st.kick.level;
+  const pend = plan(MON2, { sessions: [heavy({}, { pn: null })] }).st;
+  ok(pend.kick.level === kLevel0 && !pend.kick.demo, 'v4.5: sin saber cómo amaneció, la cancha no debería subir el nivel');
+  const low = () => { const d = clone(BASE); d.sessions = d.sessions.filter(s => s.type !== 'golpeo' || s.kick.level <= 3); return d; };
+  const stOf = (extra, mut) => { const d = low(); d.sessions = d.sessions.concat(extra); if (mut) mut(d); return E.deriveState(Object.assign({}, d, { agenda: [], customExercises: [] }), MON2); };
+  ok(stOf([]).kick.level === 4, 'v4.5: el fixture debería estar en K4: K' + stOf([]).kick.level);
+  const clean5 = stOf([heavy()]);
+  ok(clean5.kick.level === 5 && clean5.kick.demo && clean5.kick.demo.level === 5, 'v4.5: muchos golpes fuertes sin dolor deberían contar como K5 sin confirmar el 100 %: K' + clean5.kick.level);
+  const clean7 = stOf([heavy({}, { max: { der: true } })]);
+  ok(clean7.kick.level === 7 && clean7.kick.streak === 1, 'v4.5: al 100 % sin dolor debería contar como K7 (1 de 2): K' + clean7.kick.level + ' ' + clean7.kick.streak);
+  ok(stOf([heavy({}, { golpes: { der: 'varios', izq: 'no' }, max: { der: true } })]).kick.level === 6, 'v4.5: varios al 100 % debería ser K6');
+  const var4 = stOf([heavy({}, { golpes: { der: 'varios', izq: 'no' } })]);
+  ok(var4.kick.demo && var4.kick.demo.level === 4 && var4.kick.level === 5, 'v4.5: varios sin el 100 % debería contar como K4 limpio (sube a K5): ' + JSON.stringify(var4.kick.demo) + ' K' + var4.kick.level);
+  ok(stOf([heavy({}, { golpes: { der: 'no', izq: 'muchos' } })]).kick.level === 4, 'v4.5: los golpes con la otra pierna no cuentan para esta escalera');
+  ok(stOf([heavy({}, { max: { der: true }, pn: 1 })]).kick.level === 4, 'v4.5: con dolor 1 al día siguiente no debería subir');
+  ok(stOf([heavy({}, { max: { der: true }, pd: 4 })]).kick.level === 3, 'v4.5: con dolor 4 durante debería bajar un nivel, no subir: K' + stOf([heavy({}, { max: { der: true }, pd: 4 })]).kick.level);
+  ok(stOf([heavy({ date: '2026-08-20' }, { max: { der: true } })]).kick.level === 4, 'v4.5: una cancha de antes de la lesión no cuenta');
+  /* Se planifica y se proyecta con lo demostrado, aunque la fase tenga otro tope */
+  const wk7 = E.buildWeek(clean7, E.weekStartOf(MON2), MON2), tue7 = wk7.find(d => d.date === TUE2);
+  ok(clean7.phase === 3 && ses(tue7, 'golpeo') && ses(tue7, 'golpeo').level === 7, 'v4.5: el martes debería ser K7 aunque F3 tope en K5: ' + desc(tue7));
+  ok(clean7.criteria.items.find(i => /Golpeo K5/.test(i.label)).ok, 'v4.5: el criterio de golpeo de F3 debería cumplirse');
+  const pj0 = E.project(stOf([]), MON2), pj7 = E.project(clean7, MON2);
+  ok(pj7.k8 && pj0.k8 && pj7.k8 < pj0.k8 && pj7.phases[5] <= pj0.phases[5], 'v4.5: la proyección no se acorta: ' + JSON.stringify(pj0) + ' → ' + JSON.stringify(pj7));
+  /* Sin estrenar nivel solo mientras no se sepa cómo amaneció */
+  const pendWk = E.buildWeek(stOf([heavy({}, { pn: null, max: { der: true } })]), E.weekStartOf(MON2), MON2);
+  ok(ses(pendWk.find(d => d.date === TUE2), 'golpeo').level <= 4, 'v4.5: sin saber cómo amaneció, el martes no debería estrenar nivel');
+
+  /* Lectura del relato */
+  const mt = campoMaxFromText('pude patear con la derecha a full y sin ninguna molestia');
+  ok(mt && mt.der === true && !mt.izq, 'v4.5: no lee «con la derecha a full»: ' + JSON.stringify(mt));
+  ok(!campoMaxFromText('mucha definición con ambas piernas y tiros libres'), 'v4.5: inventa el 100 % sin que lo diga el relato');
+  ok(!campoMaxFromText('fue una sesión a tope de 2 horas'), 'v4.5: «a tope» sin hablar de patear no es golpeo al máximo');
+  const pt = parseTrainText('Definición y tiros libres, pateé con la derecha al 100 %, sin dolor. 2 horas', {});
+  ok(pt.campo && pt.campo.max && pt.campo.max.der === true && pt.campo.pd === 0, 'v4.5: el lector no guarda el 100 % ni el sin dolor: ' + JSON.stringify(pt.campo && { max: pt.campo.max, pd: pt.campo.pd }));
+  const ai = campoFromAi({ bloques: [{ n: 'Definición', cat: 'remate', min: 60, pies: 'ambos', int: 'alta' }], golpesFuertes: { der: 'muchos', izq: 'no' }, alMaximo: { der: true } }, { text: 'definición' });
+  ok(ai.campo.max && ai.campo.max.der === true, 'v4.5: no toma alMaximo de la IA');
+
+  /* Tren superior: «derecha» es el brazo */
+  for (const id of ['remo_mancuerna', 'press_landmine', 'rot_ext_banda', 'press_mancuernas', 'curl_biceps', 'elev_lateral']) ok(!isLegExercise(BANK_INDEX[id]), 'v4.5: ' + id + ' se marca como ejercicio de piernas');
+  for (const id of ['bulgara', 'bulgara_rf_atras', 'ext_uni_exc', 'copenhagen', 'iso_rf_zancada', 'gemelo_uni', 'step_down']) ok(isLegExercise(BANK_INDEX[id]), 'v4.5: ' + id + ' no se marca como ejercicio de piernas');
+  const upperU = E.BANK.filter(b => b.lat === 'U' && ['empuje_h', 'empuje_v', 'traccion_h', 'traccion_v', 'hombro'].includes(b.pat));
+  ok(upperU.length >= 3 && upperU.every(b => !isLegExercise(b)), 'v4.5: unilaterales de brazos marcados como piernas: ' + upperU.filter(b => isLegExercise(b)).map(b => b.id).join(', '));
+}
+
 console.log('motor · fallos:', fails.length);
 fails.forEach(f => console.log('  ', f));
 process.exit(fails.length ? 1 : 0);

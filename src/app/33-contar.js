@@ -45,7 +45,7 @@ async function trainTextGo(local) {
   const T = UI.tt; if (!T || T.busy) return;
   const txt = (T.text || '').trim();
   if (txt.length < 4) { toast('Cuenta qué hiciste.', 'warn'); return; }
-  const total = ttMinutes(T), opts = { total, intensity: T.intensity };
+  const total = ttMinutes(T), opts = { total, intensity: T.intensity, text: txt };
   let draft, err = '';
   if (local || !AIX.available()) {
     draft = parseTrainText(txt, opts);
@@ -80,7 +80,9 @@ function campoMerge(e, d, T, err) {
   if (generic || !e.id) e.title = d.titulo;
   if (d.campo) {
     const prev = e.campo || {};
-    e.campo = Object.assign(campoEmpty(), d.campo, { pd: prev.pd ?? null, pn: prev.pn ?? null, ia: !!d.ia, auto: !d.ia, texto: txt, start: d.inicio || T.start || '', end: d.fin || T.end || '' });
+    /* Lo que ya marcaste a mano (dolor, 100 %) se respeta */
+    const max = Object.assign({}, d.campo.max, prev.max);
+    e.campo = Object.assign(campoEmpty(), d.campo, { pd: prev.pd ?? d.campo.pd ?? null, pn: prev.pn ?? null, ia: !!d.ia, auto: !d.ia, texto: txt, start: d.inicio || T.start || '', end: d.fin || T.end || '' }, Object.keys(max).length ? { max } : {});
     if (e.type === 'libre') e.type = 'cancha';
   }
   if (d.minutos && (num(e.minutes) === null || !e.id)) e.minutes = d.minutos;
@@ -134,7 +136,7 @@ function campoEditorHtml(e) {
   const c = e.campo; if (!c) return '';
   const sum = campoSum(c), injSide = ST.injury ? ST.side || 'd' : null;
   const lesK = injSide === 'i' ? 'izq' : 'der', lesBand = c.golpes[lesK] || 'no';
-  const tag = (k) => (ST.injuryActive && injSide && k === lesK ? ' · lesionada' : '');
+  const tag = (k) => (ST.injuryActive && injSide && k === lesK ? ' · ' + legSideTag() : '');
   let h = '<section class="stack" aria-labelledby="cl-h"><div class="ed-head"><span class="kicker" id="cl-h">Cancha</span><span class="meta">' + (sum ? fmtDur(sum) : '') + (c.ia ? ' · ordenado con IA' : '') + '</span></div>';
   h += c.bloques.length ? '<div class="ai-items cl-items">' + c.bloques.map(clRowHtml).join('') + '</div>' : '<div class="empty small">Sin bloques. Agrega lo que hiciste.</div>';
   if (sum && num(e.minutes) && Math.abs(sum - num(e.minutes)) > 5) h += '<div class="sub">Los bloques suman ' + fmtDur(sum) + ' y la sesión ' + fmtDur(num(e.minutes)) + '.</div>';
@@ -142,10 +144,10 @@ function campoEditorHtml(e) {
   h += '<div class="stack-sm"><div class="field"><span class="lab">Golpes fuertes</span><span class="hint">Remates, tiros libres, pases largos, centros y cambios de frente. Pocos ≈ 1-10 · varios ≈ 10-30 · muchos ≈ 30 o más.</span></div>' +
     clBandHtml('der', 'Derecha' + tag('der'), c.golpes.der) + clBandHtml('izq', 'Izquierda' + tag('izq'), c.golpes.izq) +
     clBandHtml('cabezazos', 'Cabezazos con salto', c.cabezazos) + clBandHtml('sprints', 'Sprints, duelos y cambios de dirección', c.sprints) + '</div>';
-  if (ST.injuryActive && !ST.kick.top && campoRank(lesBand) >= 2) {
-    const L = effLevels(ST);
-    h += note('warn', 'Golpes fuertes con la ' + (lesK === 'der' ? 'derecha' : 'izquierda') + ' por encima de tu escalera (K' + L.k + '): cuenta como día intenso y el golpeo de los 2 días siguientes no estrena nivel.');
-  }
+  if (ST.injuryActive && lesBand !== 'no') h += toggleHtml('cl-maxt', !!(c.max && c.max[lesK] === true), 'Llegué al 100 % con la ' + (lesK === 'der' ? 'derecha' : 'izquierda'), 'Sin dolor al día siguiente, cuenta para tu nivel de golpeo.');
+  const evL = ST.injuryActive && !ST.kick.top ? campoKickLevel({ campo: Object.assign({}, c, { side: injSide }), date: e.date, done: true }) : 0;
+  if (evL > ST.kick.level) h += note('warn', 'Por encima de tu escalera (' + KICK[ST.kick.level].n + '): cuenta como día intenso y el día siguiente va sin golpeo. Si amaneces sin dolor, tu nivel sube a ' + KICK[evL].n + '.');
+  else if (ST.injuryActive && !ST.kick.top && campoRank(lesBand) >= 2) h += note('warn', 'Golpes fuertes con la ' + (lesK === 'der' ? 'derecha' : 'izquierda') + ': cuenta como día intenso y el día siguiente va sin golpeo.');
   if (ST.injuryActive && lesBand !== 'no') {
     h += '<div class="field"><span class="lab">Dolor en el recto femoral durante</span>' + scaleHtml('pd', c.pd, { pain: true, act: 'cl-pain', l: '0 nada', r: '10 máximo' }) + '</div>';
     if (e.date < todayStr()) h += '<div class="field"><span class="lab">Al día siguiente</span>' + scaleHtml('pn', c.pn, { pain: true, act: 'cl-pain', l: '0 nada', r: '≥ 3: nada intenso' }) + '</div>';
@@ -180,8 +182,10 @@ function campoReviewHtml(log) {
   const bandChip = (l, b) => chip(l + ' · ' + CAMPO_BAND_N[b || 'no'].toLowerCase(), campoRank(b) >= 2 ? 'load' : '');
   let h = '<div class="card flat tight"><div class="stack-sm"><div class="row between nowrap"><span class="h3">' + ic('ball') + ' Cancha</span>' + (isIntenseLog(log) ? chip('Intensa para el RF', 'load', 'flame') : '') + '</div>';
   h += '<div>' + (c.bloques || []).map(b => '<div class="lrow"><span class="fg2">' + esc(b.n) + (b.pies === 'der' || b.pies === 'izq' ? ' <span class="fg4">· ' + esc(CAMPO_PIES[b.pies].toLowerCase()) + '</span>' : '') + '</span><b class="num">' + (num(b.min) || 0) + ' min</b></div>').join('') + '</div>';
-  h += '<div class="micro">Golpes fuertes estimados</div><div class="row">' + bandChip('Derecha', g.der) + bandChip('Izquierda', g.izq) + (c.cabezazos && c.cabezazos !== 'no' ? bandChip('Cabezazos', c.cabezazos) : '') + (c.sprints && c.sprints !== 'no' ? bandChip('Sprints y duelos', c.sprints) : '') + (c.companeros ? chip(plural(c.companeros, 'compañero', 'compañeros'), '', 'users') : '') + '</div>';
+  h += '<div class="micro">Golpes fuertes estimados</div><div class="row">' + bandChip('Derecha', g.der) + bandChip('Izquierda', g.izq) + (c.cabezazos && c.cabezazos !== 'no' ? bandChip('Cabezazos', c.cabezazos) : '') + (c.sprints && c.sprints !== 'no' ? bandChip('Sprints y duelos', c.sprints) : '') + (c.companeros ? chip(plural(c.companeros, 'compañero', 'compañeros'), '', 'users') : '') + (campoMaxLes(log) === true ? chip('Al 100 %', 'lime') : '') + '</div>';
   if (num(c.pd) !== null || num(c.pn) !== null) h += '<div class="grid2"><div class="stat ' + (painTone(c.pd) === 'pain' ? 'pain' : '') + '"><span class="v">' + (c.pd ?? '—') + '<small>/10</small></span><span class="k">Dolor durante</span></div><div class="stat ' + (painTone(c.pn) === 'pain' ? 'pain' : '') + '"><span class="v">' + (c.pn ?? '—') + '<small>/10</small></span><span class="k">Al día siguiente</span></div></div>';
-  h += '<div class="sub">' + (c.ia ? ic('spark') + ' Ordenado con IA. ' : '') + 'Bandas estimadas, no conteos: no cuenta para subir de nivel K ni S.</div>';
+  const evL = campoKickLevel(log), evO = evL ? outcome(c.pd, c.pn) : null;
+  const evTxt = !evL ? 'no cuenta para el nivel de golpeo.' : evO === 'clean' ? 'cuenta como ' + KICK[evL].n + ' en tu escalera: sin dolor al día siguiente.' : evO === 'pending' ? 'si amaneces sin dolor, cuenta como ' + KICK[evL].n + ' en tu escalera.' : 'no sube tu nivel de golpeo: hubo dolor.';
+  h += '<div class="sub">' + (c.ia ? ic('spark') + ' Ordenado con IA. ' : '') + 'Bandas estimadas, no conteos: ' + evTxt + ' Los sprints no suben el nivel S.</div>';
   return h + '</div></div>';
 }

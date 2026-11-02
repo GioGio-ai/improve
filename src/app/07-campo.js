@@ -26,7 +26,7 @@ function campoBallMin(log) {
 function campoIntense(log) {
   if (!campoLive(log)) return false;
   const c = log.campo;
-  if (campoRank(campoShots(log).lesBand) >= 2) return true;
+  if (campoRank(campoShots(log).lesBand) >= 2 || campoMaxLes(log) === true) return true;
   if (campoRank(c.sprints) >= 2) return true;
   const hi = (c.bloques || []).filter(b => (CAMPO_CATS[b.cat] || {}).sprint && b.int === 'alta').reduce((a, b) => a + (num(b.min) || 0), 0);
   if (hi >= 15) return true;
@@ -37,6 +37,52 @@ function campoIntense(log) {
 function campoLesShotsNear(sessions, date) {
   return (sessions || []).find(s => (s.date === addDays(date, -1) || s.date === addDays(date, -2)) && campoRank(campoShots(s).lesBand) >= 2) || null;
 }
+/* ¿Llegó al 100 % con la pierna que se lesionó? true, false o null si no se sabe */
+function campoMaxLes(log) {
+  if (!log || !log.campo) return null;
+  const v = log.campo.max && log.campo.max[campoSide(log) === 'i' ? 'izq' : 'der'];
+  return v === true || v === false ? v : null;
+}
+/* Nivel K que demuestra una cancha libre. Las bandas son estimaciones: sin confirmar el 100 %, como mucho K5.
+   Al 100 %: pocos K5, varios K6 (10 remates), muchos K7 (30 o más). */
+function campoKickLevel(log) {
+  if (!campoLive(log) || !log.campo.side) return 0;
+  const r = campoRank(campoShots(log).lesBand), k = campoSide(log) === 'i' ? 'izq' : 'der';
+  if (campoMaxLes(log) === true) return r >= 3 ? 7 : r === 2 ? 6 : 5;
+  const hi = (log.campo.bloques || []).filter(b => (CAMPO_CATS[b.cat] || {}).shot && b.int === 'alta' && (b.pies === 'ambos' || b.pies === k)).reduce((a, b) => a + (num(b.min) || 0), 0);
+  return r >= 3 && hi >= 15 ? 5 : r >= 2 ? 4 : 0;
+}
+/* La cancha libre como entrada de la escalera: rige igual que una sesión (dolor ≤ 2 durante y 0 al día siguiente) */
+function campoKickEntry(log) {
+  if (!log || log.kick) return null;
+  const L = campoKickLevel(log); if (!L) return null;
+  return { id: log.id, date: log.date, type: 'golpeo', done: true, createdAt: log.createdAt || 0, kick: { level: L, pd: log.campo.pd, pn: log.campo.pn, demo: true } };
+}
+/* Día de golpeo fuerte: escalera K4 o más, cancha libre con varios golpes fuertes con cualquier pierna, partido o prueba */
+function hardKickLog(s) {
+  if (!s || s.done === false || s.deleted) return false;
+  if (['partido', 'prueba', 'juego'].includes(s.type)) return true;
+  if (s.kick && Number(s.kick.level) >= 4) return true;
+  if (!campoLive(s)) return false;
+  const g = s.campo.golpes || {};
+  return campoRank(g.der) >= 2 || campoRank(g.izq) >= 2 || campoMaxLes(s) === true;
+}
+/* «Pateé a full con la derecha»: qué pierna llegó al máximo según el relato */
+const CAMPO_MAX_RX = /(a full|al maximo|a tope|a fondo|al 100|100 ?%|con todo|maxima potencia|a toda potencia)/;
+const CAMPO_KICK_RX = /(pate|remat|chut|golpe|tiro|derech|zurda|izquierd)/;
+function campoMaxFromText(txt) {
+  const t = String(txt || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
+  const out = {};
+  for (const sent of t.split(/[.;\n]+/)) {
+    if (!CAMPO_MAX_RX.test(sent) || !CAMPO_KICK_RX.test(sent)) continue;
+    const r = /derech|diestr/.test(sent), l = /zurda|izquierd/.test(sent), both = /ambas|las dos|dos piernas/.test(sent);
+    if (r || both || !l) out.der = true;
+    if (l || both || !r) out.izq = true;
+  }
+  return Object.keys(out).length ? out : null;
+}
+/* «Sin dolor», «sin ninguna molestia»: dolor 0 durante, si no se marcó otra cosa */
+function campoNoPainFromText(txt) { return /sin (ningun[ao] )?(molestia|dolor)/.test(String(txt || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '')); }
 /* Bandas sugeridas a partir de los bloques (lector sin IA y bloques agregados a mano) */
 function campoAutoBands(bloques, much) {
   const legs = { der: 0, izq: 0 };
@@ -52,6 +98,7 @@ function campoAutoBands(bloques, much) {
   return { golpes: { der: up(band(legs.der)), izq: up(band(legs.izq)) }, cabezazos: heads >= 15 ? 'varios' : heads > 0 ? 'pocos' : 'no', sprints: band(spr) };
 }
 const CAMPO_RPE = { baja: 4, media: 6, alta: 8, max: 9 };
+function campoTextFlags(txt) { const m = campoMaxFromText(txt), o = {}; if (m) o.max = m; if (campoNoPainFromText(txt)) o.pd = 0; return o; }
 
 /* ---------- Lector sin IA: palabras clave → bloques en el orden en que se cuentan ---------- */
 const CAMPO_RX = [
@@ -133,7 +180,7 @@ function parseTrainText(txt, opts) {
   return {
     titulo: titulo.slice(0, 60), tipo: bloques.length ? 'cancha' : 'libre', minutos, inicio: tot && tot.start || '', fin: tot && tot.end || '',
     rpe: intensity ? CAMPO_RPE[intensity] : null, rpeEst: !opts.intensity,
-    campo: bloques.length ? Object.assign({ bloques, companeros }, bands) : null, ejercicios: [],
+    campo: bloques.length ? Object.assign({ bloques, companeros }, bands, campoTextFlags(txt)) : null, ejercicios: [],
     nota: bloques.length ? 'Ordenado sin IA: revisa los bloques y las bandas.' : 'No reconocí actividades con balón. Agrégalas a mano o usa la IA.',
   };
 }
@@ -160,7 +207,13 @@ function campoFromAi(res, opts) {
   return {
     titulo: String((res && res.titulo) || (bloques.length ? 'Cancha libre' : 'Sesión libre')).slice(0, 60), tipo: bloques.length ? 'cancha' : 'libre', minutos, inicio: ini, fin,
     rpe: rpe === null ? null : clamp(Math.round(rpe), 1, 10), rpeEst: !opts.intensity,
-    campo: bloques.length ? { bloques, golpes: { der: band(golpes.der), izq: band(golpes.izq) }, cabezazos: band(res.cabezazos), sprints: band(res.sprints), companeros: clamp(Math.round(num(res.companeros) || 0), 0, 30) } : null,
+    campo: bloques.length ? Object.assign({ bloques, golpes: { der: band(golpes.der), izq: band(golpes.izq) }, cabezazos: band(res.cabezazos), sprints: band(res.sprints), companeros: clamp(Math.round(num(res.companeros) || 0), 0, 30) }, (() => {
+      /* Al máximo: lo que diga la IA y lo que diga el relato; sin dolor, solo si el relato lo dice */
+      const flags = campoTextFlags(opts.text), am = (res && res.alMaximo) || {}, max = Object.assign({}, flags.max);
+      if (am.der === true) max.der = true;
+      if (am.izq === true) max.izq = true;
+      return Object.assign({}, flags, Object.keys(max).length ? { max } : {});
+    })()) : null,
     ejercicios, nota: String((res && res.nota) || '').slice(0, 200),
   };
 }

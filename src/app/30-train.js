@@ -319,7 +319,7 @@ function setValText(stp, x) {
 function setRowHtml(stp, x, k, P, curK) {
   const mode = stp.mode, attrs = (f) => 'data-k="' + k + '" data-f="' + f + '"';
   const sides = stp.side ? 2 : 1, setNo = Math.floor(k / sides) + 1;
-  const injured = x.side && x.side === ST.side && ST.injuryActive;
+  const injured = x.side && x.side === ST.side && ST.injuryActive && stepIsLeg(stp);
   const showKg = !(mode === 'contacts' || mode === 'min' || (stp.warmup && mode !== 'reps'));
   const editK = P === 'tr' && TR.edit !== undefined && TR.edit !== null ? TR.edit : curK;
   const open = P !== 'tr' || k === editK;
@@ -334,7 +334,7 @@ function setRowHtml(stp, x, k, P, curK) {
   else if (mode === 'dist') val = stepperHtml(P + '-' + k + '-m', x.m, P + '-step', attrs('m'), 'm');
   else if (mode === 'contacts') val = stepperHtml(P + '-' + k + '-c', x.c, P + '-step', attrs('c'), 'cont');
   else val = stepperHtml(P + '-' + k + '-reps', x.reps, P + '-step', attrs('reps'), 'rep');
-  const title = x.side ? sideLong(x.side) + (injured ? ' · lesionada' : '') : 'Serie ' + setNo;
+  const title = x.side ? sideLong(x.side) + (injured ? ' · ' + legSideTag() : '') : 'Serie ' + setNo;
   return '<div class="set open' + (x.done ? ' done' : ' cur') + '"><div class="sh">' + label + '<span class="st-t">' + esc(title) + (stp.side ? '<small> · serie ' + setNo + '</small>' : '') + '</span>' + go + '</div>' +
     '<div class="sg' + (showKg ? '' : ' one') + '">' + (showKg ? stepperHtml(P + '-' + k + '-kg', x.kg, P + '-step', attrs('kg'), 'kg') : '') + val + '</div></div>';
 }
@@ -359,7 +359,7 @@ function trExHtml(s) {
     if (s.lastNote) h += '<div class="lastnote">' + ic('pen') + ' Tu nota: “' + esc(s.lastNote) + '”</div>';
   }
   h += '<div class="sets">' + s.sets.map((x, k) => setRowHtml(s, x, k, 'tr', curK)).join('') + '</div>';
-  if (s.side) h += '<div class="sub">' + ic('info') + ' Por lado: pasas a la otra pierna sin descanso; el descanso va después de las dos.</div>';
+  if (s.side) h += '<div class="sub">' + ic('info') + ' Por lado: pasas ' + (stepIsLeg(s) ? 'a la otra pierna' : 'al otro lado') + ' sin descanso; el descanso va después de los dos.</div>';
   h += '<div class="row"><button class="btn sm" data-act="tr-addset">' + ic('plus') + 'Serie</button>' + (s.sets.length > (s.side ? 2 : 1) ? '<button class="btn sm ghost" data-act="tr-delset">' + ic('minus') + 'Quitar serie</button>' : '') + '</div>';
   if (!s.warmup) {
     if (s.rf) h += '<div class="field"><span class="lab">Dolor en el recto femoral</span>' + scaleHtml('pain', s.pain, { pain: true, act: 'tr-pain', l: '0 nada', r: '≥ 3 para y baja' }) + '</div>';
@@ -518,11 +518,11 @@ function trTestHtml(s) {
   h += '<div class="excue">' + esc(s.d) + '</div>';
   if (s.tkind === 'pair') {
     const v = s.val || {};
-    const box = (sd) => '<div class="side' + (sd === inj && ST.injuryActive ? ' inj' : '') + '"><span class="lab">' + sideLong(sd) + (sd === inj && ST.injuryActive ? ' · lesionada' : ' · sana') + '</span><input class="input num" inputmode="decimal" enterkeyhint="done" autocomplete="off" data-bind="tr-test" data-s="' + sd + '" value="' + esc(fmtNumRaw(v[sd])) + '" placeholder="' + esc(s.unit) + '" aria-label="' + esc(s.n + ' ' + sideLong(sd)) + '"></div>';
+    const box = (sd) => '<div class="side' + (sd === inj && ST.injuryActive ? ' inj' : '') + '"><span class="lab">' + sideLong(sd) + (sd === inj && ST.injuryActive ? ' · ' + legSideTag() : ' · sana') + '</span><input class="input num" inputmode="decimal" enterkeyhint="done" autocomplete="off" data-bind="tr-test" data-s="' + sd + '" value="' + esc(fmtNumRaw(v[sd])) + '" placeholder="' + esc(s.unit) + '" aria-label="' + esc(s.n + ' ' + sideLong(sd)) + '"></div>';
     h += '<div class="tpair">' + box(hea) + box(inj) + '</div>';
     if (s.key !== 'stretch') {
       const L = lsi(v, inj);
-      h += '<div class="lsi-live' + (L === null ? '' : L >= 90 ? ' pass' : ' low') + '" id="tr-lsi"><div><div class="h3">Lesionada vs sana</div><div class="sub">Meta ≥ 90 %</div></div><b>' + (L === null ? '—' : fmtNum(L) + ' %') + '</b></div>';
+      h += '<div class="lsi-live' + (L === null ? '' : L >= 90 ? ' pass' : ' low') + '" id="tr-lsi"><div><div class="h3">' + esc(legCompareLabel(ST)) + '</div><div class="sub">Meta ≥ 90 %</div></div><b>' + (L === null ? '—' : fmtNum(L) + ' %') + '</b></div>';
     } else {
       const a = num(v.d), b = num(v.i);
       h += '<div class="lsi-live' + (a === null || b === null ? '' : Math.abs(a - b) <= 2 ? ' pass' : ' low') + '" id="tr-lsi"><div><div class="h3">Diferencia</div><div class="sub">Meta ≤ 2 cm</div></div><b>' + (a === null || b === null ? '—' : fmtNum(Math.abs(a - b)) + ' cm') + '</b></div>';

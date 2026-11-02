@@ -5,7 +5,7 @@
    - Piernas no intensas: ≥ 2-3 h antes de la cancha. Tren superior: 1 h.
    - Nunca dos días intensos seguidos ni más de 3 por semana; descanso y pruebas, intocables.
    ============================================================ */
-const RS_LIGHT = ['movilidad', 'recuperacion', 'descanso'];
+const RS_LIGHT = ['movilidad', 'recuperacion', 'recupPiernas', 'descanso'];
 const rsNames = (types) => types.map(t => (STYPES[t] || { short: t }).short).join(' + ');
 const rsHeavy = (s) => STRENGTH_TYPES.includes(s.type) || !!s.intense;
 const rsLegs = (s) => !UPPER_TYPES.includes(s.type) && !RS_LIGHT.includes(s.type);

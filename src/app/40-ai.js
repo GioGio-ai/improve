@@ -53,6 +53,7 @@ const TRAIN_SCHEMA = {
     golpesFuertes: { type: 'object', properties: { der: BAND_ENUM, izq: BAND_ENUM }, required: ['der', 'izq'] },
     cabezazos: BAND_ENUM,
     sprints: BAND_ENUM,
+    alMaximo: { type: 'object', description: 'Solo si el relato dice que pateó al máximo (a full, a tope, al 100 %, con todo)', properties: { der: { type: 'boolean' }, izq: { type: 'boolean' } } },
     companeros: { type: 'number' },
     ejercicios: { type: 'array', items: { type: 'object', properties: {
       id: { type: 'string', description: 'Id de la lista del banco si coincide; vacío si no' },
@@ -119,6 +120,7 @@ const AIX = {
       '1) bloques: lo que hizo en el orden en que lo cuenta. cat es la categoría; min los minutos (si no los dice, estímalos; deben sumar la duración total); pies: ambos, der, izq o ninguno (estiramiento, cabeceo o sprint sin balón: ninguno); int: baja, media o alta. Si una actividad coincide con esta lista, usa su id y su nombre: ' + acts + '.\n' +
       '2) golpesFuertes por pierna: remates, tiros libres, penales, pases largos, centros y cambios de frente. Bandas: no (ninguno), pocos (1-10), varios (10-30), muchos (más de 30). «Con ambas piernas» cuenta para las dos. Si dice «mucha definición» o la sesión es larga de remate, usa muchos. No inventes golpes con una pierna que el relato no usa.\n' +
       '3) cabezazos: solo cabezazos con salto o fuertes (mismas bandas). sprints: aceleraciones al máximo, 1 contra 1, duelos y cambios de dirección (mismas bandas). companeros: cuántos lo acompañaron (0 si entrenó solo).\n' +
+      '   alMaximo: por pierna, true solo si el relato dice que esa pierna pateó al máximo (a full, a tope, al 100 %, con todo); si no lo dice, déjalo sin marcar.\n' +
       '4) rpe de 1 a 10 de la sesión entera: si marcó la intensidad, respétala (suave 4, media 6, intensa 8, al máximo 9); si no, estímala por lo que cuenta.\n' +
       '5) ejercicios: solo de gimnasio, si los hay' + (gym ? ', con el id de este banco si coincide (si no, id vacío), series, reps, kg o segundos: ' + bank : ' (aquí no hay: lista vacía)') + '.\n' +
       '6) titulo corto (máximo 48 caracteres) y nota de una línea con lo que supusiste. No inventes actividades que no están en el relato. ' + AI_STYLE;
@@ -214,6 +216,8 @@ function coachContext(st, today) {
     lesion: st.injury ? { zona: st.injury.zone, lado: st.injury.side === 'i' ? 'izquierdo' : 'derecho', fecha: st.injury.date, localizacion: st.injury.location, ecografia: (st.injury.imaging || []).map(i => i.text), mecanismo: st.injury.mechanism, recaidas: st.injury.recurrences } : null,
     fase: st.injury ? PHASES[st.phase].n + ' ' + PHASES[st.phase].t : 'Rendimiento',
     criteriosSiguienteFase: st.criteria ? st.criteria.items.map(i => ({ criterio: i.label, cumplido: i.ok, dato: i.detail, obligatorio: i.req })) : null,
+    golpeoDemostradoEnCancha: st.kick.demo ? { nivel: 'K' + st.kick.demo.level, fecha: st.kick.demo.date } : null,
+    cargaDeMas: (() => { const c = carryRule(st, today, today); return c ? { nivel: c.tier, carga: c.load, fecha: c.date, regla: c.note } : null; })(),
     niveles: { golpeo: 'K' + st.kick.level + ' (' + st.kick.streak + '/' + st.kick.req + ')', sprint: 'S' + st.sprint.level + ' (' + st.sprint.streak + '/' + st.sprint.req + ')', rt: RT_LEVELS[st.rt.idx] },
     ultimoTest: st.test, entrePiernasEntrenamiento: trainingLSI(st.sessions, st.side), checkins7dias: ci, sesiones14dias: last14, planSemana: week,
     agendaHoy: ag.items.filter(x => !x.marker).map(x => fmtHM(x.start) + ' ' + x.title + (x.sub ? ' (' + x.sub + ')' : '')),

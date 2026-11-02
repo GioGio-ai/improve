@@ -53,7 +53,7 @@ try {
   ok(/Cancha con un compañero/.test(await ed.locator('#ed-title').inputValue()), 'el título no viene de la IA');
   ok(await ed.locator('[data-act="cl-band"][data-k="der"][data-v="muchos"].on').count() === 1, 'golpes con la derecha no quedan en «muchos»');
   ok(/Estimado por lo que contaste/.test(await ed.innerText()), 'falta el aviso de RPE estimado');
-  ok(/por encima de tu escalera/.test(await ed.innerText()), 'falta el aviso de golpes fuertes por encima de la escalera');
+  ok(/cuenta como día intenso/.test(await ed.innerText()), 'falta el aviso de golpes fuertes');
   ok((await ed.locator('#ed-min').inputValue()).startsWith('120'), 'los minutos no son 120: ' + await ed.locator('#ed-min').inputValue());
   await shot('02-editor-cancha');
   await page.screenshot({ path: outDir + '/02-editor-cancha-full.png', fullPage: false });
@@ -91,7 +91,7 @@ try {
   await page.locator('.day-sec [data-act="session"][data-type="cancha"]').first().click();
   await page.waitForTimeout(400);
   const rev = await sheet.innerText();
-  ok(/Intensa para el RF/i.test(rev) && /Golpes fuertes estimados/i.test(rev) && /no cuenta para subir de nivel/i.test(rev), 'la revisión no muestra la tarjeta de cancha');
+  ok(/Intensa para el RF/i.test(rev) && /Golpes fuertes estimados/i.test(rev) && /en tu escalera/i.test(rev), 'la revisión no muestra la tarjeta de cancha');
   await shot('05-revision');
   await tap('.sheet [data-act="close"]');
 

@@ -1,6 +1,6 @@
 {
   "name": "improve",
-  "version": "4.4.0",
+  "version": "4.5.0",
   "description": "IMPROVE: entrenamiento, recuperación y comida (PWA)",
   "scripts": {
     "build": "node scripts/build.mjs",

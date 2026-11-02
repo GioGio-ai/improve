@@ -94,6 +94,8 @@ document.addEventListener('click', (e) => {
     case 'remove-block': { const d = g('date'); setPlanDay(d, dayPlan(d).types.filter(t => t !== g('type'))).then(() => toast('Quitada de este día.')); closeAllSheets(); return; }
     case 'reset-day': setPlanDay(g('date'), null).then(() => toast('Plan del día restaurado.')); closeAllSheets(); return;
     case 'pn': { const v = Number(g('v')), s0 = (S.data.sessions || []).find(x => x.id === g('id')), cl = !!(s0 && s0.campo && !s0.kick && !s0.spr); updateSession(g('id'), d => { if (d.kick) d.kick.pn = v; if (d.spr) d.spr.pn = v; if (d.campo) d.campo.pn = v; }); toast(cl ? (v >= 3 ? 'Registrado. Con ' + v + '/10, hoy nada intenso ni cancha para el recto femoral.' : 'Registrado. El plan sigue.') : v >= 3 ? 'Registrado. Con ' + v + '/10 bajas un nivel: hoy nada intenso para el RF.' : v > 0 ? 'Registrado. Repites el mismo nivel.' : 'Registrado: sesión limpia.', v >= 3 ? 'warn' : 'ok'); return; }
+    case 'cl-max': { const yes = g('v') === '1'; updateSession(g('id'), d => { if (!d.campo) return; const k = d.campo.side === 'i' ? 'izq' : 'der'; d.campo.max = Object.assign({}, d.campo.max, { [k]: yes }); }); toast(yes ? 'Registrado. Tu escalera de golpeo y el camino se actualizan.' : 'Registrado. El plan sigue.'); return; }
+    case 'cl-maxt': { const c = UI.ed && UI.ed.campo; if (!c) return; const k = (ST.side || 'd') === 'i' ? 'izq' : 'der', cur = c.max && c.max[k]; c.max = Object.assign({}, c.max, { [k]: cur !== true }); refreshSheet(true); return; }
     case 'ex': openExercise(g('id')); return;
     case 'ex-ai': openExerciseAI(g('id')); return;
     case 'exai-retry': { const ex = exInfo(g('id')); if (ex) loadExerciseAI(ex, true); return; }

@@ -26,6 +26,10 @@ function stepperHtml(id, value, act, attrs, unit, cls) {
 function toggleHtml(act, on, title, sub, attrs, tone) {
   return '<button type="button" class="toggle' + (on ? ' on' : '') + (tone ? ' ' + tone : '') + '" role="switch" aria-checked="' + !!on + '" data-act="' + act + '" ' + (attrs || '') + '><div class="mw0"><div class="t">' + esc(title) + '</div>' + (sub ? '<div class="sub">' + esc(sub) + '</div>' : '') + '</div><span class="sw"></span></button>';
 }
+/* La pierna que se lesionó: en F1-F2 está lesionada; desde F3, se refuerza. Solo se marca en ejercicios de piernas */
+function legSideTag() { return ST && ST.phase <= 2 ? 'lesionada' : 'a reforzar'; }
+function legCompareLabel(st) { const a = st.side === 'i' ? 'Izquierda' : 'Derecha', b = st.side === 'i' ? 'derecha' : 'izquierda'; return st.phase <= 2 ? 'Pierna lesionada vs sana' : a + ' vs ' + b; }
+function stepIsLeg(s) { return isLegExercise(exInfo(s.id, s)); }
 function statusMark(log) {
   if (!log) return '<span class="st0" aria-label="Pendiente"></span>';
   if (log.done === false) return '<span class="st0 miss" aria-label="No hecha">' + ic('x') + '</span>';
@@ -37,7 +41,7 @@ function phaseRail(phase) {
   return '<div class="rail" role="img" aria-label="Fase ' + PHASES[phase].n + ' de 6">' + [1, 2, 3, 4, 5, 6].map(p => '<div class="seg6 ' + (p < phase ? 'done' : p === phase ? 'cur' : '') + '"><div class="bar"></div><div class="lbl">' + PHASES[p].n + '</div></div>').join('') + '</div>';
 }
 function ladderHtml(kind, st) {
-  const isK = kind === 'k', lad = isK ? st.kick : st.sprint, max = isK ? 8 : 6, cap = (isK ? KCAP : SCAP)[st.phase] || 0, defs = isK ? KICK : SPRINT;
+  const isK = kind === 'k', lad = isK ? st.kick : st.sprint, max = isK ? 8 : 6, cap = isK ? kickCap(st, st.phase) : SCAP[st.phase] || 0, defs = isK ? KICK : SPRINT;
   let h = '<div class="ladder" style="--n:' + max + '">';
   for (let i = 1; i <= max; i++) {
     const cls = (lad.top || i < lad.level) ? 'done' : i === lad.level ? 'cur' : (st.injuryActive && i > cap) ? 'locked' : i === lad.level + 1 ? 'next' : '';

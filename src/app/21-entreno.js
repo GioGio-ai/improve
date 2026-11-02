@@ -45,14 +45,17 @@ function roadCard(st, today) {
   const goal = st.profile.targetDate;
   const rows = [{ pt: 'cur', t: PHASES[st.phase].n + ' · ' + PHASES[st.phase].t, w: 'Ahora', d: '0', cls: '' }];
   if (st.phase < 4 && proj.phases[4]) rows.push({ pt: '', t: 'F4 · ' + PHASES[4].t, w: fmtDate(proj.phases[4]), d: proj.phases[4], cls: '' });
+  if (st.kick.demo) rows.push({ pt: '', t: 'Golpeo ' + KICK[st.kick.demo.level].n + ' hecho en cancha, sin dolor', w: fmtDate(st.kick.demo.date), d: '0a', cls: 'ok' });
   if (!st.sprint.top && proj.s6) rows.push({ pt: '', t: 'Sprint S6 completo', w: fmtDate(proj.s6), d: proj.s6, cls: '' });
   if (!st.kick.top && proj.k8) rows.push({ pt: '', t: 'Golpeo K8 completo', w: fmtDate(proj.k8), d: proj.k8, cls: '' });
   if (st.phase < 5) rows.push({ pt: 'goal', t: 'F5 · listo para pruebas', w: proj.phases[5] ? fmtDate(proj.phases[5]) : 'más de 10 semanas', d: proj.phases[5] || '9999', cls: proj.phases[5] && goal ? (proj.phases[5] <= goal ? 'ok' : 'late') : '' });
   if (goal) rows.push({ pt: 'goal', t: 'Tu objetivo', w: fmtDate(goal), d: goal + 'z', cls: '' });
   rows.sort((a, b) => (a.d < b.d ? -1 : a.d > b.d ? 1 : 0));
+  /* Lo que hoy marca la fecha de F5 */
+  const brake = !proj.phases[5] ? '' : (!st.sprint.top && (!proj.k8 || (proj.s6 && proj.s6 >= proj.k8))) ? 'Lo que marca la fecha es el sprint (vas en ' + SPRINT[st.sprint.level].n + ') y el test de F4, no el golpeo.' : (!st.kick.top && proj.k8) ? 'Lo que marca la fecha es el golpeo (vas en ' + KICK[st.kick.level].n + ') y el test de F4.' : '';
   return '<section class="panel k-lime"><div class="stack"><div class="ed-head"><span class="kicker">Camino a las pruebas</span>' + (proj.phases[5] && goal ? chip(proj.phases[5] <= goal ? 'A tiempo' : 'Ajustado', proj.phases[5] <= goal ? 'lime' : 'warn') : '') + '</div>' +
     '<ul class="road">' + rows.map(r => '<li><span class="pt ' + r.pt + '"></span><span class="small">' + esc(r.t) + '</span><span class="when ' + r.cls + '">' + esc(r.w) + '</span></li>').join('') + '</ul>' +
-    '<p class="sub">Si cada sesión sale limpia y apruebas los tests.</p></div></section>';
+    '<p class="sub">Si cada sesión sale limpia y apruebas los tests.' + (brake ? ' ' + esc(brake) : '') + '</p></div></section>';
 }
 function historyPanel(st, today) {
   const sessions = (S.data.sessions || []).filter(s => !s.deleted);

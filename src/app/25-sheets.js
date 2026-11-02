@@ -118,7 +118,9 @@ function setsTableHtml(e) {
   if (sided) {
     const dS = sets.filter(x => x.side === 'd'), iS = sets.filter(x => x.side === 'i'), n = Math.max(dS.length, iS.length);
     for (let i = 0; i < n; i++) rows += '<div class="lrow num small c3"><span class="fg4">' + (i + 1) + '</span>' + cell(dS[i]) + cell(iS[i]) + '</div>';
-    return '<div><div class="lrow small c3 nob"><span></span><span class="micro">Derecha' + (ST.side === 'd' ? ' · les.' : '') + '</span><span class="micro">Izquierda' + (ST.side === 'i' ? ' · les.' : '') + '</span></div>' + rows + '</div>';
+    /* La marca de la pierna solo va en ejercicios de piernas: en un remo a una mano, derecha es el brazo */
+    const legTag = (sd) => (ST.injuryActive && ST.side === sd && e.id && isLegExercise(exInfo(e.id, e)) ? ' · ' + legSideTag() : '');
+    return '<div><div class="lrow small c3 nob"><span></span><span class="micro">Derecha' + legTag('d') + '</span><span class="micro">Izquierda' + legTag('i') + '</span></div>' + rows + '</div>';
   }
   sets.forEach((x, i) => { rows += '<div class="lrow num small c2"><span class="fg4">' + (i + 1) + '</span>' + cell(x) + '</div>'; });
   return '<div>' + rows + '</div>';

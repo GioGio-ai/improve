@@ -154,7 +154,7 @@ function fksExplain(st) {
     row('K' + K.level, 'k', 'K = Nivel de golpeo', 'Ocho niveles, de pases suaves (K1) a remates al 100 % con fatiga (K8). Ahora: <b>' + esc(KICK[K.level].t) + '</b>. Subes con sesiones limpias.') +
     row('S' + Sp.level, 's', 'S = Nivel de sprint', 'Seis niveles, de sprints al 60-70 % (S1) a velocidad máxima con cambios de dirección (S6). Ahora: <b>' + esc(SPRINT[Sp.level].t) + '</b>.') +
     row('RT', 'r', 'RT = Esfuerzos repetidos', 'Circuito de conducción intensa y vuelta trotando. Sube tras 2 sesiones con esfuerzo ≤ 7.') +
-    row('%', 'l', '% entre piernas', 'Fuerza o salto de la pierna lesionada dividido la sana. Meta: 90 % o más.') +
+    row('%', 'l', '% entre piernas', 'Fuerza o salto de la pierna que se lesionó dividido la otra. Meta: 90 % o más.') +
     '</div>' + note('blue', '<b>Sesión limpia:</b> dolor ≤ 2 durante y 0 al día siguiente. Con dolor 3 o más bajas un nivel. K5, K7, S4 y S6 piden dos limpias seguidas porque son los umbrales donde te lesionaste.');
 }
 function breathWidget() {
