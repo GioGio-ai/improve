@@ -392,3 +392,12 @@ body.locked #view, body.locked #nav { display: none; }
 .day-sec.is-today .day-t { color: var(--blue-ink); }
 .dot-today { width: 8px; height: 8px; border-radius: 50%; background: var(--blue); box-shadow: 0 0 12px var(--blue); flex: none; }
 .kicker.month { margin-top: var(--s-2); }
+
+/* ---------- Cancha libre (contar el entreno) ---------- */
+.cl-item .nm { display: grid; gap: 2px; min-height: 44px; align-content: center; text-align: left; }
+.cl-item .nm .t { font-size: var(--fs-3); font-weight: var(--fw-2); line-height: 1.3; }
+.cl-item .nm .s { font-family: var(--font); }
+.cl-band { display: grid; gap: var(--s-2); }
+.page-head .btn.sm { flex: none; }
+.cl-item { grid-template-columns: minmax(0, 1fr) 140px 32px; }
+.cl-item .stepper input { padding-right: 28px; }

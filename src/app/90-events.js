@@ -93,7 +93,7 @@ document.addEventListener('click', (e) => {
     case 'move-to': moveBlock(g('from'), g('type'), g('to')); return;
     case 'remove-block': { const d = g('date'); setPlanDay(d, dayPlan(d).types.filter(t => t !== g('type'))).then(() => toast('Quitada de este día.')); closeAllSheets(); return; }
     case 'reset-day': setPlanDay(g('date'), null).then(() => toast('Plan del día restaurado.')); closeAllSheets(); return;
-    case 'pn': { const v = Number(g('v')); updateSession(g('id'), d => { if (d.kick) d.kick.pn = v; if (d.spr) d.spr.pn = v; }); toast(v >= 3 ? 'Registrado. Con ' + v + '/10 bajas un nivel: hoy nada intenso para el RF.' : v > 0 ? 'Registrado. Repites el mismo nivel.' : 'Registrado: sesión limpia.', v >= 3 ? 'warn' : 'ok'); return; }
+    case 'pn': { const v = Number(g('v')), s0 = (S.data.sessions || []).find(x => x.id === g('id')), cl = !!(s0 && s0.campo && !s0.kick && !s0.spr); updateSession(g('id'), d => { if (d.kick) d.kick.pn = v; if (d.spr) d.spr.pn = v; if (d.campo) d.campo.pn = v; }); toast(cl ? (v >= 3 ? 'Registrado. Con ' + v + '/10, hoy nada intenso ni cancha para el recto femoral.' : 'Registrado. El plan sigue.') : v >= 3 ? 'Registrado. Con ' + v + '/10 bajas un nivel: hoy nada intenso para el RF.' : v > 0 ? 'Registrado. Repites el mismo nivel.' : 'Registrado: sesión limpia.', v >= 3 ? 'warn' : 'ok'); return; }
     case 'ex': openExercise(g('id')); return;
     case 'ex-ai': openExerciseAI(g('id')); return;
     case 'exai-retry': { const ex = exInfo(g('id')); if (ex) loadExerciseAI(ex, true); return; }
@@ -178,8 +178,21 @@ document.addEventListener('click', (e) => {
     case 'ed-move': { const i = Number(g('i')), j = i + Number(g('d')), a = UI.ed.items; if (j < 0 || j >= a.length) return; const t = a[i]; a[i] = a[j]; a[j] = t; UI.ed.modified = true; refreshSheet(true); return; }
     case 'ed-del-ex': UI.ed.items.splice(Number(g('i')), 1); UI.ed.modified = true; refreshSheet(true); return;
     case 'ed-kick': UI.ed.kick[g('name')] = Number(g('v')); refreshSheet(true); return;
-    case 'ed-scale': UI.ed[g('name')] = Number(g('v')); refreshSheet(true); return;
-    case 'ed-meta': UI.ed.minutes = Math.max(0, (num(UI.ed.minutes) || 0) + Number(g('d')) * 5); refreshSheet(true); return;
+    case 'ed-scale': UI.ed[g('name')] = Number(g('v')); if (g('name') === 'rpe') UI.ed.rpeEst = false; refreshSheet(true); return;
+    case 'ed-meta': UI.ed.minutes = Math.max(0, (num(UI.ed.minutes) || 0) + Number(g('d')) * 5); UI.ed.minAuto = false; refreshSheet(true); return;
+    /* ---- contar el entreno y cancha libre ---- */
+    case 'train-text': openTrainText({ date: g('date') || today, logId: g('id') || null }); return;
+    case 'ed-ai': openTrainText({ fromEd: true }); return;
+    case 'tt-int': if (UI.tt) { UI.tt.intensity = UI.tt.intensity === g('v') ? null : g('v'); refreshSheet(true); } return;
+    case 'tt-go': trainTextGo(false); return;
+    case 'tt-local': trainTextGo(true); return;
+    case 'cl-blk': openClBlock(Number(g('i'))); return;
+    case 'cl-add': UI.pick = Object.assign(UI.pick || {}, { tab: 'balon', mg: '' }); openPicker('ed'); return;
+    case 'cl-min': { const e2 = UI.ed, b = e2 && e2.campo && e2.campo.bloques[Number(g('i'))]; if (!b) return; b.min = Math.max(0, (num(b.min) || 0) + Number(g('d')) * 5); campoRefresh(e2); refreshSheet(true); return; }
+    case 'cl-del': { const e2 = UI.ed; if (!e2 || !e2.campo) return; e2.campo.bloques.splice(Number(g('i')), 1); campoRefresh(e2); refreshSheet(true); return; }
+    case 'cl-band': { const c = UI.ed && UI.ed.campo; if (!c) return; c.auto = false; if (g('k') === 'der' || g('k') === 'izq') c.golpes[g('k')] = g('v'); else c[g('k')] = g('v'); refreshSheet(true); return; }
+    case 'cl-pain': { const c = UI.ed && UI.ed.campo; if (!c) return; c[g('name')] = Number(g('v')); refreshSheet(true); return; }
+    case 'cl-set': { const e2 = UI.ed, b = e2 && e2.campo && e2.campo.bloques[UI.clCur]; if (!b) return; b[g('k')] = g('v'); campoRefresh(e2); refreshSheet(true); return; }
     case 'ed-save': saveEditor(); return;
     case 'ed-savetpl': saveEditorAsTemplate(); return;
     case 'ed-del': openConfirm('Borrar registro', 'Se borra este registro. Los niveles y la carga se recalculan.', 'do-ed-del', { id: UI.ed.id }, true); return;
@@ -322,7 +335,12 @@ function handleBind(el, isChange) {
     case 'ed-level': UI.ed.kick.level = Number(v); return;
     case 'ed-rt': UI.ed.rt.level = v; return;
     case 'ed-notes': UI.ed.notes = v; return;
-    case 'ed-meta': UI.ed.minutes = parseNum(v); return;
+    case 'tt-text': if (UI.tt) UI.tt.text = v; return;
+    case 'tt-date': if (UI.tt && v) { UI.tt.date = v; if (isChange) refreshSheet(true); } return;
+    case 'tt-start': case 'tt-end': if (UI.tt) { UI.tt[b === 'tt-start' ? 'start' : 'end'] = v; const m = $('#tt-min'); if (m) m.textContent = ttMinText(UI.tt); } return;
+    case 'cl-n': { const bl = UI.ed && UI.ed.campo && UI.ed.campo.bloques[UI.clCur]; if (bl && v.trim()) bl.n = v.trim().slice(0, 60); return; }
+    case 'cl-min': { const e2 = UI.ed, bl = e2 && e2.campo && e2.campo.bloques[Number(el.getAttribute('data-i'))]; if (!bl) return; bl.min = Math.max(0, Math.round(parseNum(v) || 0)); if (isChange) { campoRefresh(e2); refreshSheet(true); } return; }
+    case 'ed-meta': UI.ed.minutes = parseNum(v); UI.ed.minAuto = false; return;
     case 'se-notes': { const it = seItem(); if (it) it.notes = v; return; }
     case 'fin-step': UI.fin.minutes = parseNum(v); UI.fin.minTouched = true; saveDraft(); return;
     case 'fin-notes': UI.fin.notes = v; saveDraft(); return;

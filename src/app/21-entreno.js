@@ -3,7 +3,7 @@
    ============================================================ */
 function viewEntreno(st, today) {
   if (!S.data.profile) return onboarding();
-  let h = '<div class="aura" aria-hidden="true"></div><div class="page-head"><h1 class="h1 grow">Entreno</h1><button class="iconbtn" data-act="new-log" data-date="' + today + '" aria-label="Registrar sesión">' + ic('plus') + '</button></div>';
+  let h = '<div class="aura" aria-hidden="true"></div><div class="page-head"><h1 class="h1 grow">Entreno</h1><button class="btn sm" data-act="train-text" data-date="' + today + '">' + ic('spark') + 'Contar</button><button class="iconbtn" data-act="new-log" data-date="' + today + '" aria-label="Registrar sesión a mano">' + ic('plus') + '</button></div>';
   h += trainingBanner();
   h += '<div class="seg blue" role="tablist">' + [['semana', 'Semana'], ['historial', 'Historial'], ['ejercicios', 'Ejercicios']].map(([k, l]) => '<button type="button" role="tab" aria-selected="' + (UI.enTab === k) + '" class="' + (UI.enTab === k ? 'on' : '') + '" data-act="en-tab" data-v="' + k + '">' + l + '</button>').join('') + '</div>';
   if (UI.enTab === 'historial') return h + historyPanel(st, today);
@@ -73,7 +73,7 @@ function historyPanel(st, today) {
     const painMax = Math.max(0, ...logs.map(l => { const k = l.kick || l.spr; return k ? Math.max(num(k.pd) || 0, num(k.pn) || 0) : 0; }), ci ? num(ci.rfPain) || 0 : 0);
     h += '<section class="card tight day-sec"><div class="stack-sm"><button class="row between nowrap day-t" data-act="day" data-date="' + date + '"><span>' + esc(capFirst(fmtDateLong(date))) + '</span><span class="row nowrap tight">' +
       (ci && num(ci.sleepH) !== null ? chip(fmtNum(ci.sleepH) + ' h', sleepTone(ci.sleepH) === 'load' ? 'warn' : 'sleep', 'moon') : '') + (load ? chip(String(load), intense ? 'load' : '', 'flame') : '') + (painMax >= 3 ? chip('dolor ' + painMax, 'pain') : '') + ic('chev') + '</span></button>' +
-      (logs.length ? logs.map(l => '<button class="blk' + (l.done !== false ? ' done' : '') + '" data-act="session" data-date="' + l.date + '" data-type="' + l.type + '"><span class="c' + (l.done === false ? ' mute' : isIntenseLog(l) ? ' load' : ' lime') + '">' + ic(sessIcon(l.type)) + '</span><div class="grow"><div class="t">' + esc(l.title || (STYPES[l.type] || STYPES.libre).n) + '</div><div class="s">' + esc(logLine(l)) + '</div>' + (l.ball && (l.ball.drills || []).length ? '<div class="s fg3 num">' + esc(l.ball.drills.slice(0, 4).map(d => (BALL_DRILL_INDEX[d.id] || d).n.split(' · ')[0].replace('Definición con zurda', 'Zurda') + ' ' + ballValTxt(d)).join(' · ')) + '</div>' : '') + '</div>' + statusMark(l) + '</button>').join('') : '<div class="sub">Sin entrenamiento registrado.</div>') +
+      (logs.length ? logs.map(l => '<button class="blk' + (l.done !== false ? ' done' : '') + '" data-act="session" data-date="' + l.date + '" data-type="' + l.type + '"><span class="c' + (l.done === false ? ' mute' : isIntenseLog(l) ? ' load' : ' lime') + '">' + ic(sessIcon(l.type)) + '</span><div class="grow"><div class="t">' + esc(l.title || (STYPES[l.type] || STYPES.libre).n) + '</div><div class="s">' + esc(logLine(l)) + '</div>' + (l.ball && (l.ball.drills || []).length ? '<div class="s fg3 num">' + esc(l.ball.drills.slice(0, 4).map(d => (BALL_DRILL_INDEX[d.id] || d).n.split(' · ')[0].replace('Definición con zurda', 'Zurda') + ' ' + ballValTxt(d)).join(' · ')) + '</div>' : '') + (l.campo && (l.campo.bloques || []).length ? '<div class="s fg3">' + esc(l.campo.bloques.filter(b => !['calentamiento', 'movilidad'].includes(b.cat)).slice(0, 4).map(b => b.n).join(' · ')) + '</div>' : '') + '</div>' + statusMark(l) + '</button>').join('') : '<div class="sub">Sin entrenamiento registrado.</div>') +
       '</div></section>';
   }
   if (dates.length > UI.histLimit) h += '<button class="btn block ghost" data-act="hist-more">Ver más días</button>';
@@ -104,7 +104,11 @@ function bankPanel(st) {
 function ballPanel(st) {
   const L = effLevels(st);
   const why = (d) => (d.minPhase || 1) > st.phase ? 'Se abre en ' + PHASES[d.minPhase].n : d.kRight && L.k < d.kRight ? 'Desde K' + d.kRight + ' (derecha)' : d.sMin && L.s < d.sMin ? 'Desde S' + d.sMin : '';
-  let h = note('blue', 'Derecha: interior y control desde ya; empeine fuerte solo en el golpeo. Voleas y centros con la derecha desde K7. Cabeceo fuerte: máx. ' + BALL_HEADER_CAP + ' por semana.');
+  let h = '<section class="stack-sm"><div class="sec"><span class="t">Con compañeros o por tu cuenta</span></div>' +
+    '<button class="blk" data-act="train-text" data-date="' + todayStr() + '"><span class="c">' + ic('spark') + '</span><div class="grow"><div class="t">Contar una sesión con balón</div><div class="s">La describes y la IA la ordena en bloques</div></div>' + ic('chev') + '</button>' +
+    '<div class="exlist">' + CAMPO_ACTS.map(a => '<div class="exrow ic44"><span class="ic-tile" aria-hidden="true">' + ic(CAMPO_CATS[a.cat].ic) + '</span><div class="mw0"><div class="t">' + esc(a.n) + '</div><div class="s">' + esc(a.d) + '</div></div><span class="f">' + a.min + '′</span></div>').join('') + '</div></section>';
+  h += '<div class="sec"><span class="t">Estaciones del plan</span></div>';
+  h += note('blue', 'Derecha: interior y control desde ya; empeine fuerte solo en el golpeo. Voleas y centros con la derecha desde K7. Cabeceo fuerte: máx. ' + BALL_HEADER_CAP + ' por semana.');
   h += '<div class="stack-sm">' + BALL_DRILLS.map(d => {
     const w = why(d), pies = d.perFoot ? ['der', 'izq'] : [null];
     const recs = pies.map(p => { const b = ballBest(st.sessions, d.id, p); return b ? (p ? (p === 'der' ? 'Der ' : 'Izq ') : '') + fmtNum(b.val) : null; }).filter(Boolean);

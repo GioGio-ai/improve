@@ -55,6 +55,7 @@ function logLine(log) {
   const k = log.kick || log.spr;
   if (k) parts.push('dolor ' + (k.pd ?? '—') + '/' + (k.pn ?? '—'));
   if (log.ball) { const b = ballLogLine(log); if (b) parts.push(b); }
+  if (log.campo) { const c = campoLine(log); if (c) parts.push(c); if (num(log.campo.pd) !== null || num(log.campo.pn) !== null) parts.push('dolor ' + (log.campo.pd ?? '—') + '/' + (log.campo.pn ?? '—')); }
   return parts.join(' · ');
 }
 
@@ -132,10 +133,11 @@ function sessionReviewHtml(log, planned) {
   const load = sessionLoad(log);
   let h = sheetHead(log.title || T.n, capFirst(fmtDateLong(log.date)) + ' · ' + (done ? (log.modified ? '<span class="c-lime">hecha con cambios</span>' : '<span class="c-lime">hecha</span>') : '<span class="c-pain">no hecha</span>')) + '<div class="sheet-body">';
   if (done) {
-    h += '<div class="stats four"><div class="stat"><span class="v">' + (log.minutes || '—') + '<small>min</small></span><span class="k">Duración</span></div>' +
+    /* Sin series (cancha, balón): tres cifras con más aire en lugar de una columna vacía */
+    h += '<div class="stats' + (setsPlan ? ' four' : '') + '"><div class="stat"><span class="v">' + (log.minutes || '—') + '<small>min</small></span><span class="k">Duración</span></div>' +
       '<div class="stat ' + rpeTone(log.rpe) + '"><span class="v">' + (num(log.rpe) === null ? '—' : log.rpe) + '</span><span class="k">Esfuerzo</span></div>' +
       '<div class="stat load"><span class="v">' + (load || '—') + '</span><span class="k">Carga</span></div>' +
-      '<div class="stat ' + (setsPlan && setsDone >= setsPlan ? 'lime' : '') + '"><span class="v">' + (setsPlan ? setsDone + '<small>/' + setsPlan + '</small>' : '—') + '</span><span class="k">Series</span></div></div>';
+      (setsPlan ? '<div class="stat ' + (setsDone >= setsPlan ? 'lime' : '') + '"><span class="v">' + setsDone + '<small>/' + setsPlan + '</small></span><span class="k">Series</span></div>' : '') + '</div>';
     if (vol) h += '<div class="sub">Volumen ' + vol + ' kg' + (isIntenseLog(log) ? ' · cuenta como día intenso para el RF' : '') + '</div>';
   }
   const k = log.kick || log.spr;
@@ -145,6 +147,7 @@ function sessionReviewHtml(log, planned) {
       '<div class="grid2"><div class="stat ' + (painTone(k.pd) === 'pain' ? 'pain' : '') + '"><span class="v">' + (k.pd ?? '—') + '<small>/10</small></span><span class="k">Dolor durante</span></div><div class="stat ' + (painTone(k.pn) === 'pain' ? 'pain' : '') + '"><span class="v">' + (k.pn ?? '—') + '<small>/10</small></span><span class="k">Al día siguiente</span></div></div>' +
       (log.kick && log.kick.count ? '<div class="sub">' + log.kick.count + ' golpes' + (log.kick.partial ? ' · sesión parcial' : '') + '</div>' : '') + (log.spr && log.spr.reps ? '<div class="sub">' + log.spr.reps + ' repeticiones</div>' : '') + '</div></div>';
   }
+  if (log.campo) h += campoReviewHtml(log);
   if (log.tec) h += '<div class="sub">Técnica ' + KICK[log.tec.level].n + ' · ' + (log.tec.count || 0) + ' golpes</div>';
   if (log.ball && (log.ball.drills || []).length) h += '<div class="card flat tight"><div class="stack-sm"><div class="row between"><span class="h3">' + ic('ball') + ' Balón</span>' + (num(log.ball.headersAlta) ? chip(log.ball.headersAlta + ' cabezazos fuerza alta', 'load') : '') + '</div>' + log.ball.drills.map(d => { const b = ballBest((S.data.sessions || []).filter(x => x.id !== log.id), d.id, d.pie || null, log.date); const v = ballEntryVal(d); const rec = d.metric !== 'aciertos' && d.metric !== 'hits' && v !== null && (!b || ((BALL_DRILL_INDEX[d.id] || {}).lowerBetter ? v < b.val : v > b.val)); return '<div class="lrow"><span class="fg2">' + esc(d.n || (BALL_DRILL_INDEX[d.id] || {}).n || d.id) + (d.pie ? ' <span class="fg4">· ' + (d.pie === 'der' ? 'derecha' : 'izquierda') + '</span>' : '') + '</span><b class="num' + (rec ? ' c-lime' : '') + '">' + esc(ballValTxt(d)) + (rec ? ' ★' : '') + '</b></div>'; }).join('') + '</div></div>';
   if (log.rt) h += '<div class="sub">' + (log.rt.pre ? 'RT corto antes de K8' : 'Circuito RT ' + String(log.rt.level).replace('x', ' × ')) + (log.rt.series ? ' · ' + log.rt.series + ' series hechas' : '') + '</div>';
@@ -161,7 +164,10 @@ function sessionReviewHtml(log, planned) {
         setsTableHtml(e) + (pv ? '<div class="sub">Anterior · ' + fmtDate(pv.date) + ' · ' + esc(fmtSetsShort((pv.e.sets || []).filter(x => x && x.done !== false))) + '</div>' : '') + (e.notes ? '<div class="small fg2">“' + esc(e.notes) + '”</div>' : '') + '</div></div>';
     }).join('') + '</div>';
   }
-  if (log.notes) h += note('info', esc(log.notes));
+  if (log.notes && !(log.campo && log.campo.texto === log.notes)) h += note('info', esc(log.notes));
+  else if (log.campo && log.campo.texto) h += '<details><summary>' + ic('pen') + 'Lo que contaste</summary><div class="in"><p class="small fg2">' + esc(log.campo.texto) + '</p></div></details>';
+  /* Un registro con notas y sin estructura: la IA lo ordena en bloques */
+  if (done && log.notes && !log.campo && !exs.length && !log.kick && !log.spr && !log.ball) h += '<button class="btn primary block" data-act="train-text" data-id="' + esc(log.id) + '">' + ic('spark') + 'Ordenar mis notas con IA</button>';
   if (log.plan && (log.plan.items || log.plan.field)) planned = { items: (log.plan.items || []).map(it => Object.assign({}, it)), field: log.plan.field || null };
   if (planned && ((planned.items || []).length || planned.field)) {
     const plan = fieldSummary(planned) + (planned.items.length ? '<div class="exlist">' + planned.items.map(it => itemRow(it, true)).join('') + '</div>' : '');
@@ -201,7 +207,7 @@ function dayHtml(date) {
   h += '<div class="sec"><span class="t">Comidas</span><a href="#comida" data-act="close-go" data-href="#comida">Ver</a></div>';
   if (!ms.length) h += '<div class="sub">Sin comidas registradas.</div>';
   else h += '<div class="stack-sm">' + ms.map(m => mealRowHtml(m)).join('') + '</div>';
-  h += '<div class="stack-sm"><button class="btn block" data-act="new-log" data-date="' + date + '">' + ic('plus') + 'Registrar otra sesión</button>' +
+  h += '<div class="stack-sm">' + (date <= today ? '<div class="grid2"><button class="btn" data-act="train-text" data-date="' + date + '">' + ic('spark') + 'Contarla con IA</button><button class="btn" data-act="new-log" data-date="' + date + '">' + ic('plus') + 'Registrar a mano</button></div>' : '<button class="btn block" data-act="new-log" data-date="' + date + '">' + ic('plus') + 'Registrar otra sesión</button>') +
     (d.override && date >= today ? '<button class="btn sm ghost block" data-act="reset-day" data-date="' + date + '">' + ic('undo') + 'Restaurar el plan de este día</button>' : '') + '</div>';
   return h + '</div>';
 }

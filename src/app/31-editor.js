@@ -48,7 +48,7 @@ function openEditor(o) {
   let e;
   if (o.logId) {
     const log = (S.data.sessions || []).find(s => s.id === o.logId); if (!log) return;
-    e = { mode: 'log', id: log.id, date: log.date, type: log.type, title: log.title || (STYPES[log.type] || STYPES.libre).n, items: (log.exercises || []).filter(x => x && x.id).map(logExToItem), done: log.done !== false, minutes: log.minutes ?? null, rpe: log.rpe ?? null, notes: log.notes || '', kick: log.kick ? clone(log.kick) : log.spr ? clone(log.spr) : null, rt: log.rt ? clone(log.rt) : null, modified: !!log.modified, source: log.source || 'manual' };
+    e = { mode: 'log', id: log.id, date: log.date, type: log.type, title: log.title || (STYPES[log.type] || STYPES.libre).n, items: (log.exercises || []).filter(x => x && x.id).map(logExToItem), done: log.done !== false, minutes: log.minutes ?? null, rpe: log.rpe ?? null, notes: log.notes || '', kick: log.kick ? clone(log.kick) : log.spr ? clone(log.spr) : null, rt: log.rt ? clone(log.rt) : null, modified: !!log.modified, source: log.source || 'manual', campo: log.campo ? clone(log.campo) : log.type === 'cancha' ? campoEmpty() : null };
   } else if (o.template !== undefined) {
     const t = o.template ? (S.data.templates || []).find(x => x.id === o.template) : null;
     e = { mode: 'template', id: t ? t.id : null, title: t ? t.name : '', items: t ? t.exercises.map(x => itemWithSets(tplToItem(x), todayStr(), false)) : [] };
@@ -59,8 +59,9 @@ function openEditor(o) {
     e = { mode: 'log', id: null, date, type, title: planned ? planned.title : 'Sesión libre', items: planned && !o.blank ? planned.items.map(it => itemWithSets(it, date, true)) : [], done: true, minutes: planned ? planned.est : null, rpe: null, notes: '',
       kick: fk && (fk.kind === 'golpeo' || fk.kind === 'sprint') && !fk.tec ? { level: fk.level, pd: null, pn: null } : null, rt: fk && fk.kind === 'rt' ? { level: fk.level } : null, modified: !!o.modified, source: 'manual' };
   }
+  if (e.mode === 'log' && !e.campo) e.campo = e.type === 'cancha' ? campoEmpty() : null;
   UI.ed = e;
-  openSheet({ id: 'editor', full: true, render: editorHtml });
+  if (!o.noOpen) openSheet({ id: 'editor', full: true, render: editorHtml });
 }
 function editorHtml() {
   const e = UI.ed; if (!e) return '';
@@ -70,10 +71,12 @@ function editorHtml() {
   let h = sheetHead(isTpl ? (e.id ? 'Editar plantilla' : 'Nueva plantilla') : (e.id ? 'Editar registro' : 'Lo que hice'), sub) + '<div class="sheet-body">';
   h += '<div class="field"><label for="ed-title">' + (isTpl ? 'Nombre' : 'Título') + '</label><input class="input" id="ed-title" data-bind="ed-title" value="' + esc(e.title) + '" autocomplete="off"></div>';
   if (!isTpl) h += '<div class="grid2"><div class="field"><label for="ed-date">Fecha</label><input class="input" type="date" id="ed-date" data-bind="ed-date" value="' + e.date + '"></div><div class="field"><span class="lab">Estado</span><div class="seg"><button type="button" data-act="ed-status" data-v="1" class="' + (e.done ? 'on' : '') + '">Hecha</button><button type="button" data-act="ed-status" data-v="0" class="' + (!e.done ? 'on' : '') + '">No</button></div></div></div>';
-  h += '<div class="scroll-x"><button class="pill" data-act="ed-blank">' + ic('trash') + 'Desde cero</button><button class="pill" data-act="ed-copy">' + ic('copy') + 'Copiar sesión</button>' +
+  h += '<div class="scroll-x">' + (!isTpl ? '<button class="pill on" data-act="ed-ai">' + ic('spark') + (e.notes || (e.campo && e.campo.texto) ? 'Ordenar con IA' : 'Contar con IA') + '</button>' : '') + '<button class="pill" data-act="ed-blank">' + ic('trash') + 'Desde cero</button><button class="pill" data-act="ed-copy">' + ic('copy') + 'Copiar sesión</button>' +
     ((S.data.templates || []).length && !isTpl ? '<button class="pill" data-act="ed-tpl">' + ic('star') + 'Plantillas</button>' : '') + (planned ? '<button class="pill" data-act="ed-planned">' + ic('cal') + 'La planificada</button>' : '') + '</div>';
-  h += '<div class="stack-sm">' + (e.items.length ? e.items.map((it, i) => edRow(it, i, e.items.length)).join('') : '<div class="empty small">Añade los ejercicios que hiciste.</div>') + '</div>';
-  h += '<button class="btn block dash" data-act="ed-add">' + ic('plus') + 'Añadir ejercicio</button>';
+  if (!isTpl && e.aiNote) h += '<div class="sub">' + ic('spark') + ' ' + esc(e.aiNote) + '</div>';
+  if (!isTpl && e.campo) h += campoEditorHtml(e);
+  if (e.items.length || !e.campo) h += '<div class="stack-sm">' + (e.items.length ? e.items.map((it, i) => edRow(it, i, e.items.length)).join('') : '<div class="empty small">Añade los ejercicios que hiciste.</div>') + '</div>';
+  h += '<button class="btn block dash" data-act="ed-add">' + ic('plus') + (e.campo ? 'Añadir ejercicio de gimnasio' : 'Añadir ejercicio') + '</button>';
   if (!isTpl && e.kick) {
     const isK = e.type === 'golpeo', defs = isK ? KICK : SPRINT, max = isK ? 8 : 6;
     h += '<div class="field"><label for="ed-level">' + (isK ? 'Nivel de golpeo' : 'Nivel de sprint') + '</label><select class="input" id="ed-level" data-bind="ed-level">' + Array.from({ length: max }, (_, i) => i + 1).map(i => '<option value="' + i + '"' + (i === Number(e.kick.level) ? ' selected' : '') + '>' + defs[i].n + ' · ' + esc(defs[i].t) + '</option>').join('') + '</select></div>' +
@@ -82,7 +85,7 @@ function editorHtml() {
   }
   if (!isTpl && e.rt) h += '<div class="field"><label for="ed-rt">Repeticiones × series</label><select class="input" id="ed-rt" data-bind="ed-rt">' + RT_LEVELS.map(l => '<option value="' + l + '"' + (l === e.rt.level ? ' selected' : '') + '>' + l.replace('x', ' × ') + '</option>').join('') + '</select></div>';
   if (!isTpl) h += '<div class="field"><span class="lab">Minutos</span>' + stepperHtml('ed-min', e.minutes, 'ed-meta', 'data-name="minutes"', 'min') + '</div>' +
-    '<div class="field"><span class="lab">Esfuerzo de la sesión (RPE)</span>' + scaleHtml('rpe', e.rpe, { act: 'ed-scale', tone: 'load', l: '0 reposo', r: '10 máximo' }) + '</div>' +
+    '<div class="field"><span class="lab">Esfuerzo de la sesión (RPE)</span>' + scaleHtml('rpe', e.rpe, { act: 'ed-scale', tone: 'load', l: '0 reposo', r: '10 máximo' }) + (e.rpeEst && num(e.rpe) !== null ? '<span class="hint">' + ic('spark') + ' Estimado por lo que contaste: confírmalo o tócalo.</span>' : '') + '</div>' +
     '<div class="field"><label for="ed-notes">Notas</label><textarea class="input" id="ed-notes" data-bind="ed-notes" rows="2">' + esc(e.notes) + '</textarea></div>';
   if (e.id) h += '<button class="btn sm ghost danger" data-act="' + (isTpl ? 'ed-deltpl' : 'ed-del') + '">' + ic('trash') + (isTpl ? 'Borrar plantilla' : 'Borrar registro') + '</button>';
   h += '<div class="sheet-foot">' + (!isTpl ? '<button class="btn" data-act="ed-savetpl">' + ic('star') + 'Plantilla</button>' : '') + '<button class="btn primary lg" data-act="ed-save">Guardar</button></div>';
@@ -161,6 +164,14 @@ function saveEditor() {
   log.date = e.date; log.type = e.type; log.title = (e.title || (STYPES[e.type] || STYPES.libre).n).trim(); log.done = e.done;
   log.minutes = num(e.minutes); log.rpe = num(e.rpe); log.notes = e.notes || '';
   log.exercises = e.items.map(itemToLogEx);
+  /* Cancha libre contada: bloques y bandas (el motor la lee en campoIntense, remates, cabezazos y dolor) */
+  if (e.campo && (e.campo.bloques || []).length) {
+    const c = clone(e.campo); delete c.auto;
+    c.side = ST.injury ? ST.side || 'd' : null;
+    log.campo = c;
+    if (log.type === 'libre') log.type = 'cancha';
+  } else delete log.campo;
+  if (!e.id && e.source && e.source !== 'manual') log.source = e.source;
   if (planned && e.type !== 'libre') {
     const pIds = planned.items.map(i => i.id).join(','), lIds = e.items.filter(i => !i.warmup).map(i => i.id).join(',');
     log.modified = e.modified || pIds !== lIds || log.title !== planned.title;
@@ -170,10 +181,12 @@ function saveEditor() {
   // Conserva todo lo que ya tenía el registro (golpes, repeticiones, parcial) y solo cambia lo editado
   if (e.kick) { const k = Object.assign({}, e.kick, { level: Number(e.kick.level) || 1, pd: num(e.kick.pd), pn: num(e.kick.pn) }); if (e.type === 'golpeo') { log.kick = k; delete log.spr; } else { log.spr = k; delete log.kick; } }
   if (e.rt) log.rt = Object.assign({}, log.rt || {}, { level: e.rt.level });
-  const id = e.id || (e.type === 'libre' ? uid('s') : 's-' + e.date + '-' + e.type);
+  const free = e.type === 'libre' || e.type === 'cancha' || log.type === 'cancha';
+  const id = e.id || (free ? uid('s') : 's-' + e.date + '-' + e.type);
   const intense = isIntenseLog(log);
-  if (!e.id && e.date <= todayStr() && e.type !== 'libre') freezeDay(e.date);
-  put('sessions', id, log).then(() => toast(log.done === false ? 'Guardada como no hecha.' : intense ? 'Guardada. Cuenta como día intenso: el plan se ajusta.' : 'Guardada.'));
+  if (!e.id && e.date <= todayStr() && !free) freezeDay(e.date);
+  const askNext = log.done !== false && ST.injuryActive && log.campo && campoShots(log).les > 0 && num(log.campo.pn) === null && e.date >= addDays(todayStr(), -1);
+  put('sessions', id, log).then(() => toast(log.done === false ? 'Guardada como no hecha.' : intense ? (askNext ? 'Guardada. Cuenta como día intenso; mañana te pregunto cómo amaneció el recto femoral.' : 'Guardada. Cuenta como día intenso: el plan se ajusta.') : 'Guardada.'));
   UI.ed = null;
   closeAllSheets();
 }
@@ -204,8 +217,8 @@ function pickerHtml() {
   const P = UI.pick;
   return sheetHead('Añadir ejercicio', 'Banco, biblioteca y tus ejercicios') + '<div class="sheet-body">' +
     '<div class="field"><label class="sr" for="pick-q">Buscar</label><input class="input" id="pick-q" type="search" inputmode="search" enterkeyhint="search" data-pick="q" placeholder="Buscar: búlgara, nordic, squat…" value="' + esc(P.q) + '" autocomplete="off"></div>' +
-    '<div class="seg">' + [['recientes', 'Recientes'], ['banco', 'Banco'], ['biblioteca', 'Biblioteca'], ['mios', 'Míos']].map(([k, l]) => '<button type="button" data-act="pick-tab" data-v="' + k + '" class="' + (P.tab === k ? 'on' : '') + '">' + l + '</button>').join('') + '</div>' +
-    '<div class="scroll-x" role="group" aria-label="Grupo muscular">' + PICK_GROUPS.map(([g, l]) => '<button type="button" class="pill' + ((P.mg || '') === g ? ' on' : '') + '" data-act="pick-mg" data-v="' + g + '" aria-pressed="' + ((P.mg || '') === g) + '">' + l + '</button>').join('') + '</div>' +
+    '<div class="seg">' + [['recientes', 'Recientes'], ['balon', 'Balón'], ['banco', 'Banco'], ['biblioteca', 'Biblioteca'], ['mios', 'Míos']].map(([k, l]) => '<button type="button" data-act="pick-tab" data-v="' + k + '" class="' + (P.tab === k ? 'on' : '') + '">' + l + '</button>').join('') + '</div>' +
+    (P.tab === 'balon' ? '<p class="sub">Se suma como bloque de cancha: minutos, pierna e intensidad.</p>' : '<div class="scroll-x" role="group" aria-label="Grupo muscular">' + PICK_GROUPS.map(([g, l]) => '<button type="button" class="pill' + ((P.mg || '') === g ? ' on' : '') + '" data-act="pick-mg" data-v="' + g + '" aria-pressed="' + ((P.mg || '') === g) + '">' + l + '</button>').join('') + '</div>') +
     '<div class="exlist" id="pick-list">' + pickListHtml() + '</div></div>';
 }
 const PICK_GROUPS = [['', 'Todos'], ['pecho', 'Pecho'], ['espalda', 'Espalda'], ['deltoides_lat', 'Hombro'], ['biceps', 'Bíceps'], ['triceps', 'Tríceps'], ['cuello', 'Cuello'], ['core', 'Core'], ['lumbar', 'Lumbar'],
@@ -226,6 +239,13 @@ function pickListHtml() {
   const P = UI.pick, q = normTxt(P.q || '');
   const match = (txt) => !q || normTxt(txt).includes(q);
   let rows = [];
+  if (P.tab === 'balon') {
+    const list = CAMPO_ACTS.map(a => ({ id: a.id, n: a.n, cat: a.cat, s: (CAMPO_CATS[a.cat].n !== a.n ? CAMPO_CATS[a.cat].n + ' · ' : '') + a.min + ' min' }))
+      .concat(BALL_DRILLS.map(d => ({ id: d.id, n: d.n, cat: ballDrillCat(d), s: 'Estación del plan · ' + d.unit })))
+      .filter(x => match(x.n + ' ' + CAMPO_CATS[x.cat].n));
+    if (!list.length) return '<div class="empty small">Sin resultados.</div>';
+    return list.map(x => '<button class="exrow ic44" data-act="pick" data-id="' + esc(x.id) + '"><span class="ic-tile" aria-hidden="true">' + ic(CAMPO_CATS[x.cat].ic) + '</span><div class="mw0"><div class="t">' + esc(x.n) + '</div><div class="s">' + esc(x.s) + '</div></div><span class="f">' + ic('plus') + '</span></button>').join('');
+  }
   if (P.tab === 'recientes') rows = recentIds().map(e => exInfo(e.id, e)).filter(x => x && match(x.n));
   else if (P.tab === 'banco') rows = BANK.filter(e => match(e.n + ' ' + (e.m || '') + ' ' + (LABELS.pat[e.pat] || '')));
   else if (P.tab === 'mios') rows = (S.data.custom || []).map(customNorm).filter(e => match(e.n));
@@ -249,6 +269,8 @@ function pickItem(id) {
   return it;
 }
 function onPick(id) {
+  /* Actividad o estación con balón: bloque de cancha en el registro */
+  if (CAMPO_ACT_INDEX[id] || BALL_DRILL_INDEX[id]) { if (UI.pick.target === 'ed' && UI.ed && UI.ed.mode === 'log') { campoAddBlock(UI.ed, id); UI.ed.modified = true; closeSheet(); } else toast('Los bloques con balón se agregan desde «Lo que hice».', 'warn'); return; }
   const it = pickItem(id); if (!it) return;
   const target = UI.pick.target;
   if (target === 'ed') { UI.ed.items.push(itemWithSets(it, UI.ed.mode === 'template' ? todayStr() : UI.ed.date, UI.ed.mode !== 'template')); UI.ed.modified = true; closeSheet(); }

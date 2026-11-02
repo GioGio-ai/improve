@@ -571,6 +571,56 @@ const BALL_FOCUS = [
   { tags: ['dominio', 'pase'], min: 20, t: 'dominio y pase' },
 ];
 const BALL_HEADER_CAP = 10; // cabezazos de fuerza alta por semana (plan + registros)
+
+/* -------- Cancha libre: lo que se cuenta sin contar (con un compañero, un picado, una sesión propia) --------
+   Las cantidades exactas no se saben: se registran por banda. Una banda es una estimación, no un conteo. */
+const CAMPO_CATS = {
+  calentamiento: { n: 'Calentamiento', ic: 'flame' },
+  remate: { n: 'Definición', ic: 'target', shot: true },
+  balon_parado: { n: 'Balón parado', ic: 'target', shot: true },
+  pase_largo: { n: 'Pases largos y centros', ic: 'ball', shot: true },
+  pase: { n: 'Pase y control', ic: 'ball' },
+  dominio: { n: 'Dominio', ic: 'ball' },
+  conduccion: { n: 'Conducción y regate', ic: 'ball' },
+  duelo: { n: '1 contra 1', ic: 'users', sprint: true },
+  cabeceo: { n: 'Cabeceo', ic: 'ball' },
+  juego: { n: 'Juego', ic: 'users', sprint: true },
+  sprint: { n: 'Velocidad', ic: 'run', sprint: true },
+  fuerza: { n: 'Fuerza', ic: 'dumb' },
+  movilidad: { n: 'Vuelta a la calma', ic: 'leaf' },
+  otro: { n: 'Otro', ic: 'dots' },
+};
+/* Bandas: golpes fuertes (remates, tiros libres, pases largos, centros y cambios de frente) y cabezazos con salto */
+const CAMPO_BANDS = ['no', 'pocos', 'varios', 'muchos'];
+const CAMPO_BAND_N = { no: 'Ninguno', pocos: 'Pocos', varios: 'Varios', muchos: 'Muchos' };
+const CAMPO_SHOTS = { no: 0, pocos: 8, varios: 20, muchos: 40 };
+const CAMPO_HEADS = { no: 0, pocos: 3, varios: 8, muchos: 15 };
+const CAMPO_PIES = { ambos: 'Ambas piernas', der: 'Derecha', izq: 'Izquierda', ninguno: 'Sin pierna' };
+const CAMPO_INT = { baja: 'Suave', media: 'Media', alta: 'Alta' };
+/* Actividades con balón para registrar a mano o para que la IA las nombre igual */
+const CAMPO_ACTS = [
+  { id: 'cl_calentamiento', n: 'Calentamiento', cat: 'calentamiento', pies: 'ninguno', int: 'baja', min: 15, d: 'Trote, movilidad dinámica, toques suaves y progresivos.' },
+  { id: 'cl_def_ambas', n: 'Definición con ambas piernas', cat: 'remate', pies: 'ambos', int: 'alta', min: 20, d: 'Remates al arco desde distintas posiciones y ángulos, con las dos piernas.' },
+  { id: 'cl_def_control', n: 'Control y definición', cat: 'remate', pies: 'ambos', int: 'alta', min: 15, d: 'Recibir, orientar el control y rematar en dos toques.' },
+  { id: 'cl_def_primera', n: 'Definición de primera', cat: 'remate', pies: 'ambos', int: 'alta', min: 15, d: 'Remate sin control tras un pase, en velocidad: cruzado o al primer palo.' },
+  { id: 'cl_tiros_libres', n: 'Tiros libres', cat: 'balon_parado', pies: 'ambos', int: 'alta', min: 10, d: 'Balón parado al arco desde la frontal: con barrera o sin ella.' },
+  { id: 'cl_penales', n: 'Penales', cat: 'balon_parado', pies: 'ambos', int: 'media', min: 10, d: 'Elegir palo antes de patear y repetir la rutina.' },
+  { id: 'cl_cambio_frente', n: 'Cambios de frente', cat: 'pase_largo', pies: 'ambos', int: 'alta', min: 15, d: 'Pases largos por abajo y por arriba, de lado a lado de la cancha.' },
+  { id: 'cl_centros', n: 'Centros y remates', cat: 'pase_largo', pies: 'ambos', int: 'alta', min: 15, d: 'Centro desde la banda y remate o cabezazo en el área.' },
+  { id: 'cl_pases', n: 'Pases con compañero', cat: 'pase', pies: 'ambos', int: 'media', min: 10, d: 'Pase y control a uno y dos toques, a distintas distancias.' },
+  { id: 'cl_1v1', n: '1 contra 1', cat: 'duelo', pies: 'ambos', int: 'alta', min: 15, d: 'Duelos de ataque y defensa: regate, cambio de ritmo y remate.' },
+  { id: 'cl_conduccion', n: 'Conducción y regate', cat: 'conduccion', pies: 'ambos', int: 'media', min: 10, d: 'Conducir con cambios de ritmo y de dirección, regate ante un cono o un rival.' },
+  { id: 'cl_cabeceo', n: 'Cabeceo con centros', cat: 'cabeceo', pies: 'ninguno', int: 'media', min: 10, d: 'Ataque al balón que llega del centro: dirección antes que fuerza.' },
+  { id: 'cl_rondo', n: 'Rondo', cat: 'juego', pies: 'ambos', int: 'media', min: 15, d: 'Posesión en espacio corto a pocos toques.' },
+  { id: 'cl_reducido', n: 'Partido reducido', cat: 'juego', pies: 'ambos', int: 'alta', min: 20, d: '3c3 a 5c5 en espacio chico: muchos cambios de ritmo y remates.' },
+  { id: 'cl_partido', n: 'Partido informal', cat: 'juego', pies: 'ambos', int: 'alta', min: 40, d: 'Picado o partido sin calendario.' },
+  { id: 'cl_aceleraciones', n: 'Aceleraciones y cambios de dirección', cat: 'sprint', pies: 'ninguno', int: 'alta', min: 10, d: 'Arranques de 5-20 m y frenadas, sin balón.' },
+  { id: 'cl_estiramiento', n: 'Estiramiento y caminata', cat: 'movilidad', pies: 'ninguno', int: 'baja', min: 10, d: 'Caminata suave, estiramientos y agua.' },
+];
+const CAMPO_ACT_INDEX = {};
+CAMPO_ACTS.forEach(a => { CAMPO_ACT_INDEX[a.id] = a; });
+/* Estación de Balón → categoría de cancha libre */
+function ballDrillCat(d) { const t = (d && d.tags) || []; return t.includes('zurda') || t.includes('derecha') ? 'remate' : t.includes('cabeceo') ? 'cabeceo' : t.includes('dominio') ? 'dominio' : t.includes('conduccion') ? 'conduccion' : 'pase'; }
 const BANK_INDEX = {};
 BANK.forEach(b => { BANK_INDEX[b.id] = b; });
 

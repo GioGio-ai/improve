@@ -53,7 +53,10 @@ function trainingBanner() {
 function pendingPainPrompts(st, today) {
   const list = st.sessions.filter(s => s.done !== false && s.date < today && s.date >= addDays(today, -3) && ((s.type === 'golpeo' && s.kick) || (s.type === 'sprint' && s.spr)))
     .filter(s => { const k = s.kick || s.spr; return k.pn === null || k.pn === undefined; }).sort(byDate).slice(-2);
-  return list.map(s => {
+  /* Cancha libre con golpes fuertes de la pierna lesionada: ¿cómo amaneció? */
+  const free = st.injuryActive ? st.sessions.filter(s => s.campo && !s.kick && !s.spr && s.done !== false && !s.deleted && s.date < today && s.date >= addDays(today, -2) && campoShots(s).les > 0 && num(s.campo.pn) === null).sort(byDate).slice(-1) : [];
+  return free.map(s => '<section class="card t-pain tight"><div class="stack-sm"><div class="micro">Dolor al día siguiente</div><div class="h3">¿Cómo amaneció el recto femoral tras la cancha del ' + DOW_LONG[weekday(s.date)] + '?</div>' +
+    scaleHtml('pn', null, { pain: true, act: 'pn', data: ' data-id="' + esc(s.id) + '"', l: '0 nada', r: '≥ 3: nada intenso hoy' }) + '<p class="sub">Golpes fuertes ' + esc(campoLine(s).replace(/^golpes fuertes /, '')) + '. Con 3 o más, hoy sin cancha para el recto femoral.</p></div></section>').join('') + list.map(s => {
     const k = s.kick || s.spr, lvl = s.kick ? KICK[k.level].n : SPRINT[k.level].n;
     return '<section class="card t-pain tight"><div class="stack-sm"><div class="micro">Dolor al día siguiente</div><div class="h3">¿Cómo amaneció el recto femoral tras ' + (s.kick ? 'el golpeo ' : 'el sprint ') + lvl + ' del ' + DOW_LONG[weekday(s.date)] + '?</div>' +
       scaleHtml('pn', null, { pain: true, act: 'pn', data: ' data-id="' + esc(s.id) + '"', l: '0 nada', r: '≥ 3 baja de nivel' }) + '<p class="sub">Esta respuesta decide si subes de nivel.</p></div></section>';

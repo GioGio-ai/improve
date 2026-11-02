@@ -56,6 +56,7 @@ const STYPES = {
   recuperacion: { n: 'Recuperación activa', short: 'Recuperación', cat: 'recup', icon: 'leaf' },
   descanso: { n: 'Descanso', short: 'Descanso', cat: 'recup', icon: 'moon' },
   libre: { n: 'Sesión libre', short: 'Libre', cat: 'gym', icon: 'dumb' },
+  cancha: { n: 'Cancha libre', short: 'Cancha', cat: 'campo', icon: 'ball' },
 };
 const GYM_TYPES = ['fuerzaA', 'potenciaB', 'superior', 'superiorA', 'superiorB', 'prevencion', 'movilidad', 'recuperacion', 'fuerzaMax', 'fuerzaCorta', 'potencia', 'activacion'];
 const STRENGTH_TYPES = ['fuerzaA', 'potenciaB', 'fuerzaMax', 'potencia'];
@@ -615,9 +616,10 @@ function ballEntryVal(x) {
   return x.metric === 'hits' || x.metric === 'aciertos' ? num(x.hits) : num(x.count);
 }
 function ballHeadersOf(log) {
-  if (!log || !log.ball || log.done === false) return 0;
-  if (num(log.ball.headersAlta) !== null) return num(log.ball.headersAlta);
-  return (log.ball.drills || []).filter(x => x.headerStrong).reduce((a, x) => a + (num(x.attempts) || 0), 0);
+  const c = campoHeaders(log);
+  if (!log || !log.ball || log.done === false) return c;
+  if (num(log.ball.headersAlta) !== null) return num(log.ball.headersAlta) + c;
+  return (log.ball.drills || []).filter(x => x.headerStrong).reduce((a, x) => a + (num(x.attempts) || 0), 0) + c;
 }
 function ballHeaderCount(sessions, weekStart) {
   const end = addDays(weekStart, 6);
@@ -669,7 +671,7 @@ function ballMinutesByWeek(sessions, today, weeks) {
   const ws = weekStartOf(today), out = [];
   for (let i = weeks - 1; i >= 0; i--) {
     const start = addDays(ws, -7 * i), end = addDays(start, 6);
-    const m = sessions.filter(s => s.done !== false && s.date >= start && s.date <= end && (s.type === 'balon' || s.type === 'golpeoTec')).reduce((a, s) => a + (num(s.minutes) || 0), 0);
+    const m = sessions.filter(s => s.done !== false && s.date >= start && s.date <= end).reduce((a, s) => a + (s.type === 'balon' || s.type === 'golpeoTec' ? num(s.minutes) || 0 : campoBallMin(s)), 0);
     out.push({ start, min: m });
   }
   return out;
@@ -1029,11 +1031,14 @@ function isIntenseLog(s) {
   if (s.type === 'testRend') return !Array.isArray(s.tests) || s.tests.length > 0;
   if (s.kick && Number(s.kick.level) >= 4) return true;
   if (s.spr && Number(s.spr.level) >= 3) return true;
+  /* Cancha libre contada: golpes fuertes con la pierna lesionada, sprints y duelos, o una sesión dura y larga */
+  if (s.campo && campoIntense(s)) return true;
   const ex = (s.exercises || []).filter(e => exTags(e));
   if (ex.length) {
     const L = rfLoad(s), r = num(s.rpe);
     return L >= 8 || (r !== null && r >= 8 && L >= 4);
   }
+  if (s.campo) return false;
   return STRENGTH_TYPES.includes(s.type);
 }
 
@@ -1147,7 +1152,7 @@ function painToday(st, date) {
   /* Sin check-in del día, el dolor ≥ 3 del día anterior sigue hasta confirmarlo (falla cerrada) */
   if (!ci) { const y = (st.checkins || []).find(c => c.date === addDays(date, -1)), yp = y ? num(y.rfPain) || 0 : 0; if (yp >= 3) { rest = yp; carried = true; } }
   for (const m of activeMolestias(st, date)) if (m.zona === 'recto_femoral' && m.lado === (st.side || 'd') && m.tipo === 'dolor' && !(m.noAdjust || []).includes(date)) { if (m.nivelAct > rest) carried = false; rest = Math.max(rest, m.nivelAct); }
-  const prev = st.sessions.filter(s => s.date === addDays(date, -1) && s.done !== false).map(s => s.kick || s.spr).filter(Boolean).map(k => num(k.pn) || 0);
+  const prev = st.sessions.filter(s => s.date === addDays(date, -1) && s.done !== false).map(s => s.kick || s.spr || s.campo).filter(Boolean).map(k => num(k.pn) || 0);
   const next = prev.length ? Math.max.apply(null, prev) : 0;
   return { rest, next, ci, carried };
 }
@@ -1581,6 +1586,13 @@ function buildWeekCore(st, weekStart, today, carry) {
           o.capK = Math.min(o.capK || 8, 3); o.capS = Math.min(o.capS || 6, 2); o.capReason = o.capReason || sr.why;
           if (d.types.some(t => t === 'golpeo' || t === 'sprint')) d.notes.push(sr.text);
         }
+        /* Golpes fuertes con la pierna lesionada fuera de la escalera (cancha libre) en los 2 días previos: sin estrenar nivel de golpeo */
+        const cl = st.injuryActive && !st.kick.top ? campoLesShotsNear(st.sessions, d.date) : null;
+        if (cl) {
+          const o = d.molOpts || (d.molOpts = {});
+          o.capK = Math.min(o.capK || 8, bestK); o.capReason = o.capReason || 'golpes fuertes fuera de la escalera el ' + DOW_LONG[weekday(cl.date)] + ', sin estrenar nivel';
+          if (d.types.includes('golpeo')) d.notes.push('El ' + DOW_LONG[weekday(cl.date)] + ' hubo golpes fuertes con la ' + (st.side === 'i' ? 'izquierda' : 'derecha') + ' fuera de la escalera: hoy golpeo sin estrenar nivel.');
+        }
         /* Dolor muscular alto (check-in de hoy): sin estrenar nivel de golpeo ni de sprint */
         if (d.date === today && domsHigh(st, today)) {
           const o = d.molOpts || (d.molOpts = {});
@@ -1788,13 +1800,14 @@ function loadModel(st, date) {
 /* Remates fuertes con la pierna sana (estaciones de definición) y con la lesionada (golpeo K5+ y voleas/centros) */
 const SANA_SHOT_DRILLS = BALL_DRILLS.filter(d => d.foot === 'izq').map(d => d.id);
 function sanaShotsOf(log) {
-  if (!log || !log.ball || log.done === false || log.deleted) return 0;
-  if (num(log.ball.shotsSana) !== null) return num(log.ball.shotsSana);
-  return (log.ball.drills || []).filter(x => SANA_SHOT_DRILLS.includes(x.id)).reduce((a, x) => a + (num(x.intentos) || num(x.valor) || 0), 0);
+  const c = campoShots(log).sana;
+  if (!log || !log.ball || log.done === false || log.deleted) return c;
+  if (num(log.ball.shotsSana) !== null) return num(log.ball.shotsSana) + c;
+  return (log.ball.drills || []).filter(x => SANA_SHOT_DRILLS.includes(x.id)).reduce((a, x) => a + (num(x.intentos) || num(x.valor) || 0), 0) + c;
 }
 function lesShotsOf(log) {
   if (!log || log.done === false || log.deleted) return 0;
-  let n = 0;
+  let n = campoShots(log).les;
   if (log.kick && Number(log.kick.level) >= 5) n += num(log.kick.count) !== null ? num(log.kick.count) : (KICK_TARGET[Number(log.kick.level)] || 0);
   if (log.ball) n += (log.ball.drills || []).filter(x => x.id === 'volea_centro_der').reduce((a, x) => a + (num(x.intentos) || num(x.valor) || 0), 0);
   return n;
@@ -2128,7 +2141,9 @@ function dayKind(day, prof, logs) {
   const skip = new Set(own.filter(l => l.done === false).map(l => l.type));
   const sess = skip.size ? day.sessions.filter(s => !skip.has(s.type)) : day.sessions;
   const types = sess.map(s => s.type);
-  const intense = skip.size ? (sess.some(s => s.intense) || own.some(isIntenseLog)) : day.intense;
+  /* Lo hecho fuera del plan (cancha libre, un picado, gimnasio extra) también cuenta para la comida */
+  const extra = own.filter(l => l.done !== false && !day.sessions.some(s => s.type === l.type));
+  const intense = (skip.size ? (sess.some(s => s.intense) || own.some(isIntenseLog)) : day.intense) || extra.some(isIntenseLog);
   const trials = (prof && prof.trials) || [];
   if (types.includes('partido') || types.includes('prueba') || day.trial) return 'prueba';
   if (trials.includes(addDays(day.date, 1)) || day.md === 'MD-1') return 'prueba';
@@ -2136,8 +2151,9 @@ function dayKind(day, prof, logs) {
      de carga media (llegar con el glucógeno lleno; tras un partido tarda más de 48 h en reponerse) */
   const afterMatch = day.md === 'MD+1' || (logs || []).some(l => l && l.date === addDays(day.date, -1) && l.done !== false && !l.deleted && ['partido', 'prueba'].includes(l.type));
   if (trials.includes(addDays(day.date, 2)) || trials.includes(addDays(day.date, -1)) || afterMatch) return intense ? 'alto' : 'moderado';
-  if (!types.length || types.every(t => t === 'descanso')) return 'descanso';
+  if ((!types.length || types.every(t => t === 'descanso')) && !extra.length) return 'descanso';
   if (intense) return 'alto';
+  if (extra.some(l => blockKind(l.type) === 'campo' || STRENGTH_TYPES.includes(l.type) || (num(l.minutes) || 0) >= 45)) return 'moderado';
   if (types.every(t => ['movilidad', 'recuperacion', 'descanso', 'prevencion', 'superior', 'superiorA', 'superiorB', 'activacion'].includes(t))) return 'bajo';
   return 'moderado';
 }
@@ -2163,7 +2179,7 @@ function deriveState(data, today) {
   const weight = weights.length ? num(weights[weights.length - 1].kg) : num(profile.weight);
   const custom = (data.customExercises || []);
   const bank = BANK.concat(custom);
-  const recentPain = sessions.some(s => s.date >= addDays(today, -13) && ['kick', 'spr'].some(f => s[f] && ((num(s[f].pd) || 0) >= 3 || (num(s[f].pn) || 0) >= 3)))
+  const recentPain = sessions.some(s => s.date >= addDays(today, -13) && s.done !== false && ['kick', 'spr', 'campo'].some(f => s[f] && ((num(s[f].pd) || 0) >= 3 || (num(s[f].pn) || 0) >= 3)))
     || (data.checkins || []).some(c => c.date >= addDays(today, -13) && (num(c.rfPain) || 0) >= 3)
     /* También el dolor ≥ 3 marcado en el mapa (al reportarlo o en un «¿Sigue?») en el recto femoral lesionado */
     || (data.molestias || []).some(m => m && !m.deleted && m.zona === 'recto_femoral' && (m.lado || side) === side && m.tipo === 'dolor'

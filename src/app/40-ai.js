@@ -32,6 +32,37 @@ const EX_SCHEMA = {
   },
   required: ['resumen', 'pasos', 'claves', 'errores', 'seguridad', 'busqueda'],
 };
+/* Contar el entreno: el relato libre se ordena en bloques; lo que no se puede contar va por bandas */
+const BAND_ENUM = { type: 'string', enum: ['no', 'pocos', 'varios', 'muchos'] };
+const TRAIN_SCHEMA = {
+  type: 'object',
+  properties: {
+    titulo: { type: 'string', description: 'Título corto de la sesión, máximo 48 caracteres' },
+    minutos: { type: 'number', description: 'Duración total en minutos; 0 si no se puede saber' },
+    inicio: { type: 'string', description: 'HH:MM si el relato lo dice; vacío si no' },
+    fin: { type: 'string', description: 'HH:MM si el relato lo dice; vacío si no' },
+    rpe: { type: 'number', description: 'Esfuerzo de la sesión entera, 1 a 10' },
+    bloques: { type: 'array', items: { type: 'object', properties: {
+      id: { type: 'string', description: 'Id de la lista de actividades si coincide; vacío si no' },
+      n: { type: 'string', description: 'Nombre corto en español' },
+      cat: { type: 'string', enum: Object.keys(CAMPO_CATS) },
+      min: { type: 'number', description: 'Minutos del bloque' },
+      pies: { type: 'string', enum: ['ambos', 'der', 'izq', 'ninguno'] },
+      int: { type: 'string', enum: ['baja', 'media', 'alta'] },
+    }, required: ['n', 'cat', 'min', 'pies', 'int'] } },
+    golpesFuertes: { type: 'object', properties: { der: BAND_ENUM, izq: BAND_ENUM }, required: ['der', 'izq'] },
+    cabezazos: BAND_ENUM,
+    sprints: BAND_ENUM,
+    companeros: { type: 'number' },
+    ejercicios: { type: 'array', items: { type: 'object', properties: {
+      id: { type: 'string', description: 'Id de la lista del banco si coincide; vacío si no' },
+      n: { type: 'string' }, series: { type: 'number' }, reps: { type: 'number' }, kg: { type: 'number' }, seg: { type: 'number' },
+    }, required: ['n'] } },
+    nota: { type: 'string', description: 'Una línea: qué supusiste o qué revisar' },
+  },
+  required: ['titulo', 'rpe', 'bloques', 'golpesFuertes', 'cabezazos', 'sprints', 'nota'],
+};
+const TT_INT_N = { baja: 'suave', media: 'media', alta: 'intensa', max: 'al máximo' };
 function aiErrorText(e) {
   const c = e && (e.code || e.name || '');
   if (c === 'no-ai' || c === 'offline') return 'La IA necesita conexión.';
@@ -74,6 +105,24 @@ const AIX = {
       'Usa estos valores por 100 g cuando el alimento coincida: ' + FOOD_HINT + '.\n' +
       'El mate, tereré, café sin azúcar y el agua van con 0 kcal. Texto: "' + o.text + '". ' + AI_STYLE;
     return this.json(prompt, MEAL_SCHEMA, { tier: 'fast' });
+  },
+  /* o: { text, date, total, start, end, intensity } */
+  async parseTraining(o) {
+    const L = ST && ST.injuryActive ? effLevels(ST) : null;
+    const les = ST && ST.side === 'i' ? 'izquierda' : 'derecha';
+    const acts = CAMPO_ACTS.map(a => a.id + '=' + a.n).concat(BALL_DRILLS.map(d => d.id + '=' + d.n)).join('; ');
+    const gym = /gim|gym|serie|kg|kilo|repet|sentadilla|press|peso muerto|nordic|n[oó]rdico|m[aá]quina|mancuerna|barra|polea|plancha|zancada|b[uú]lgara/i.test(o.text);
+    const bank = gym ? BANK.map(b => b.id + '=' + b.n).concat((S.data.custom || []).map(c => c.id + '=' + c.n)).join('; ') : '';
+    const prompt = 'Ordena el relato de un entrenamiento de ' + athleteDesc() + (L ? ', hoy en ' + PHASES[ST.phase].n + ': su escalera de golpeo con la ' + les + ' va por K' + L.k + ' y la de sprint por S' + L.s : '') + '.\n' +
+      'Fecha: ' + o.date + (o.total ? '. Duró ' + o.total + ' min' : '') + (o.start && o.end ? ' (de ' + o.start + ' a ' + o.end + ')' : '') + (o.intensity ? '. Intensidad que marcó: ' + TT_INT_N[o.intensity] : '') + '.\n' +
+      'Relato: "' + String(o.text).slice(0, 2000) + '"\n\n' +
+      '1) bloques: lo que hizo en el orden en que lo cuenta. cat es la categoría; min los minutos (si no los dice, estímalos; deben sumar la duración total); pies: ambos, der, izq o ninguno (estiramiento, cabeceo o sprint sin balón: ninguno); int: baja, media o alta. Si una actividad coincide con esta lista, usa su id y su nombre: ' + acts + '.\n' +
+      '2) golpesFuertes por pierna: remates, tiros libres, penales, pases largos, centros y cambios de frente. Bandas: no (ninguno), pocos (1-10), varios (10-30), muchos (más de 30). «Con ambas piernas» cuenta para las dos. Si dice «mucha definición» o la sesión es larga de remate, usa muchos. No inventes golpes con una pierna que el relato no usa.\n' +
+      '3) cabezazos: solo cabezazos con salto o fuertes (mismas bandas). sprints: aceleraciones al máximo, 1 contra 1, duelos y cambios de dirección (mismas bandas). companeros: cuántos lo acompañaron (0 si entrenó solo).\n' +
+      '4) rpe de 1 a 10 de la sesión entera: si marcó la intensidad, respétala (suave 4, media 6, intensa 8, al máximo 9); si no, estímala por lo que cuenta.\n' +
+      '5) ejercicios: solo de gimnasio, si los hay' + (gym ? ', con el id de este banco si coincide (si no, id vacío), series, reps, kg o segundos: ' + bank : ' (aquí no hay: lista vacía)') + '.\n' +
+      '6) titulo corto (máximo 48 caracteres) y nota de una línea con lo que supusiste. No inventes actividades que no están en el relato. ' + AI_STYLE;
+    return this.json(prompt, TRAIN_SCHEMA, { tier: 'fast' });
   },
 };
 
@@ -152,7 +201,7 @@ function coachContext(st, today) {
   const prof = st.profile;
   const exLine = (e) => (e.n || (exInfo(e.id, e) || {}).n || e.id) + (e.sets && e.sets.length ? ' ' + fmtSetsShort(e.sets.filter(x => x && x.done !== false)) : '') + (e.fb ? ' [' + e.fb + ']' : '');
   const ballLine = (d) => (d.n || (BALL_DRILL_INDEX[d.id] || {}).n || d.id) + (d.pie ? ' (' + d.pie + ')' : '') + ' ' + ballValTxt(d);
-  const last14 = st.sessions.filter(s => s.date >= addDays(today, -13)).sort(byDate).map(s => ({ fecha: s.date, sesion: s.title || s.type, hecha: s.done !== false, min: s.minutes, rpe: s.rpe, intensa: isIntenseLog(s), ejercicios: (s.exercises || []).filter(e => !e.warmup).slice(0, 12).map(exLine), dolorDurante: (s.kick || s.spr || {}).pd, dolorDiaSiguiente: (s.kick || s.spr || {}).pn, balon: s.ball ? (s.ball.drills || []).map(ballLine) : null }));
+  const last14 = st.sessions.filter(s => s.date >= addDays(today, -13)).sort(byDate).map(s => ({ fecha: s.date, sesion: s.title || s.type, hecha: s.done !== false, min: s.minutes, rpe: s.rpe, intensa: isIntenseLog(s), ejercicios: (s.exercises || []).filter(e => !e.warmup).slice(0, 12).map(exLine), dolorDurante: (s.kick || s.spr || s.campo || {}).pd, dolorDiaSiguiente: (s.kick || s.spr || s.campo || {}).pn, balon: s.ball ? (s.ball.drills || []).map(ballLine) : null, canchaLibre: s.campo ? { bloques: (s.campo.bloques || []).map(b => b.n + ' ' + b.min + ' min (' + (CAMPO_PIES[b.pies] || '').toLowerCase() + ', ' + (CAMPO_INT[b.int] || '').toLowerCase() + ')'), golpesFuertesEstimados: 'derecha ' + CAMPO_BAND_N[(s.campo.golpes || {}).der || 'no'] + ', izquierda ' + CAMPO_BAND_N[(s.campo.golpes || {}).izq || 'no'], cabezazos: CAMPO_BAND_N[s.campo.cabezazos || 'no'], sprintsYDuelos: CAMPO_BAND_N[s.campo.sprints || 'no'], companeros: s.campo.companeros || 0, relato: s.campo.texto || s.notes || '' } : null }));
   const ci = (S.data.checkins || []).filter(c => c.date >= addDays(today, -6)).sort(byDate).map(c => ({ fecha: c.date, sueno: c.sleepH, calidad: fiveLabel('sleepQ', c.sleepQ), energia: fiveLabel('fatigue', c.fatigue), dolorMuscular: fiveLabel('soreness', c.soreness), estres: fiveLabel('stress', c.stress), dolorRF: c.rfPain }));
   const week = weekPlan(weekStartOf(today)).map(d => ({ fecha: d.date, intenso: d.intense, sesiones: d.sessions.map(s => s.title), ajustes: d.notes }));
   const cov = coverage(st.sessions, today, 28);
@@ -175,7 +224,7 @@ function coachContext(st, today) {
     molestiasActivasHoy: activeMolestias(st, today).map(m => zoneName(m.zona, m.lado) + ' ' + m.tipo + ' ' + m.nivelAct + '/10'),
     patronesMolestias: molestiaInsights(st, today).map(x => zoneName(x.zona, x.lado) + ': ' + x.n + ' días con molestia en 14 · ' + x.tip),
     seriesPorGrupoSemana: (() => { const ws = weekStartOf(today), led = muscleLedger(st, ws, today, weekPlan(ws)); return groupGaps(led, st.phase).map(g => g.n + ': ' + g.have + ' (objetivo ' + g.lo + '-' + g.hi + ')'); })(),
-    balon: { recordsPorEstacion: BALL_DRILLS.map(d => { const b = ballBest(st.sessions, d.id, null); return b ? d.n + ': ' + fmtNum(b.val) + ' ' + d.unit + ' (' + b.date + ')' : null; }).filter(Boolean), minutosPorSemana: ballMinutesByWeek(st.sessions, today, 4).map(w => w.start + ': ' + w.min + ' min'), cabezazosFuerzaAltaSemana: ballHeaderCount(st.sessions, weekStartOf(today)) + '/' + BALL_HEADER_CAP, reglaDerecha: 'Derecha solo interior y control; empeine por la escalera K; voleas y centros con la derecha desde K7' },
+    balon: { recordsPorEstacion: BALL_DRILLS.map(d => { const b = ballBest(st.sessions, d.id, null); return b ? d.n + ': ' + fmtNum(b.val) + ' ' + d.unit + ' (' + b.date + ')' : null; }).filter(Boolean), minutosPorSemana: ballMinutesByWeek(st.sessions, today, 4).map(w => w.start + ': ' + w.min + ' min'), cabezazosFuerzaAltaSemana: ballHeaderCount(st.sessions, weekStartOf(today)) + '/' + BALL_HEADER_CAP, reglaDerecha: 'Derecha solo interior y control; empeine por la escalera K; voleas y centros con la derecha desde K7', canchaLibre: 'Las sesiones de cancha libre registran golpes fuertes por bandas estimadas (pocos ≈ 8, varios ≈ 20, muchos ≈ 40), no conteos: no cuentan para subir de nivel K ni S' },
     proyeccion: proj ? { F4: proj.phases[4] || null, K8: proj.k8, S6: proj.s6, listoParaPruebas: proj.phases[5] || null } : null,
     estadoHoy: (() => { const ds = dayStatus(st, today); return { nivel: ds.level, motivos: ds.reasons, puntaje: ds.score, mediaPersonal28dias: ds.baseline ? ds.baseline.mean : null }; })(),
     carga: (() => { const lm = loadModel(st, today); return { ultimos7dias: lm.week, semanaAnterior: lm.prevWeek, aguda7: lm.acute, cronica28: lm.chronic, cociente: lm.ratio }; })(),
