@@ -42,7 +42,7 @@ document.addEventListener('click', (e) => {
     case 'short-min': UI.short.min = Number(g('v')); refreshSheet(true); return;
     case 'short-go': { const q = UI.short, s = findPlanned(q.date, q.type); if (!s) return; const c = compressSession(s, q.min); startTraining({ date: q.date, key: 'gym', title: s.title + ' · ' + q.min + ' min', sessions: [Object.assign({}, c.session, { est: c.est })], warmup: c.session.warmup }, { compressed: q.min }); return; }
     case 'ag-open': openAgendaItem(g('date'), g('key')); return;
-    case 'ag-shift': { const it = agendaFor(g('date')).items.find(x => x.key === g('key')); if (it) { agendaSet(g('date'), g('key'), { start: it.start + Number(g('d')) }).then(() => refreshSheet(true)); haptic(8); } return; }
+    case 'ag-shift': { const it = agendaFor(g('date')).items.find(x => x.key === g('key')); if (it) { const s = it.start + Number(g('d')); agendaSet(g('date'), g('key'), { start: it.key === 'sleep' ? clampBed(s) : s }).then(() => refreshSheet(true)); haptic(8); } return; }
     case 'ag-unmove': agendaSet(g('date'), g('key'), null).then(() => { refreshSheet(true); toast('Vuelve a la hora sugerida.'); }); return;
     case 'ag-reset': { const d = g('date'); remove('agenda', d).then(() => toast('Horario sugerido restaurado.')); return; }
     case 'ag-undo': { const u = UI.agUndo; if (!u) return; const doc = clone(agendaDoc(u.date) || { date: u.date, items: {} }); delete doc.id; doc.items = doc.items || {}; if (u.prev) doc.items[u.key] = u.prev; else delete doc.items[u.key]; put('agenda', u.date, doc); UI.agUndo = null; $('#toast').hidden = true; return; }
@@ -339,7 +339,7 @@ function handleBind(el, isChange) {
     case 'inv-q': UI.inv.q = v; return;
     case 'mol-z': if (UI.mol && v && isChange) { UI.mol.view = ZONE_VIEW[v] || UI.mol.view; molAdd(UI.mol, v, (ST && ST.side) || 'd'); el.value = ''; refreshSheet(true); } return;
     case 'mol-nota': if (UI.mol) UI.mol.nota = v; return;
-    case 'ag-time': if (isChange && /^\d{1,2}:\d{2}$/.test(v)) { agendaSet(el.getAttribute('data-date'), el.getAttribute('data-key'), { start: hm(v) }).then(() => toast('Hora cambiada a ' + v + '.')); } return;
+    case 'ag-time': if (isChange && /^\d{1,2}:\d{2}$/.test(v)) { const key = el.getAttribute('data-key'), start = key === 'sleep' ? normBed(hm(v)) : hm(v); agendaSet(el.getAttribute('data-date'), key, { start }).then(() => toast('Hora cambiada a ' + fmtHM(start) + '.')); } return;
     case 'sched': if (isChange && /^\d{1,2}:\d{2}$/.test(v)) setSchedule(name, v); return;
     case 'meal-text': UI.meal.text = v; return;
     case 'meal-item-n': { const it = UI.meal.items[Number(el.getAttribute('data-i'))]; if (it && it.n !== v) { it.n = v; it.renamed = !!v.trim(); } if (it && isChange && it.renamed) setTimeout(() => refreshSheet(true), 0); return; }

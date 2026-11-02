@@ -585,6 +585,31 @@ const dayTargets = G('dayTargets'), slotTargets = G('slotTargets'), habitSkips =
 }
 function fmt(m) { return String(Math.floor(m / 60)).padStart(2, '0') + ':' + String(m % 60).padStart(2, '0'); }
 
+/* ---------- Dormir siempre de noche (perfil o cambio del día guardados en la mañana) ---------- */
+{
+  const SUN = '2026-11-01', normBed = G('normBed'), scheduleOf = G('scheduleOf');
+  const ck = [{ id: SUN, date: SUN, bedTime: '21:30', wakeTime: '07:30', sleepH: 10 }];
+  const check = (label, sched, agendaDoc, wantSleep) => {
+    const p = plan(SUN, { profile: { schedule: sched }, checkins: ck });
+    const ag = buildAgenda(p.day(SUN), p.st, agendaDoc);
+    const it = (k) => ag.items.find(x => x.key === k);
+    const sl = it('sleep'), cena = it('cena'), alm = it('almuerzo'), des = it('desayuno');
+    ok(sl && sl.start === hm(wantSleep) + (hm(wantSleep) < 6 * 60 ? 1440 : 0), 'Dormir ' + label + ': quedó a las ' + (sl && fmt(sl.start % 1440)) + ' (esperado ' + wantSleep + ')');
+    ok(cena && alm && des && cena.start > alm.end && cena.start > des.end, 'Cena ' + label + ': antes del almuerzo o del desayuno (' + (cena && fmt(cena.start % 1440)) + ')');
+    ok(sl && cena && sl.start - cena.end >= 45, 'Cena ' + label + ': pegada a dormir');
+    ok(ag.items.every((x, i, a) => !i || a[i - 1].start <= x.start), 'Orden ' + label + ': la agenda no sale ordenada');
+    ok(sl && ag.items[ag.items.length - 1].key === 'sleep', 'Dormir ' + label + ': no es lo último del día');
+  };
+  check('10:30 en el perfil (a. m. por error)', { sleep: '10:30' }, null, '22:30');
+  check('21:30 en el perfil', { sleep: '21:30' }, null, '21:30');
+  check('00:30 en el perfil (después de medianoche)', { sleep: '00:30' }, null, '00:30');
+  check('cambiado hoy a las 10:30', {}, { items: { sleep: { start: 10 * 60 + 30 } } }, '22:30');
+  check('cambiado hoy a las 00:15', {}, { items: { sleep: { start: 15 } } }, '00:15');
+  ok(scheduleOf({ schedule: { sleep: '10:30' } }).sleep === '22:30', 'Perfil: 10:30 no se lee como 22:30');
+  ok(scheduleOf({ schedule: { sleep: 'xx' } }).sleep === '21:30', 'Perfil: hora de dormir inválida sin valor por defecto');
+  ok(normBed(17 * 60) === 17 * 60 && normBed(23 * 60) === 23 * 60 && normBed(31 * 60) === 30 * 60, 'normBed: noche mal normalizada');
+}
+
 console.log('motor · fallos:', fails.length);
 fails.forEach(f => console.log('  ', f));
 process.exit(fails.length ? 1 : 0);

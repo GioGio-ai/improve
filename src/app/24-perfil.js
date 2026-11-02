@@ -105,7 +105,15 @@ function refreshWeather() {
     }).catch(() => { wxAt = Date.now() - 2.5 * 3600e3; });
 }
 function updateProfile(fn) { const p = clone(S.data.profile || { restDay: 6, teamDays: [], matchDays: [], equipmentOff: [] }); delete p.id; fn(p); return put('profile', 'main', p); }
-function setSchedule(k, v) { updateProfile(p => { p.schedule = Object.assign({}, scheduleOf(p), p.schedule || {}); p.schedule[k] = v; }); }
+function setSchedule(k, v) {
+  /* Dormir siempre de noche: 10:30 (a. m. por error) se guarda como 22:30 */
+  if (k === 'sleep' && /^\d{1,2}:\d{2}$/.test(v)) {
+    const fixed = fmtHM(normBed(hm(v)));
+    if (fixed !== fmtHM(hm(v))) toast('Dormir a las ' + fmtHM(hm(v)) + ' es de día: queda a las ' + fixed + '.', 'info');
+    v = fixed;
+  }
+  updateProfile(p => { p.schedule = scheduleOf(p); p.schedule[k] = v; });
+}
 function openInjury(isNew) {
   const inj = isNew ? null : ST.injury;
   const img = inj ? (inj.imaging || [])[0] || {} : {};

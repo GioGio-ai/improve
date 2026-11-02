@@ -362,7 +362,8 @@ function dragStart(e, grip) {
 function dragUpdate() {
   const dy = DRAG.lastY - DRAG.startY + (window.scrollY - DRAG.scroll0);
   const raw = DRAG.startMin + dy / PX_MIN;
-  const lo = DRAG.r0 - 60, hi = DRAG.r0 + 24 * 60;
+  const bed = DRAG.it.key === 'sleep';
+  const lo = bed ? BED_MIN : DRAG.r0 - 60, hi = bed ? BED_MAX : DRAG.r0 + 24 * 60;
   const v = clamp(Math.round(raw / 15) * 15, lo, hi - (DRAG.it.dur || 0));
   if (v !== DRAG.cur) { DRAG.cur = v; haptic(6); }
   if (Math.abs(dy) > 6) DRAG.moved = true;
@@ -395,6 +396,7 @@ function dragEnd(cancel) {
   saveAgendaTime(d.date, d.key, d.cur, true);
 }
 function saveAgendaTime(date, key, start, fromDrag) {
+  if (key === 'sleep') start = clampBed(start);
   const doc = clone(agendaDoc(date) || { date, items: {} });
   delete doc.id; doc.date = date; doc.items = doc.items || {};
   doc.items[key] = Object.assign({}, doc.items[key] || {}, { start });

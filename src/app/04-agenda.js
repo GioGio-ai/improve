@@ -9,7 +9,25 @@ const AGENDA_DEFAULTS = {
 function hm(s) { if (typeof s === 'number') return s; const p = String(s || '0:0').split(':').map(Number); return (p[0] || 0) * 60 + (p[1] || 0); }
 function fmtHM(min) { min = ((Math.round(min) % 1440) + 1440) % 1440; return String(Math.floor(min / 60)).padStart(2, '0') + ':' + String(min % 60).padStart(2, '0'); }
 function fmtDur(min) { min = Math.round(min); if (min < 60) return min + ' min'; const h = Math.floor(min / 60), m = min % 60; return h + ' h' + (m ? ' ' + String(m).padStart(2, '0') : ''); }
-function scheduleOf(prof) { return Object.assign({}, AGENDA_DEFAULTS, (prof && prof.schedule) || {}); }
+/* Hora de dormir: siempre de noche (17:00 a 06:00 del día siguiente), en minutos del día que puede pasar de 24:00.
+   Antes de las 06:00 → después de medianoche (00:30 → 24:30).
+   De 06:00 a 17:00 → error de a. m./p. m. (10:30 → 22:30): nadie se acuesta a media mañana. */
+const BED_MIN = 17 * 60, BED_MAX = 30 * 60;
+function normBed(v) {
+  v = Math.round(num(v) ?? hm(AGENDA_DEFAULTS.sleep));
+  if (v >= 24 * 60) return Math.min(v, BED_MAX);
+  if (v < 6 * 60) return v + 24 * 60;
+  if (v < BED_MIN) return v + 12 * 60;
+  return v;
+}
+/* Arrastre o ±15 min del marcador «Dormir»: se queda dentro de la noche */
+const clampBed = (v) => clamp(Math.round(v), BED_MIN, BED_MAX);
+function scheduleOf(prof) {
+  const s = Object.assign({}, AGENDA_DEFAULTS, (prof && prof.schedule) || {});
+  if (/^\d{1,2}:\d{2}$/.test(String(s.sleep))) s.sleep = fmtHM(normBed(hm(s.sleep)));
+  else s.sleep = AGENDA_DEFAULTS.sleep;
+  return s;
+}
 const ceil15 = (m) => Math.ceil(m / 15) * 15;
 /* Minutos entre acostarse y levantarse (cruza la medianoche) */
 function sleepSpan(bed, wake) { if (!bed || !wake) return null; const d = (hm(wake) - hm(bed) + 1440) % 1440; return d || null; }
@@ -85,7 +103,8 @@ function buildAgenda(day, st, agendaDoc, opts) {
   const match = !!(B.club && B.club.sessions.some(x => x.type === 'prueba' || x.type === 'partido'));
   const clubStart = B.club ? O('club', hm(sch.field)) : null;
   const wakeDef = slept && slept.wake !== null ? slept.wake : match ? Math.min(hm(sch.wake), clubStart - 180) : hm(sch.wake);
-  const wake = O('wake', wakeDef), sleep = O('sleep', hm(sch.sleep) - earlier);
+  /* Dormir siempre de noche, también si quedó guardado en la mañana (perfil o cambio del día) */
+  const wake = O('wake', wakeDef), sleep = normBed(O('sleep', Math.max(BED_MIN, normBed(hm(sch.sleep)) - earlier)));
   const lateWake = !!(slept && slept.wake !== null && !(ov.wake && num(ov.wake.start) !== null) && slept.wake > hm(sch.wake) + 20);
   add({ key: 'wake', kind: 'wake', title: slept && slept.wake !== null ? 'Te levantaste' : 'Despertar', start: wake, dur: 0, movable: true, marker: true });
   const train = {};
