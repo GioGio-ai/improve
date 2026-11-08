@@ -32,18 +32,20 @@ try {
   await page.clock.setFixedTime(new Date(today + 'T09:30:00-03:00'));
   await page.goto('http://127.0.0.1:8765/?local=1#hoy');
   await page.waitForSelector('.topbar', { timeout: 15000 });
-  await page.waitForSelector('.dato-card .dato-t', { timeout: 8000 });
   ok(await page.locator('.topbar a[href="#aprende"]').count() === 1, 'sin acceso a Aprende en la cabecera');
+  /* v5.0: Hoy en tres piezas; el dato del día vive solo en Aprende */
+  ok(await page.locator('#view .dato-card').count() === 0, 'el dato del día sigue en Hoy');
+  await page.evaluate(() => { location.hash = '#aprende'; });
+  await page.waitForSelector('.dato-card .dato-t', { timeout: 8000 });
   const t1 = await page.locator('.dato-card .dato-t').innerText();
   const a1 = (await db('aprende')).main || {};
   ok(a1.dia && a1.dia.fecha === today && a1.vistos && a1.vistos[a1.dia.id] === today, 'dato del día no guardado: ' + JSON.stringify(a1.dia));
-  await page.locator('.dato-card').scrollIntoViewIfNeeded();
-  await shot('hoy-dato');
+  await shot('aprende-dato');
   // Estable al recargar
   await page.reload(); await page.waitForSelector('.dato-card .dato-t', { timeout: 8000 });
   ok(await page.locator('.dato-card .dato-t').innerText() === t1, 'el dato del día cambió al recargar');
-  // Más información → Aprende con la ficha abierta
-  await click('.dato-card [data-act="dato-open"].linkbtn');
+  // La ficha completa
+  await click('.dato-card [data-act="dato-open"]');
   await page.waitForSelector('.sheet .dato-hero', { timeout: 6000 });
   ok(await page.evaluate(() => location.hash) === '#aprende', 'no navegó a #aprende');
   ok(await page.locator('#nav a[data-nav="hoy"].on').count() === 1, 'Aprende no marca Hoy en la barra');
@@ -60,11 +62,12 @@ try {
   await click('[data-act="apr-filter"][data-v="guardados"]');
   ok(await page.locator('.dt-row[data-act="dato-open"]').count() === 1, 'filtro guardados ≠ 1');
   await click('[data-act="apr-filter"][data-v="todos"]');
-  ok(await page.locator('.dt-row[data-act="dato-open"]').count() === 90, 'lista completa ≠ 90: ' + await page.locator('.dt-row[data-act="dato-open"]').count());
-  await page.locator('#apr-q').fill('creatina');
+  ok(await page.locator('.dt-row[data-act="dato-open"]').count() === 67, 'lista completa ≠ 67 (sin comida): ' + await page.locator('.dt-row[data-act="dato-open"]').count());
+  ok(!(await page.locator('[data-act="apr-filter"][data-v="nutricion"], [data-act="apr-filter"][data-v="hidratacion"]').count()), 'siguen los filtros de nutrición e hidratación');
+  await page.locator('#apr-q').fill('isquio');
   await page.waitForTimeout(500);
   const rows = await page.locator('.dt-row[data-act="dato-open"]').count();
-  ok(rows >= 2 && rows < 10, 'búsqueda «creatina»: ' + rows);
+  ok(rows >= 2 && rows < 10, 'búsqueda «isquio»: ' + rows);
   await page.locator('#apr-q').fill('');
   await page.waitForTimeout(400);
   await shot('aprende-lista');
@@ -98,6 +101,9 @@ try {
   // Otro día: dato distinto (rota sin repetir)
   await page.clock.setFixedTime(new Date(addDays(today, 1) + 'T09:30:00-03:00'));
   await page.goto('http://127.0.0.1:8765/?local=1#hoy');
+  await page.waitForSelector('.topbar', { timeout: 15000 });
+  await page.evaluate(() => { location.hash = '#aprende'; });
+  await click('[data-act="apr-tab"][data-v="datos"]');
   await page.waitForSelector('.dato-card .dato-t', { timeout: 8000 });
   ok(await page.locator('.dato-card .dato-t').innerText() !== t1, 'el dato de mañana repite el de hoy');
 } catch (e) { fails.push('PASO: ' + e.message.split('\n')[0]); await shot('ERROR'); }

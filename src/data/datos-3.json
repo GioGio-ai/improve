@@ -520,34 +520,6 @@
     ]
   },
   {
-    "id": "elite-carbos-periodizados",
-    "cat": "elite",
-    "titular": "En la Premier League comen más carbohidratos el día de partido que en los de entrenamiento",
-    "cifra": "6,4 vs 4,2",
-    "cifraLbl": "g/kg partido vs. entreno",
-    "resumen": "Seis jugadores profesionales del Liverpool registraron su dieta: comieron 6,4 g de carbohidratos por kilo los días de partido y 4,2 g/kg los de entrenamiento. Ajustan el combustible a la carga del día.",
-    "mecanismo": "Más carbohidratos cuando la sesión los necesita y menos en días suaves ayuda a rendir sin sobrar energía.",
-    "nivel": "C",
-    "estudios": [
-      {
-        "cita": "Anderson L y col. · Int J Sport Nutr Exerc Metab 2017",
-        "titulo": "Energy Intake and Expenditure of Professional Soccer Players of the English Premier League: Evidence of Carbohydrate Periodization",
-        "diseno": "Observacional",
-        "n": 6,
-        "poblacion": "Futbolistas de la Premier League"
-      }
-    ],
-    "aplicar": [
-      "Tu plan ya lo hace: 3,5 g/kg en descanso y hasta 7 g/kg en días de prueba.",
-      "Mira el tipo de día en Comida antes de armar el plato.",
-      "La proteína se mantiene alta todos los días."
-    ],
-    "contexto": [
-      "nutricion",
-      "precompetencia"
-    ]
-  },
-  {
     "id": "elite-microciclo",
     "cat": "elite",
     "titular": "Los clubes de élite bajan la carga a medida que se acerca el partido",
@@ -693,35 +665,6 @@
     ]
   },
   {
-    "id": "mito-ventana-anabolica",
-    "cat": "mitos",
-    "titular": "La «ventana anabólica» de 30 min no es tan estricta: importa el total del día",
-    "cifra": "Total",
-    "cifraLbl": "del día, no el minuto",
-    "resumen": "Un metaanálisis encontró que el beneficio de tomar proteína justo después de entrenar desaparece cuando la cantidad total del día es la misma. No hay que salir corriendo del gimnasio a comer.",
-    "mecanismo": "La síntesis de proteína se mantiene elevada durante horas después de entrenar; lo que cuenta es llegar a la meta diaria repartida en comidas.",
-    "nivel": "A",
-    "mito": "matiz",
-    "estudios": [
-      {
-        "cita": "Schoenfeld BJ, Aragon AA, Krieger JW · J Int Soc Sports Nutr 2013",
-        "titulo": "The effect of protein timing on muscle strength and hypertrophy: a meta-analysis",
-        "diseno": "Metaanálisis",
-        "n": null,
-        "poblacion": "Adultos que entrenan fuerza"
-      }
-    ],
-    "aplicar": [
-      "Come proteína en las 2-3 h después de entrenar, sin estrés por los minutos.",
-      "Si entrenaste en ayunas, ahí sí conviene comer pronto.",
-      "Prioriza llegar a tu meta diaria."
-    ],
-    "contexto": [
-      "gimnasio",
-      "nutricion"
-    ]
-  },
-  {
     "id": "mito-acido-lactico",
     "cat": "mitos",
     "titular": "Las agujetas no son ácido láctico",
@@ -748,97 +691,6 @@
     "contexto": [
       "molestia",
       "descanso"
-    ]
-  },
-  {
-    "id": "mito-sin-gluten",
-    "cat": "mitos",
-    "titular": "Dejar el gluten no mejoró el rendimiento de deportistas sin celiaquía",
-    "cifra": "245 = 245",
-    "cifraLbl": "kJ con y sin gluten",
-    "resumen": "En un ensayo doble ciego con 13 ciclistas sin celiaquía, una semana sin gluten no cambió el rendimiento en una contrarreloj de 15 min, ni los síntomas digestivos ni la inflamación, comparado con una semana con gluten.",
-    "mecanismo": "Sin celiaquía ni sensibilidad diagnosticada, el gluten no afecta el rendimiento. Muchos mejoran al dejarlo porque comen menos procesados.",
-    "nivel": "B",
-    "mito": "mito",
-    "estudios": [
-      {
-        "cita": "Lis DM y col. · Med Sci Sports Exerc 2015",
-        "titulo": "No Effects of a Short-Term Gluten-free Diet on Performance in Nonceliac Athletes",
-        "diseno": "Ensayo cruzado doble ciego",
-        "n": 13,
-        "poblacion": "Ciclistas sin celiaquía"
-      }
-    ],
-    "testimonios": [
-      {
-        "quien": "Novak Djokovic (tenis)",
-        "texto": "Dejó el gluten tras un test de intolerancia y lo contó como clave de su mejora en 2011. Su caso puede deberse a una sensibilidad real: no aplica a todos.",
-        "fuente": "Novak Djokovic, «Serve to Win» (2013)"
-      }
-    ],
-    "aplicar": [
-      "Tu dieta sin harinas mejora por menos procesados, no por quitar el gluten en sí.",
-      "Si sospechas intolerancia, consulta y hazte el análisis.",
-      "No hace falta evitar la avena si te sienta bien."
-    ],
-    "contexto": [
-      "nutricion"
-    ]
-  },
-  {
-    "id": "mito-keto",
-    "cat": "mitos",
-    "titular": "La dieta cetogénica empeoró la eficiencia de marchistas de élite",
-    "cifra": "21",
-    "cifraLbl": "atletas de élite",
-    "resumen": "En 21 marchistas de élite, 3 semanas de dieta alta en grasa y baja en carbohidratos aumentaron el uso de grasa, pero empeoraron la economía del esfuerzo y anularon la mejora del entrenamiento intenso. Los grupos con carbohidratos sí mejoraron.",
-    "mecanismo": "Oxidar grasa necesita más oxígeno por unidad de energía que los carbohidratos: a ritmos altos, cuesta más.",
-    "nivel": "B",
-    "mito": "mito",
-    "estudios": [
-      {
-        "cita": "Burke LM y col. · J Physiol 2017",
-        "titulo": "Low carbohydrate, high fat diet impairs exercise economy and negates the performance benefit from intensified training in elite race walkers",
-        "diseno": "Ensayo controlado",
-        "n": 21,
-        "poblacion": "Marchistas de élite"
-      }
-    ],
-    "aplicar": [
-      "Para el fútbol, los carbohidratos son el combustible de los sprints.",
-      "Ajusta la cantidad al tipo de día, no los elimines.",
-      "Menos carbohidratos solo en días de descanso."
-    ],
-    "contexto": [
-      "nutricion"
-    ]
-  },
-  {
-    "id": "mito-creatina-rinones",
-    "cat": "mitos",
-    "titular": "La creatina no daña los riñones en personas sanas",
-    "cifra": "Segura",
-    "cifraLbl": "en dosis normales",
-    "resumen": "Una revisión de las preguntas frecuentes sobre la creatina concluyó que, en personas sanas y con las dosis habituales, no daña los riñones ni causa calambres, y que el aumento de peso inicial es agua dentro del músculo.",
-    "mecanismo": "La creatina eleva la creatinina en sangre (un producto de su uso), lo que a veces se confunde con daño renal en los análisis.",
-    "nivel": "A",
-    "mito": "mito",
-    "estudios": [
-      {
-        "cita": "Antonio J y col. · J Int Soc Sports Nutr 2021",
-        "titulo": "Common questions and misconceptions about creatine supplementation: what does the scientific evidence really show?",
-        "diseno": "Revisión",
-        "n": null,
-        "poblacion": "Revisión de la evidencia"
-      }
-    ],
-    "aplicar": [
-      "3-5 g al día es la dosis normal.",
-      "Si te hacen un análisis, avisa que tomas creatina: sube la creatinina.",
-      "Con enfermedad renal previa, consulta al médico."
-    ],
-    "contexto": [
-      "nutricion"
     ]
   }
 ]

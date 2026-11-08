@@ -75,49 +75,37 @@ function saveCustom() {
 const EVIDENCE = [
   { lvl: 'Alta', cls: 'good', items: [
     ['Sueño de 9 h o más', 'Tu horario de 21:30 a 7:30 es ideal. Habitación oscura y fresca, sin pantallas 30-60 min antes.'],
-    ['Proteína 2 g/kg al día', 'En 4-5 tomas de ~35 g. Proteína lenta antes de dormir en días de mucha carga.'],
-    ['Carbohidratos según la carga', 'Más en días dobles y antes de pruebas; menos en descanso.'],
-    ['Creatina 3-5 g al día', 'La mejor evidencia para fuerza y potencia. Ayuda a conservar músculo en la rehabilitación.'],
     ['Carga progresiva', 'Ninguna técnica de recuperación reemplaza que el tejido tolere más carga.'],
   ] },
   { lvl: 'Moderada', cls: 'warn', items: [
     ['Respiración con exhalación larga', '5 min después de entrenar: pasa a modo recuperación.'],
-    ['Baño de agua fría', 'Solo tras partidos o semanas muy cargadas (10-15 °C, 10-15 min). Nunca en las horas siguientes a la fuerza: frena la ganancia. Beber agua fría no tiene problema.'],
+    ['Baño de agua fría', 'Solo tras partidos o semanas muy cargadas (10-15 °C, 10-15 min). Nunca en las horas siguientes a la fuerza: frena la ganancia.'],
     ['Siesta de 20-30 min', 'Antes de las 15:00. Mejora el rendimiento de la tarde sin quitar sueño de noche.'],
-    ['Omega-3', 'Pescado 2-3 veces por semana. Efecto modesto sobre dolor e inflamación.'],
-    ['Cafeína 3 mg/kg', 'Antes de pruebas o sesiones clave, solo si ya la tomas. No después de las 14:00.'],
   ] },
   { lvl: 'Baja', cls: '', items: [
-    ['Gelatina + vitamina C', '15 g de gelatina con una naranja, 30-60 min antes de cargar el recto femoral. Evidencia temprana para tendones.'],
     ['Masaje y compresión', 'Mejoran la sensación; efecto fisiológico modesto. Nada profundo sobre la lesión.'],
   ] },
   { lvl: 'Evitar', cls: 'pain', items: [
     ['Antiinflamatorios de rutina', 'Interfieren con la reparación del tejido. Solo con indicación médica.'],
-    ['Alcohol', 'Baja la síntesis de proteína y empeora el sueño 24-48 h.'],
+    ['Alcohol', 'Empeora el sueño y la recuperación durante 24-48 h.'],
     ['Estirar fuerte la lesión', 'La longitud del recto femoral se gana con carga excéntrica e isométrica en rango largo, no con estiramientos agresivos.'],
   ] },
 ];
-function openGuide(g) { openSheet({ id: 'guide-' + g, full: ['prueba', 'recuperacion', 'nutricion', 'fks'].includes(g), render: () => guideHtml(g), onClose: () => { if (g === 'respiracion') stopBreath(true); } }); }
+function openGuide(g) { openSheet({ id: 'guide-' + g, full: ['prueba', 'recuperacion', 'fks'].includes(g), render: () => guideHtml(g), onClose: () => { if (g === 'respiracion') stopBreath(true); } }); }
 function evidenceList(groups) {
   return groups.map(gr => '<div class="stack-sm">' + chip(gr.lvl === 'Evitar' || gr.lvl === 'Seguridad' ? gr.lvl : 'Evidencia ' + gr.lvl.toLowerCase(), gr.cls === 'good' ? 'lime' : gr.cls === 'warn' ? 'warn' : gr.cls === 'pain' ? 'pain' : '') + '<ul class="crit">' + gr.items.map(([a, b]) => '<li><span class="mk' + (gr.cls === 'good' ? ' ok' : gr.cls === 'pain' ? ' pain' : '') + '">' + ic(gr.cls === 'pain' ? 'x' : 'check') + '</span><div class="small"><b>' + esc(a) + '</b><div class="fg3">' + esc(b) + '</div></div><span></span></li>').join('') + '</ul></div>').join('');
 }
 function guideHtml(g) {
-  const kg = ST && ST.weight;
   if (g === 'respiracion') return sheetHead('Respiración guiada', 'Pasa a modo recuperación') + '<div class="sheet-body">' + breathWidget() + '</div>';
   if (g === 'recuperacion') return sheetHead('Recuperación por evidencia') + '<div class="sheet-body">' + evidenceList(EVIDENCE) + '</div>';
-  if (g === 'nutricion') return sheetHead('Nutrición por evidencia', 'Para tu dieta natural, sin harinas ni azúcar') + '<div class="sheet-body">' + evidenceList(NUTRI_GUIDE) + '</div>';
   if (g === 'fks') return sheetHead('Qué significan F, K y S') + '<div class="sheet-body">' + fksExplain(ST) + '</div>';
   if (g === 'prueba') {
-    const c1 = kg ? Math.round(kg * 1 / 5) * 5 + '-' + Math.round(kg * 2 / 5) * 5 + ' g' : '1-2 g/kg';
-    const caf = kg ? Math.round(kg * 3 / 10) * 10 + ' mg' : '3 mg/kg';
-    const fl = kg ? Math.round(kg * 5) + '-' + Math.round(kg * 7) + ' ml' : '5-7 ml/kg';
     const rows = [
-      ['48-24 h antes', ['Carbohidratos altos: 6-8 g/kg al día (mandioca, arroz, papa, frutas, miel).', 'Sueño de 9 h las dos noches.', 'El día anterior, solo activación de 20-25 min.']],
-      ['3-4 h antes', ['Comida con ' + c1 + ' de carbohidratos, proteína moderada, poca grasa y fibra. Ej.: arroz, pollo y banana.', 'Agua: ' + fl + '.', 'Jugo de remolacha 500 ml 2-3 h antes.']],
-      ['60-90 min antes', ['Snack de 30-60 g de carbohidratos si tienes hambre: banana con miel.', 'Cafeína ' + caf + ' solo si ya la tomas.']],
+      ['48-24 h antes', ['Sueño de 9 h las dos noches: desde 5 días antes, acuéstate 30-60 min antes.', 'El día anterior, solo activación de 20-25 min.', 'Deja listos los botines, las canilleras y la ropa.']],
+      ['La mañana', ['Despierta al menos 3 h antes de jugar.', 'Paseo corto y movilidad suave al levantarte.']],
       ['Calentamiento 20-25 min', ['Trote y movilidad dinámica.', 'Isometría de recto femoral 2 × 20 s.', 'Aceleraciones y cambios de dirección.', 'Golpeo progresivo 50, 70 y 85 %, solo si completaste K8.']],
-      ['Durante', ['Agua con una pizca de sal.', 'Entre partidos: 30-60 g de carbohidratos por hora (banana, miel).']],
-      ['Después', ['Carbohidratos 1-1,2 g/kg por hora las primeras 3-4 h y ' + (kg ? Math.round(kg * 0.4) + ' g' : '0,4 g/kg') + ' de proteína.', 'Repón 1,25-1,5 L por cada kg perdido.', 'Agua fría 10-15 min: acá sí sirve.', 'Mañana: check-in y dolor del recto femoral.']],
+      ['Durante', ['Entre bloques, muévete suave para no enfriarte.', 'Si aparece dolor en el recto femoral, para.']],
+      ['Después', ['Agua fría 10-15 min: acá sí sirve.', 'Respiración 5 min y a dormir temprano.', 'Mañana: check-in y dolor del recto femoral.']],
     ];
     const ready = !ST.injuryActive || ST.phase >= 5;
     return sheetHead('Día de prueba', 'Antes, durante y después') + '<div class="sheet-body">' + (ready ? '' : note('warn', 'Todavía estás en ' + PHASES[ST.phase].n + '. Jugar a máxima intensidad requiere F5.')) +

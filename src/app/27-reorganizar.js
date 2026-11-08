@@ -29,12 +29,11 @@ function rsContext(date, types) {
 
 /* Primer hueco libre del día que respeta las reglas: antes de la cancha y/o después */
 function rsSlot(c, o) {
-  const ag = c.ag, lunch = ag.items.find(x => x.key === 'almuerzo'), field = c.field;
+  const ag = c.ag, field = c.field;
   const latestEnd = ag.sleep - (o.heavy ? 120 : 75);
   const res = { before: null, after: null };
   for (let t = ceil15(o.from); t + o.dur <= latestEnd; t += 15) {
     const end = t + o.dur;
-    if (lunch && t < lunch.start + (o.legs ? 120 : 90) && end > lunch.start - 15) continue;
     if (!field) { res.before = t; break; }
     if (end <= field.start - o.gap) { if (res.before === null) res.before = t; continue; }
     if (t >= field.end + 15) { if (o.afterField) res.after = t; break; }

@@ -1,4 +1,4 @@
-// Flujos principales en modo local: node test/flows.mjs <fixture.json> <outdir> <foto.jpg>
+// Flujos principales en modo local: node test/flows.mjs <fixture.json> <outdir>
 import { createRequire } from 'node:module';
 import fs from 'node:fs';
 const require = createRequire(import.meta.url);
@@ -117,29 +117,21 @@ await step('gimnasio-sabado', async () => {
   await shot('gym-pausado');
 });
 
-await step('comida-texto', async () => {
-  await page.evaluate(() => { location.hash = '#comida'; });
+await step('registrar', async () => {
+  await page.evaluate(() => { location.hash = '#entreno'; });
   await page.waitForTimeout(500);
-  await click('[data-act="meal-text"]');
-  await page.fill('#meal-txt', '3 huevos revueltos, 200 g de mandioca, un vaso de leche de cabra y una banana con miel');
-  await shot('comida-texto');
-  await click('[data-act="meal-text-go"]');
-  await page.waitForSelector('.ai-items', { timeout: 8000 });
-  await shot('comida-confirmar-texto');
-  await click('[data-act="meal-save"]');
-  await shot('comida-guardada');
+  await click('[data-act="reg"]');
+  await shot('registrar');
+  if (!(await page.locator('.sheet [data-act="train-text"]').count()) || !(await page.locator('.sheet [data-act="new-log"]').count())) throw new Error('la hoja Registrar no tiene «Contarlo» ni «Cargar a mano»');
+  await click('.sheet [data-act="close"]');
 });
 
-await step('comida-foto', async () => {
-  if (!photo) return;
-  const [fc] = await Promise.all([page.waitForEvent('filechooser'), page.locator('[data-act="meal-photo"]').first().click()]);
-  await fc.setFiles(photo);
-  await page.waitForTimeout(300);
-  await shot('foto-analizando');
-  await page.waitForSelector('.ai-items', { timeout: 10000 });
-  await shot('foto-confirmar');
-  await click('[data-act="meal-save"]');
-  await shot('foto-guardada');
+await step('sin-comida', async () => {
+  await page.evaluate(() => { location.hash = '#comida'; });
+  await page.waitForTimeout(500);
+  if (await page.locator('#nav a').count() !== 4) throw new Error('la barra no tiene 4 pestañas');
+  if (await page.locator('[data-nav="comida"]').count()) throw new Error('sigue la pestaña Comida');
+  if (!(await page.locator('.hoy-head').count())) throw new Error('#comida no lleva a Hoy');
 });
 
 await step('test-en-vivo', async () => {

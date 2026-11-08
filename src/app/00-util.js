@@ -147,3 +147,5 @@ async function exifDate(file) {
   } catch (e) { /* sin EXIF */ }
   return null;
 }
+/* Texto sin tildes ni signos, para buscar */
+function normTxt(s) { return String(s || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^a-z0-9ñ.,\s]/g, ' ').replace(/\s+/g, ' ').trim(); }

@@ -5,7 +5,6 @@ function openAgendaItem(date, key) {
   const it = agendaFor(date).items.find(x => x.key === key);
   if (!it) return;
   if (it.kind === 'train' || it.kind === 'recup') openBlock(date, key);
-  else if (it.kind === 'meal') openMeal(date, key);
   else openSheet({ id: 'ag-' + key, render: () => agendaInfoHtml(date, key) });
 }
 function timeAdjustHtml(date, it) {
@@ -43,8 +42,9 @@ function blockSheetHtml(date, key) {
   if (!past || date === today) h += '<div class="field"><span class="lab">Hora</span>' + timeAdjustHtml(date, it) + '</div>';
   h += '<div class="stack-sm">';
   if (!dn.all && !past) h += '<button class="btn primary lg block" data-act="start-block" data-date="' + date + '" data-key="' + key + '">' + ic('play') + (dn.some ? 'Seguir con lo pendiente' : 'Empezar ' + it.title.toLowerCase()) + '</button>';
-  if (!dn.all) h += '<div class="grid2"><button class="btn sm" data-act="block-done" data-date="' + date + '" data-key="' + key + '">' + ic('check') + 'Hecho tal cual</button><button class="btn sm" data-act="block-short" data-date="' + date + '" data-key="' + key + '">' + ic('timer') + 'Poco tiempo</button></div>';
-  if (!dn.all && date <= today && (it.kind === 'train')) h += '<button class="btn sm ghost block" data-act="resched" data-date="' + date + '" data-types="' + esc(b.sessions.filter(s => !findLog(date, s.type)).map(s => s.type).join(',')) + '">' + ic('cal') + (past ? 'No la hice · recuperarla' : 'No llego · reorganizar') + '</button>';
+  if (!dn.all && date <= today) h += '<div class="grid2"><button class="btn sm" data-act="reg-open" data-date="' + date + '" data-key="' + key + '">' + ic('check') + 'Registrar</button>' + (past ? '<span></span>' : '<button class="btn sm" data-act="block-short" data-date="' + date + '" data-key="' + key + '">' + ic('timer') + 'Poco tiempo</button>') + '</div>';
+  else if (!dn.all) h += '<button class="btn sm block" data-act="block-short" data-date="' + date + '" data-key="' + key + '">' + ic('timer') + 'Poco tiempo</button>';
+  if (!dn.all && date === today && it.kind === 'train') h += '<button class="btn sm ghost block" data-act="resched" data-date="' + date + '" data-types="' + esc(b.sessions.filter(s => !findLog(date, s.type)).map(s => s.type).join(',')) + '">' + ic('cal') + 'No llego · reorganizar</button>';
   return h + '</div></div>';
 }
 function logLine(log) {
@@ -92,9 +92,8 @@ function sessionSheetHtml(date, type) {
   (s.notes || []).forEach(n => { h += note('info', esc(n)); });
   h += '<div class="stack-sm">';
   if (!club && !past) h += '<button class="btn primary lg block" data-act="start" data-date="' + date + '" data-type="' + type + '">' + ic('play') + 'Empezar solo esta sesión</button>';
-  h += '<div class="grid2"><button class="btn sm" data-act="quick-done" data-date="' + date + '" data-type="' + type + '">' + ic('check') + 'Hecha tal cual</button>' +
-    '<button class="btn sm" data-act="did-other" data-date="' + date + '" data-type="' + type + '">' + ic('edit') + 'Lo que hice</button></div>';
-  h += '<div class="grid2"><button class="btn sm ghost" data-act="' + (date <= today ? 'resched' : 'not-done') + '" data-date="' + date + '" data-type="' + type + '">' + ic('x') + 'No la hice</button>' + (past ? '<span></span>' : '<button class="btn sm ghost" data-act="move" data-date="' + date + '" data-type="' + type + '">' + ic('cal') + 'Otro día</button>') + '</div>';
+  if (date <= today) h += '<div class="grid2"><button class="btn sm" data-act="reg-open" data-date="' + date + '" data-type="' + type + '">' + ic('check') + 'Registrar</button>' + (past ? '<span></span>' : '<button class="btn sm ghost" data-act="move" data-date="' + date + '" data-type="' + type + '">' + ic('cal') + 'Otro día</button>') + '</div>';
+  else h += '<div class="grid2"><button class="btn sm ghost" data-act="not-done" data-date="' + date + '" data-type="' + type + '">' + ic('x') + 'No la haré</button><button class="btn sm ghost" data-act="move" data-date="' + date + '" data-type="' + type + '">' + ic('cal') + 'Otro día</button></div>';
   return h + '</div></div>';
 }
 /* Revisión de una sesión hecha: clara y comparada con la vez anterior */
@@ -183,20 +182,16 @@ function sessionReviewHtml(log, planned) {
 /* ---------- Día completo ---------- */
 function openDay(date) { openSheet({ id: 'day-' + date, full: true, render: () => dayHtml(date) }); }
 function dayHtml(date) {
-  const d = dayPlan(date), today = todayStr(), ag = agendaFor(date);
+  const d = dayPlan(date), today = todayStr();
   const ci = checkinFor(date), adv = readinessAdvice(ci);
   const logs = logsFor(date), done = logs.filter(l => l.done !== false);
   const load = done.reduce((a, l) => a + sessionLoad(l), 0);
-  const T = dayTargets(ST, date, ag), ms = mealsFor(date), tot = sumItems([].concat(...ms.map(m => m.items || [])));
-  const water = (num((nutriDoc(date) || {}).water) || 0) / 1000;
-  let h = sheetHead(capFirst(fmtDateLong(date)), (d.intense ? '<span class="c-load">Día intenso para el RF</span>' : 'Carga baja para el RF') + ' · ' + esc(KIND_N[ag.kind] || '')) + '<div class="sheet-body">';
-  h += '<div class="tiles">' +
+  let h = sheetHead(capFirst(fmtDateLong(date)), (d.intense ? '<span class="c-load">Día intenso para el RF</span>' : 'Carga baja para el RF')) + '<div class="sheet-body">';
+  h += '<div class="tiles two">' +
     '<div class="tile ' + (ci ? sleepTone(ci.sleepH) : '') + '"><span class="c">' + ic('moon') + '</span><span class="v">' + (ci && num(ci.sleepH) !== null ? fmtNum(ci.sleepH) + '<small>h</small>' : '—') + '</span><span class="k">Sueño</span></div>' +
     '<div class="tile ' + (adv ? readinessTone(adv.score) : '') + '"><span class="c">' + ic('pulse') + '</span><span class="v">' + (adv ? adv.score : '—') + '</span><span class="k">Estado</span></div>' +
     '<div class="tile ' + (ci && num(ci.rfPain) >= 3 ? 'pain' : '') + '"><span class="c">' + ic('drop') + '</span><span class="v">' + (ci && num(ci.rfPain) !== null ? ci.rfPain + '<small>/10</small>' : '—') + '</span><span class="k">Dolor RF</span></div>' +
-    '<div class="tile load"><span class="c">' + ic('flame') + '</span><span class="v">' + (load || '—') + '</span><span class="k">Carga</span></div>' +
-    '<div class="tile food"><span class="c">' + ic('fork') + '</span><span class="v">' + tot.p + '<small>/' + T.p + ' g</small></span><span class="k">Proteína</span></div>' +
-    '<div class="tile water"><span class="c">' + ic('drop') + '</span><span class="v">' + fmtNum(Math.round(water * 10) / 10) + '<small>/' + fmtNum(T.water) + ' L</small></span><span class="k">Agua</span></div></div>';
+    '<div class="tile load"><span class="c">' + ic('flame') + '</span><span class="v">' + (load || '—') + '</span><span class="k">Carga</span></div></div>';
   (d.notes || []).forEach(n => { h += note('info', esc(n)); });
   h += '<div class="sec"><span class="t">Entrenamiento</span></div>';
   const blocks = dayBlocks(d);
@@ -206,10 +201,7 @@ function dayHtml(date) {
     extra.map(l => '<button class="blk done" data-act="edit-log" data-id="' + esc(l.id) + '"><span class="c lime">' + ic(sessIcon(l.type)) + '</span><div class="grow"><div class="t">' + esc(l.title || STYPES[l.type].n) + '</div><div class="s">' + esc(logLine(l)) + '</div></div>' + statusMark(l) + '</button>').join('') + '</div>';
   const mols = (S.data.molestias || []).filter(m => m && !m.deleted && m.fecha === date);
   if (mols.length) h += '<div class="sec"><span class="t">Molestias</span></div><div class="stack-sm">' + mols.map(m => molRowHtml(Object.assign({}, m, { nivelAct: m.nivel, last: null }))).join('') + '</div>';
-  h += '<div class="sec"><span class="t">Comidas</span><a href="#comida" data-act="close-go" data-href="#comida">Ver</a></div>';
-  if (!ms.length) h += '<div class="sub">Sin comidas registradas.</div>';
-  else h += '<div class="stack-sm">' + ms.map(m => mealRowHtml(m)).join('') + '</div>';
-  h += '<div class="stack-sm">' + (date <= today ? '<div class="grid2"><button class="btn" data-act="train-text" data-date="' + date + '">' + ic('spark') + 'Contarla con IA</button><button class="btn" data-act="new-log" data-date="' + date + '">' + ic('plus') + 'Registrar a mano</button></div>' : '<button class="btn block" data-act="new-log" data-date="' + date + '">' + ic('plus') + 'Registrar otra sesión</button>') +
+  h += '<div class="stack-sm">' + (date <= today ? '<button class="btn block" data-act="reg" data-date="' + date + '">' + ic('plus') + 'Registrar</button>' : '') +
     (d.override && date >= today ? '<button class="btn sm ghost block" data-act="reset-day" data-date="' + date + '">' + ic('undo') + 'Restaurar el plan de este día</button>' : '') + '</div>';
   return h + '</div>';
 }

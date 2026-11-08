@@ -41,6 +41,8 @@ try {
   // «Hecha tal cual» de una sesión del martes → congela martes y miércoles
   const btn = page.locator('.day-sec.is-today [data-act="session"]').first();
   await btn.click();
+  await page.locator('.sheet [data-act="reg-open"]').first().click();
+  await page.waitForTimeout(300);
   await page.locator('.sheet [data-act="quick-done"]').first().click();
   await page.waitForTimeout(300);
   await page.locator('.sheet [data-act="qd-save"]').first().click();
@@ -116,19 +118,10 @@ try {
   await p2.waitForTimeout(500);
   const satTxt2 = await p2.locator('.day-sec').filter({ hasText: /sábado|Sáb/i }).first().innerText().catch(() => '');
   ok(/Juego/.test(satTxt2) && !/Simulación/.test(satTxt2), 'F5 sábado con compañeros sigue en simulación: ' + satTxt2.replace(/\s+/g, ' ').slice(0, 160));
-  /* v4.3 · clima para el agua: ubicación aproximada y agua extra con calor (modo local: 33 °C simulados) */
+  /* v5.0 · sin comida: Perfil sin clima para el agua ni meta de peso */
   await p2.evaluate(() => { location.hash = '#perfil'; });
-  await p2.waitForSelector('[data-act="geo"]', { timeout: 15000 });
-  await p2.locator('[data-act="geo"]').first().click();
-  await p2.waitForTimeout(800);
-  const geo = await p2.evaluate(() => JSON.parse(localStorage.getItem('improve-local-v1') || '{}').profile.main.geo);
-  ok(geo && geo.lat === 10 && geo.lon === 10, 'Perfil: la ubicación para el clima no se guarda: ' + JSON.stringify(geo));
-  await p2.evaluate(() => { location.hash = '#comida'; });
-  await p2.waitForSelector('.water', { timeout: 15000 });
-  await p2.waitForTimeout(500);
-  const wtxt = await p2.locator('.water').first().innerText();
-  ok(/33 °C/.test(wtxt) && /por el calor/.test(wtxt), 'Comida: sin agua extra por el calor: ' + wtxt.replace(/\s+/g, ' '));
-  await p2.screenshot({ path: outDir + '/05-comida-calor.png' });
+  await p2.waitForSelector('.cover', { timeout: 15000 });
+  ok(!(await p2.locator('[data-act="geo"]').count()), 'Perfil: sigue el clima para el agua');
   await p2.screenshot({ path: outDir + '/04-f5-semana.png', fullPage: true });
 } catch (e) { fails.push('PASO F5: ' + e.message.split('\n')[0]); await p2.screenshot({ path: outDir + '/ERROR-f5.png' }).catch(() => {}); }
 await browser.close();

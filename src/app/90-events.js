@@ -1,12 +1,11 @@
 /* ============================================================
    EVENTOS E INICIO
    ============================================================ */
-const RENDERERS = { hoy: viewHoy, entreno: viewEntreno, comida: viewComida, progreso: viewProgreso, perfil: viewPerfil, coach: viewCoach, aprende: viewAprende };
+const RENDERERS = { hoy: viewHoy, entreno: viewEntreno, progreso: viewProgreso, perfil: viewPerfil, coach: viewCoach, aprende: viewAprende };
 function afterRender() {
   markNavBadge();
   aprendeAfterRender();
   hydrateThumbs($('#view'));
-  hydrateMealImgs($('#view'));
   hydrateMedia($('#view'));
   const imp = $('#import-file');
   if (imp && !imp.getAttribute('data-bound')) { imp.setAttribute('data-bound', '1'); imp.addEventListener('change', importData); }
@@ -140,7 +139,6 @@ document.addEventListener('click', (e) => {
     case 'sick-save': saveSick(); return;
     case 'sick-del': deleteSick(g('v')); return;
     case 'emphasis': updateProfile(p => { if (g('v')) p.emphasis = g('v'); else delete p.emphasis; }); return;
-    case 'geo': toggleGeo(); return;
     case 'export': exportData(); return;
     case 'photo-set': pickMediaPhoto(el.dataset.k); return;
     case 'sign-out': openConfirm('Cerrar sesión', 'Tus datos quedan guardados en tu cuenta. Para volver a entrar necesitas tu contraseña.', 'do-sign-out'); return;
@@ -278,24 +276,11 @@ document.addEventListener('click', (e) => {
     case 'fin-tpl': UI.fin.tpl = !UI.fin.tpl; saveDraft(); refreshSheet(true); return;
     case 'fin-save': saveFinish(); return;
     case 'post-apply': applyPostSuggestion(Number(g('i'))); return;
-    /* ---- comida ---- */
-    case 'food-day': UI.foodDate = addDays(UI.foodDate || today, Number(g('d'))); scheduleRender(); return;
-    case 'food-today': UI.foodDate = null; scheduleRender(); return;
-    case 'meal-photo': pickPhoto(g('date') || today, g('slot') || null, false); return;
-    case 'meal-gallery': pickPhoto(g('date') || today, g('slot') || null, true); return;
-    case 'meal-text': openMealText(g('date') || today, g('slot') || null); return;
-    case 'meal-text-go': mealTextGo(false); return;
-    case 'meal-text-local': mealTextGo(true); return;
-    case 'meal-search': openFoodSearch(g('date') || today, false); return;
-    case 'meal-add-food': openFoodSearch(UI.meal ? UI.meal.date : today, true); return;
-    case 'food-pick': foodPick(g('id')); return;
-    case 'food-ai': foodAI(); return;
-    case 'meal-item-ai': mealItemAI(Number(g('i'))); return;
-    case 'meal-fix-open': UI.meal.fixOpen = !UI.meal.fixOpen; refreshSheet(true); if (UI.meal.fixOpen) setTimeout(() => { const t = $('#meal-fix'); if (t) t.focus(); }, 60); return;
-    case 'meal-fix-go': mealFixGo(); return;
-    case 'meal-ate': eatSuggested(g('date'), g('key')); return;
-    case 'meal-skip': skipMeal(g('date'), g('key')); return;
-    case 'pend-opts': openPendOpts(g('date'), g('key')); return;
+    case 'pend-opts': openRegister({ date: g('date'), key: g('key') }); return;
+    /* ---- registrar (v5.0) ---- */
+    case 'reg': openRegister({ date: g('date') || today }); return;
+    case 'reg-open': openRegister({ date: g('date') || today, key: g('key') || null, type: g('type') || null }); return;
+    case 'reg-date': regSetDate(g('v')); return;
     case 'pend-all': openPendAll(); return;
     /* ---- aprende ---- */
     case 'dato-open': if (UI.view === 'aprende' || LAYERS.length) openDato(g('id')); else goDato(g('id')); return;
@@ -317,15 +302,6 @@ document.addEventListener('click', (e) => {
     case 'inv-del': openConfirm('Borrar investigación', 'Se borra el informe y la lista de estudios.', 'do-inv-del', { id: g('id') }, true); return;
     case 'do-inv-del': remove('investigaciones', g('id')).then(() => toast('Investigación borrada.')); closeAllSheets(); return;
     case 'pend-dismiss': pendDismissYesterday(); return;
-    case 'meal-undo': remove('meals', g('id')).then(() => toast('Registro deshecho.', 'info')); return;
-    case 'meal-edit': editMeal(g('id')); return;
-    case 'meal-del': { const id = g('id'); remove('meals', id); remove('mealimg', id).catch(() => {}); UI.meal = null; closeAllSheets(); toast('Comida borrada.', 'info'); return; }
-    case 'meal-save': saveMeal(); return;
-    case 'meal-item-del': UI.meal.items.splice(Number(g('i')), 1); refreshSheet(true); return;
-    case 'meal-g': { const i = Number(g('i')), it = UI.meal.items[i]; if (!it) return; const fd = it.id && FOOD_INDEX[it.id]; const step = fd && fd.ug && ['unidad', 'vaso', 'cda', 'feta', 'pote', 'lata', 'media'].includes(fd.unit) ? fd.ug : it.g >= 200 ? 25 : 10; mealSetGrams(i, Math.max(0, it.g + Number(g('d')) * step)); refreshSheet(true); return; }
-    case 'menu-var': { const k = g('date') + ':' + g('key'); UI.menuVar[k] = (UI.menuVar[k] || 0) + 1; scheduleRender(); refreshSheet(true); return; }
-    case 'water-add': addWater(g('date') || today, Number(g('ml'))); return;
-    case 'supp': toggleSupp(g('date') || today, g('key')); return;
     default: return;
   }
 });
@@ -372,13 +348,6 @@ function handleBind(el, isChange) {
     case 'mol-nota': if (UI.mol) UI.mol.nota = v; return;
     case 'ag-time': if (isChange && /^\d{1,2}:\d{2}$/.test(v)) { const key = el.getAttribute('data-key'), start = key === 'sleep' ? normBed(hm(v)) : hm(v); agendaSet(el.getAttribute('data-date'), key, { start }).then(() => toast('Hora cambiada a ' + fmtHM(start) + '.')); } return;
     case 'sched': if (isChange && /^\d{1,2}:\d{2}$/.test(v)) setSchedule(name, v); return;
-    case 'meal-text': UI.meal.text = v; return;
-    case 'meal-item-n': { const it = UI.meal.items[Number(el.getAttribute('data-i'))]; if (it && it.n !== v) { it.n = v; it.renamed = !!v.trim(); } if (it && isChange && it.renamed) setTimeout(() => refreshSheet(true), 0); return; }
-    case 'meal-fix': UI.meal.fix = v; return;
-    case 'meal-g': { const i = Number(el.getAttribute('data-i')); mealSetGrams(i, parseNum(v)); if (isChange) refreshSheet(true); return; }
-    case 'meal-time': if (/^\d{1,2}:\d{2}$/.test(v)) { UI.meal.time = v; if (!UI.meal.slotFixed && isChange) { UI.meal.slot = slotForTime(UI.meal.date, v); refreshSheet(true); } } return;
-    case 'meal-slot': UI.meal.slot = v; UI.meal.slotFixed = true; return;
-    case 'meal-note': UI.meal.note = v; return;
     default: return;
   }
 }
@@ -387,7 +356,6 @@ document.addEventListener('input', (e) => {
   if (!el.getAttribute) return;
   if (el.hasAttribute('data-bind')) { handleBind(el, false); return; }
   if (el.getAttribute('data-pick')) { UI.pick.q = el.value; clearTimeout(UI.pickTimer); UI.pickTimer = setTimeout(updatePickList, 150); return; }
-  if (el.getAttribute('data-food-q')) { UI.foodQ = el.value; UI.foodAIErr = ''; const l = $('#food-list'); if (l) l.innerHTML = foodListHtml(); return; }
   const k = el.getAttribute('data-input');
   if (k) { if (k === 'bank-q') { UI.bank.q = el.value; UI.bank.limit = 30; } if (k === 'lib-q') { UI.lib.q = el.value; UI.lib.limit = 40; } if (k === 'apr-q') UI.apr.q = el.value; clearTimeout(UI.inputTimer); UI.inputTimer = setTimeout(scheduleRender, 200); }
 });

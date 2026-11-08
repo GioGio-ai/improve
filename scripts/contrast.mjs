@@ -44,7 +44,7 @@ function ratio(fg, bgLayers) {
 }
 
 const SURF = ['--bg', '--surface-1', '--surface-2', '--surface-3'];
-const TONES = ['blue', 'lime', 'amber', 'red', 'violet', 'teal', 'cyan', 'gold', 'pink'];
+const TONES = ['blue', 'lime', 'amber', 'red', 'violet'];
 const C = [];
 const add = (fg, bg, min, what) => C.push({ fg, bg: Array.isArray(bg) ? bg : [bg], min, what });
 // Texto neutro
@@ -58,7 +58,7 @@ for (const t of TONES) for (const s of SURF) { add('--' + t, s, 4.5, 'cifra ' + 
 // Botones y rellenos
 add('--on-blue', '--blue-fill', 4.5, 'botón primario');
 add('--fg', '--surface-3', 4.5, 'botón secundario');
-for (const t of ['lime', 'amber', 'red', 'violet', 'teal', 'cyan']) add('--on-accent', '--' + t, 4.5, 'texto sobre relleno ' + t);
+for (const t of ['lime', 'amber', 'red', 'violet']) add('--on-accent', '--' + t, 4.5, 'texto sobre relleno ' + t);
 add('--on-accent', '--lime-ink', 4.5, 'récord');
 // Bordes, foco e indicadores (≥ 3:1)
 for (const s of SURF) { add('--blue', s, 3, 'anillo de foco'); add('--line-sel', s, 3, 'borde seleccionado'); }

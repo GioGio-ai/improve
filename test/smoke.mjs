@@ -23,7 +23,7 @@ await page.goto('http://127.0.0.1:8765/?local=1#hoy');
 await page.waitForSelector('.topbar', { timeout: 15000 });
 await shot('01-hoy');
 await shot('01-hoy-full', true);
-for (const v of ['entreno', 'comida', 'progreso', 'perfil', 'coach']) {
+for (const v of ['entreno', 'progreso', 'perfil', 'coach']) {
   await page.evaluate((h) => { location.hash = h; }, '#' + v);
   await page.waitForTimeout(600);
   await shot('02-' + v + '-full', true);

@@ -8,7 +8,7 @@ function viewPerfil(st, today) {
   const who = [p.position, p.club].filter(Boolean).join(' · ');
   let h = '<div class="aura" aria-hidden="true"></div><section class="cover">' + photoImg('f5') + '<button class="iconbtn glass cover-edit" data-act="edit-profile" aria-label="Editar perfil">' + ic('edit') + '</button>' +
     '<span class="avatar lg">' + avatarImg() + '</span><div class="cover-t"><h1 class="h1">' + esc(p.name || 'Tu perfil') + '</h1>' + (who ? '<div class="cover-s">' + esc(who) + '</div>' : '') + '</div></section>';
-  h += '<div class="stats"><div class="stat"><span class="v">' + (age ?? '—') + '</span><span class="k">años</span></div><div class="stat"><span class="v">' + (p.heightCm ?? '—') + '</span><span class="k">cm</span></div><div class="stat"><span class="v">' + (st.weight ? fmtNum(st.weight) : '—') + '</span><span class="k">kg</span></div></div>';
+  h += '<div class="stats"><div class="stat"><span class="v">' + (age ?? '—') + '</span><span class="k">años</span></div><div class="stat"><span class="v">' + (p.heightCm ?? '—') + '</span><span class="k">cm</span></div><button type="button" class="stat" data-act="add-weight" aria-label="Registrar peso"><span class="v">' + (st.weight ? fmtNum(st.weight) : '—') + '</span><span class="k">kg ' + ic('plus') + '</span></button></div>';
   if (p.targetDate || p.goalText) {
     const left = p.targetDate ? diffDays(p.targetDate, today) : null;
     h += '<section class="panel k-lime goal"><span class="kicker"><span class="d lime"></span>Objetivo</span>' +
@@ -26,8 +26,7 @@ function viewPerfil(st, today) {
   const t = (k, label) => '<div class="field"><label for="sc-' + k + '">' + label + '</label><input class="input num" type="time" step="900" id="sc-' + k + '" data-bind="sched" data-name="' + k + '" value="' + esc(sch[k]) + '"></div>';
   h += '<section class="card"><div class="stack"><div class="stack-sm"><span class="kicker">Rutina diaria</span><p class="sub">La agenda del día parte de estos horarios.</p></div>' +
     '<div class="timegrid">' + t('wake', 'Despertar') + t('sleep', 'Dormir') + t('gym', 'Gimnasio') + t('field', 'Cancha (lun-vie)') + t('fieldEnd', 'Cancha cierra') + t('fieldSat', 'Cancha sábado') + '</div>' +
-    toggleHtml('sched-nap', sch.nap !== false, 'Siesta corta', '20-30 min después del almuerzo, antes de las 15:00', '', 'sleep') +
-    toggleHtml('geo', !!p.geo, 'Clima para el agua', p.geo ? 'Con tu ubicación aproximada: más agua los días de calor.' : 'Usa tu ubicación aproximada para sumar agua los días de calor.', '', 'water') + '</div></section>';
+    toggleHtml('sched-nap', sch.nap !== false, 'Siesta corta', '20-30 min después del almuerzo, antes de las 15:00', '', 'sleep') + '</div></section>';
   // Calendario
   const dayBtns = (key, multi) => '<div class="pills">' + DOW.map((d, i) => { const on = multi ? (p[key] || []).includes(i) : Number(p[key] ?? 6) === i; return '<button type="button" class="pill' + (on ? ' on' : '') + '" data-act="cal" data-key="' + key + '" data-i="' + i + '" aria-pressed="' + on + '">' + d + '</button>'; }).join('') + '</div>';
   const trials = (p.trials || []).slice().sort();
@@ -48,7 +47,7 @@ function viewPerfil(st, today) {
   h += '<section class="card"><div class="stack"><div class="stack-sm"><span class="kicker">Fotos de la app</span><p class="sub">Toca una para cambiarla. Se guardan en tu cuenta.</p></div><div class="ph-grid">' +
     PHOTO_SLOTS.map(([k, n]) => '<button type="button" class="ph-slot' + (k === 'avatar' ? ' av' : '') + '" data-act="photo-set" data-k="' + k + '" aria-label="Cambiar foto: ' + n + '">' + photoImg(k) + '<span class="lb">' + n + '</span><span class="ed">' + ic('camera') + '</span></button>').join('') + '</div></div></section>';
   // Leyenda de colores
-  const L = [['blue', 'Azul', 'Plan y acción'], ['lime', 'Lima', 'Hecho y logros'], ['load', 'Ámbar', 'Carga e intensidad'], ['pain', 'Rojo', 'Solo dolor'], ['sleep', 'Violeta', 'Sueño y recuperación'], ['prot', 'Verde agua', 'Proteína'], ['carb', 'Dorado', 'Carbohidratos'], ['fat', 'Rosa', 'Grasas'], ['water', 'Cian', 'Agua']];
+  const L = [['blue', 'Azul', 'Plan y acción'], ['lime', 'Lima', 'Hecho y logros'], ['load', 'Ámbar', 'Carga e intensidad'], ['pain', 'Rojo', 'Solo dolor'], ['sleep', 'Violeta', 'Sueño y recuperación']];
   h += '<section class="card"><div class="stack"><span class="kicker">Colores</span><ul class="legend-list">' + L.map(([k, n, d]) => '<li><span class="sw ' + k + '"></span><div class="mw0"><b>' + n + '</b><div class="sub">' + d + '</div></div></li>').join('') + '</ul></div></section>';
   // Datos y cuenta
   h += '<section class="card"><div class="stack"><div class="stack-sm"><span class="kicker">Tus datos</span><p class="sub">' + (S.mode === 'cloud' ? 'En tu cuenta, cifrados en tránsito. Solo tú los ves. Funcionan sin conexión.' : 'Modo local de prueba: solo en este navegador.') + '</p></div>' +
@@ -59,7 +58,7 @@ function viewPerfil(st, today) {
 }
 function openProfile() {
   const p = S.data.profile || {};
-  UI.pf = Object.assign({ name: '', birth: '', heightCm: null, position: '', foot: 'Derecha', club: '', goalText: '', targetDate: '', targetText: '', weightTarget: '' }, clone(p));
+  UI.pf = Object.assign({ name: '', birth: '', heightCm: null, position: '', foot: 'Derecha', club: '', goalText: '', targetDate: '', targetText: '' }, clone(p));
   openSheet({ id: 'profile', full: true, render: profileHtml });
 }
 function profileHtml() {
@@ -68,7 +67,7 @@ function profileHtml() {
   return sheetHead('Perfil', 'Ajusta el plan') + '<div class="sheet-body">' + f('name', 'Nombre', 'text', ' autocomplete="given-name"') + '<div class="grid2">' + f('birth', 'Nacimiento', 'date') + f('heightCm', 'Altura (cm)', 'text', ' inputmode="numeric"') + '</div>' +
     '<div class="grid2">' + f('position', 'Posición') + '<div class="field"><label for="pf-foot">Pierna hábil</label><select class="input" id="pf-foot" data-bind="pf" data-name="foot">' + ['Derecha', 'Izquierda', 'Ambas'].map(o => '<option' + (p.foot === o ? ' selected' : '') + '>' + o + '</option>').join('') + '</select></div></div>' +
     f('club', 'Club') + '<div class="field"><label for="pf-goal">Objetivo</label><textarea class="input" id="pf-goal" data-bind="pf" data-name="goalText" rows="2">' + esc(p.goalText || '') + '</textarea></div>' +
-    '<div class="grid2">' + f('targetDate', 'Fecha objetivo', 'date') + f('weightTarget', 'Objetivo de peso') + '</div>' + f('targetText', 'Qué tiene que pasar ese día') +
+    f('targetDate', 'Fecha objetivo', 'date') + f('targetText', 'Qué tiene que pasar ese día') +
     '<div class="sheet-foot"><button class="btn primary lg" data-act="pf-save">Guardar</button></div></div>';
 }
 function saveProfile() {
@@ -78,32 +77,6 @@ function saveProfile() {
   if (p.restDay === undefined) p.restDay = 6;
   put('profile', 'main', p).then(() => toast('Perfil guardado.'));
   closeSheet();
-}
-/* Clima para el agua: ubicación aproximada (2 decimales, ~1 km) y pronóstico de Open-Meteo (gratis, sin clave) */
-const WX_KEY = 'improve-wx-v1';
-let wxAt = 0;
-function toggleGeo() {
-  const p = S.data.profile || {};
-  if (p.geo) { updateProfile(x => { delete x.geo; }); for (const k in WX) delete WX[k]; try { localStorage.removeItem(WX_KEY); } catch (e) { /* nada */ } return; }
-  if (!navigator.geolocation) { toast('Este teléfono no da la ubicación.', 'warn'); return; }
-  navigator.geolocation.getCurrentPosition((pos) => {
-    const r = (v) => Math.round(v * 100) / 100;
-    updateProfile(x => { x.geo = { lat: r(pos.coords.latitude), lon: r(pos.coords.longitude) }; }).then(() => { wxAt = 0; refreshWeather(); toast('Listo: el agua sigue el calor del día.'); });
-  }, () => toast('No se pudo obtener la ubicación.', 'warn'), { timeout: 10000, maximumAge: 3600e3 });
-}
-function refreshWeather() {
-  const g = S.data.profile && S.data.profile.geo;
-  if (!g || Date.now() - wxAt < 3 * 3600e3) return;
-  wxAt = Date.now();
-  try { const c = JSON.parse(localStorage.getItem(WX_KEY) || 'null'); if (c && c.lat === g.lat && c.lon === g.lon && Date.now() - c.at < 3 * 3600e3) { Object.assign(WX, c.days); scheduleRender(); return; } } catch (e) { /* nada */ }
-  if (S.mode !== 'cloud') { const t = todayStr(); for (let i = 0; i < 7; i++) WX[addDays(t, i)] = { tmax: 33 }; scheduleRender(); return; }
-  fetch('https://api.open-meteo.com/v1/forecast?latitude=' + g.lat + '&longitude=' + g.lon + '&daily=temperature_2m_max&timezone=auto&forecast_days=7')
-    .then(r => r.json()).then(j => {
-      const days = {}; ((j.daily && j.daily.time) || []).forEach((d, i) => { const v = num(j.daily.temperature_2m_max[i]); if (v !== null) days[d] = { tmax: v }; });
-      Object.assign(WX, days);
-      try { localStorage.setItem(WX_KEY, JSON.stringify({ at: Date.now(), lat: g.lat, lon: g.lon, days })); } catch (e) { /* nada */ }
-      scheduleRender();
-    }).catch(() => { wxAt = Date.now() - 2.5 * 3600e3; });
 }
 function updateProfile(fn) { const p = clone(S.data.profile || { restDay: 6, teamDays: [], matchDays: [], equipmentOff: [] }); delete p.id; fn(p); return put('profile', 'main', p); }
 function setSchedule(k, v) {

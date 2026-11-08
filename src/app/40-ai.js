@@ -1,25 +1,7 @@
 /* ============================================================
-   IA (Gemini vía Firebase AI Logic): técnica de ejercicios, comidas, coach, traducción
+   IA (Gemini vía Firebase AI Logic): técnica de ejercicios, contar el entreno, coach, traducción
    ============================================================ */
 const AI_STYLE = 'Responde en español neutro, directo, conciso y práctico. Sin relleno ni saludos.';
-const FOOD_HINT = FOODS.filter(f => !f.water).map(f => f.n + ': ' + f.p + 'P/' + f.c + 'C/' + f.f + 'G/' + f.kcal + 'kcal' + (f.ug ? ' (1 ' + f.unit + ' ≈ ' + f.ug + (f.ml ? ' ml' : ' g') + ')' : '')).join('; ');
-const MEAL_SCHEMA = {
-  type: 'object',
-  properties: {
-    items: { type: 'array', items: { type: 'object', properties: {
-      n: { type: 'string', description: 'Alimento en español, corto (ej. "Huevo revuelto", "Mandioca hervida")' },
-      g: { type: 'number', description: 'Cantidad estimada en gramos (o ml para líquidos)' },
-      p: { type: 'number', description: 'Proteína en gramos para esa cantidad' },
-      c: { type: 'number', description: 'Carbohidratos en gramos' },
-      f: { type: 'number', description: 'Grasa en gramos' },
-      kcal: { type: 'number' },
-      conf: { type: 'string', enum: ['alta', 'media', 'baja'] },
-    }, required: ['n', 'g', 'p', 'c', 'f', 'kcal', 'conf'] } },
-    hora: { type: 'string', description: 'Hora HH:MM si el texto la menciona; vacío si no' },
-    nota: { type: 'string', description: 'Una línea: supuestos o qué revisar' },
-  },
-  required: ['items', 'nota'],
-};
 const EX_SCHEMA = {
   type: 'object',
   properties: {
@@ -87,25 +69,6 @@ const AIX = {
       'Ejercicio: "' + ex.n + '".' + (ex.cue ? '\nIndicación del plan: ' + ex.cue : '') + (ex.m ? '\nMúsculos: ' + ex.m : '') + (ex.eq && ex.eq.length ? '\nEquipo: ' + ex.eq.join(', ') : '') +
       '\nPasos cortos (máximo 18 palabras cada uno), en imperativo. ' + AI_STYLE;
     return this.json(prompt, EX_SCHEMA, { tier: 'fast' });
-  },
-  async analyzeMeal(o) {
-    const prompt = 'Analiza la foto de esta comida casera paraguaya. Identifica cada alimento visible y estima la cantidad en gramos (ml para líquidos) según el tamaño del plato, cubiertos y porciones. Calcula proteína, carbohidratos, grasa y kcal de cada uno.\n' +
-      'Usa estos valores por 100 g cuando el alimento coincida: ' + FOOD_HINT + '.\n' +
-      'Si algo es dudoso, márcalo con conf "baja". No inventes alimentos que no se ven. La comida es ' + (SLOT_N[o.slot] || 'una comida') + ' de un futbolista de ' + Math.round(ST.weight || 85) + ' kg que no come harinas, procesados ni azúcar (sí miel). ' + AI_STYLE;
-    return this.json(prompt, MEAL_SCHEMA, { image: o.image, tier: 'vision' });
-  },
-  async fixMeal(o) {
-    const list = o.items.map(i => '- ' + i.n + ': ' + i.g + ' g (' + Math.round(i.p) + ' P, ' + Math.round(i.c) + ' C, ' + Math.round(i.f) + ' G, ' + Math.round(i.kcal) + ' kcal)').join('\n');
-    const prompt = 'Registro actual de una comida' + (o.image ? ' (foto adjunta)' : '') + ':\n' + (list || '(vacío)') + '\n' +
-      'Corrección del usuario: "' + o.text + '".\nDevuelve la lista COMPLETA corregida: aplica la corrección (cambia, quita o agrega alimentos y cantidades) y recalcula los macros de lo que cambie. Mantén igual lo que el usuario no corrige.\n' +
-      'Usa estos valores por 100 g cuando el alimento coincida: ' + FOOD_HINT + '. ' + AI_STYLE;
-    return this.json(prompt, MEAL_SCHEMA, o.image ? { image: o.image, tier: 'vision' } : { tier: 'fast' });
-  },
-  async parseMealText(o) {
-    const prompt = 'Convierte este registro de comida en alimentos con cantidades en gramos (ml para líquidos) y sus macros. Si no dice cantidad, usa una porción casera típica de Paraguay para un adulto deportista.\n' +
-      'Usa estos valores por 100 g cuando el alimento coincida: ' + FOOD_HINT + '.\n' +
-      'El mate, tereré, café sin azúcar y el agua van con 0 kcal. Texto: "' + o.text + '". ' + AI_STYLE;
-    return this.json(prompt, MEAL_SCHEMA, { tier: 'fast' });
   },
   /* o: { text, date, total, start, end, intensity } */
   async parseTraining(o) {
@@ -208,8 +171,7 @@ function coachContext(st, today) {
   const week = weekPlan(weekStartOf(today)).map(d => ({ fecha: d.date, intenso: d.intense, sesiones: d.sessions.map(s => s.title), ajustes: d.notes }));
   const cov = coverage(st.sessions, today, 28);
   const proj = st.injuryActive ? project(st, today) : null;
-  const ag = agendaFor(today), T = dayTargets(st, today, ag);
-  const ms = mealsFor(today), tot = sumItems([].concat(...ms.map(m => m.items || [])));
+  const ag = agendaFor(today);
   return {
     hoy: today, hora: fmtHM(nowMin()),
     perfil: { nombre: prof.name, edad: ageFrom(prof.birth, today), alturaCm: prof.heightCm, pesoKg: st.weight, posicion: prof.position, pieHabil: prof.foot, objetivo: prof.goalText, fechaObjetivo: prof.targetDate, objetivoFecha: prof.targetText, pruebas: prof.trials || [] },
@@ -223,8 +185,7 @@ function coachContext(st, today) {
     niveles: { golpeo: 'K' + st.kick.level + ' (' + st.kick.streak + '/' + st.kick.req + ')', sprint: 'S' + st.sprint.level + ' (' + st.sprint.streak + '/' + st.sprint.req + ')', rt: RT_LEVELS[st.rt.idx] },
     ultimoTest: st.test, entrePiernasEntrenamiento: trainingLSI(st.sessions, st.side), checkins7dias: ci, sesiones14dias: last14, planSemana: week,
     agendaHoy: ag.items.filter(x => !x.marker).map(x => fmtHM(x.start) + ' ' + x.title + (x.sub ? ' (' + x.sub + ')' : '')),
-    nutricionHoy: { tipoDia: T.kindN, objetivos: { proteina: T.p, carbohidratos: T.c, grasa: T.f, kcal: T.kcal, aguaL: T.water }, consumido: tot, comidas: ms.map(m => (m.time || '') + ' ' + (m.skipped ? (m.title || m.slot) + ': no la comió' : (m.items || []).map(i => i.n + ' ' + i.g + 'g').join(', '))), sinRegistrar: pendingItems(today).map(p => (p.date === today ? '' : 'ayer ') + fmtHM(p.it.start) + ' ' + pendTitle(p)) },
-    dieta: 'Sin harinas, procesados ni azúcar (sí miel). Comida casera: leche de cabra (hervida), huevos caseros, carne, pescado, mandioca, arroz, frutas. Mate con cúrcuma por la mañana, café después del almuerzo.',
+    sinRegistrar: pendingItems(today).map(p => (p.date === today ? '' : 'ayer ') + fmtHM(p.it.start) + ' ' + pendTitle(p)),
     patronesSinEstimulo28dias: coverageGaps(cov, st).map(p => LABELS.pat[p]),
     molestias14dias: (S.data.molestias || []).filter(m => m && !m.deleted && m.fecha >= addDays(today, -13)).map(m => ({ fecha: m.fecha, zona: zoneName(m.zona, m.lado), tipo: m.tipo, nivel: m.nivel, nota: m.nota || '', resuelta: !!m.resuelta, seguimiento: (m.updates || []).map(u => u.fecha + ' ' + u.estado + ' ' + u.nivel + '/10') })),
     molestiasActivasHoy: activeMolestias(st, today).map(m => zoneName(m.zona, m.lado) + ' ' + m.tipo + ' ' + m.nivelAct + '/10'),
@@ -240,13 +201,18 @@ function coachContext(st, today) {
     aprendizaje: aprendeCoachCtx(today),
   };
 }
-const COACH_RULES = 'Eres preparador físico, readaptador y nutricionista deportivo de élite en fútbol profesional. Hablas directamente con el atleta (sus datos están en el JSON). Responde en español neutro, directo, conciso, frío, realista y práctico. Sin relleno. Usa solo los datos del JSON; si falta un dato que cambia la respuesta, dilo en una línea. No diagnostiques: ante dolor que no baja o empeora, deriva a un profesional. Respeta la progresión por criterios: nunca recomiendes saltar niveles de golpeo o sprint ni adelantar fases sin cumplir los criterios. Formato: párrafos cortos o listas breves en texto plano, sin tablas ni markdown pesado. Si pregunta por un tema que ya investigó en la app (aprendizaje.investigaciones), usa esa respuesta y su nivel de evidencia y dilo («según tu investigación del …»); no inventes estudios, autores ni cifras. Lo que marcó en «Lo aplico» son hábitos que adoptó: tenlos en cuenta.';
+const COACH_RULES = 'Eres preparador físico y readaptador de élite en fútbol profesional. Tu tema es el entrenamiento, la recuperación, el sueño y las molestias; la alimentación no está en la app. Hablas directamente con el atleta (sus datos están en el JSON). Responde en español neutro, directo, conciso, frío, realista y práctico. Sin relleno. Usa solo los datos del JSON; si falta un dato que cambia la respuesta, dilo en una línea. No diagnostiques: ante dolor que no baja o empeora, deriva a un profesional. Respeta la progresión por criterios: nunca recomiendes saltar niveles de golpeo o sprint ni adelantar fases sin cumplir los criterios. Formato: párrafos cortos o listas breves en texto plano, sin tablas ni markdown pesado. Si pregunta por un tema que ya investigó en la app (aprendizaje.investigaciones), usa esa respuesta y su nivel de evidencia y dilo («según tu investigación del …»); no inventes estudios, autores ni cifras. Lo que marcó en «Lo aplico» son hábitos que adoptó: tenlos en cuenta.';
+/* Atajo con la próxima prueba del perfil (o el objetivo) */
+function coachTrialAsk(st, today) {
+  const next = ((st.profile || {}).trials || []).filter(t => t >= today).sort()[0] || ((st.profile || {}).targetDate >= today ? st.profile.targetDate : null);
+  return ['¿Llego a las pruebas?', next ? '¿Llego bien a la prueba del ' + fmtDateLong(next) + '? ¿Qué es lo que más me puede frenar y qué ajusto?' : '¿Cómo voy hacia mi objetivo? ¿Qué es lo que más me puede frenar?'];
+}
 function viewCoach(st, today) {
   const C = UI.coach;
   let h = '<div class="aura" aria-hidden="true"></div><div class="page-head"><a class="iconbtn" href="#hoy" aria-label="Volver">' + ic('chevL') + '</a><h1 class="h1 grow">Coach</h1>' + (C.turns.length ? '<button class="btn xs ghost" data-act="coach-clear">Borrar</button>' : '') + '</div>';
-  h += '<section class="card coach-intro"><div class="stack"><p class="body">Lee tu lesión, tests, check-ins, sesiones y comida, y responde.</p>' +
+  h += '<section class="card coach-intro"><div class="stack"><p class="body">Lee tu lesión, tests, check-ins, sesiones y molestias, y responde.</p>' +
     '<div class="scroll-x">' + [['Analiza mi semana', 'Analiza mi situación y la semana. Dime: 1) estado en 2-3 líneas, 2) riesgos concretos, 3) ajustes para los próximos 7 días (máximo 5), 4) qué datos me faltan registrar.'],
-      ['¿Qué ajusto hoy?', '¿Qué ajusto hoy según mi check-in, lo que hice ayer y la agenda de hoy?'], ['¿Qué como ahora?', '¿Qué me conviene comer en la próxima comida según lo que ya comí hoy y lo que entreno?'], ['¿Llego a las pruebas?', '¿Llego a estar listo para las pruebas del 16 de noviembre? ¿Qué es lo que más me puede frenar?']]
+      ['¿Qué ajusto hoy?', '¿Qué ajusto hoy según mi check-in, lo que hice ayer y la agenda de hoy?'], ['¿Por qué cambió mi plan?', '¿Por qué el plan de hoy es así? Explícame cada ajuste (molestias, sueño, carga, pretemporada) en una línea.'], coachTrialAsk(st, today)]
       .map(([l, q]) => '<button class="pill" data-act="coach-ask" data-q="' + esc(q) + '" data-l="' + esc(l) + '"' + (C.busy ? ' disabled' : '') + '>' + esc(l) + '</button>').join('') + '</div>' +
     (C.unavailable ? note('warn', 'La IA no está disponible ahora. Revisa la conexión.') : '') + '</div></section>';
   if (C.turns.length) h += '<section class="stack" aria-live="polite">' + C.turns.map(t => '<div class="msg ' + (t.role === 'user' ? 'me' : 'cl') + (t.pending ? ' pending' : '') + '">' + esc(t.show || t.content) + '</div>').join('') + '</section>';

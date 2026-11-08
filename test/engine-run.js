@@ -5,7 +5,7 @@ function loadEngine(files) {
   const ctx = { console, Math, Date, JSON };
   vm.createContext(ctx);
   const code = files.map(f => fs.readFileSync(path.join(ROOT, f), 'utf8')).join('\n');
-  vm.runInContext(code + '\n;this.__E = { deriveState, buildWeek, weekStartOf, project, makeSession, fmtSpec, estimateSession, dayBlocks, addDays, BANK, BANK_INDEX, ALT, CHAINS, postSuggestions, suggestSets, dayKind, typeof_agenda: typeof buildAgenda !== "undefined" ? buildAgenda : null, typeof_nut: typeof nutritionTargets !== "undefined" ? nutritionTargets : null, get: (n) => eval(n) };', ctx, { filename: 'engine.js' });
+  vm.runInContext(code + '\n;this.__E = { deriveState, buildWeek, weekStartOf, project, makeSession, fmtSpec, estimateSession, dayBlocks, addDays, BANK, BANK_INDEX, ALT, CHAINS, postSuggestions, suggestSets, typeof_agenda: typeof buildAgenda !== "undefined" ? buildAgenda : null, typeof_nut: typeof nutritionTargets !== "undefined" ? nutritionTargets : null, get: (n) => eval(n) };', ctx, { filename: 'engine.js' });
   return ctx.__E;
 }
 module.exports = { loadEngine };
@@ -22,7 +22,7 @@ if (require.main === module) {
     const ws = E.addDays(E.weekStartOf(today), 7 * w);
     for (const day of E.buildWeek(st, ws, today)) {
       const bl = E.dayBlocks(day).map(b => b.key + '[' + b.sessions.map(s => s.short).join('+') + ' ' + b.est + 'm]').join(' ');
-      console.log(day.date, day.intense ? 'INT' : '   ', E.dayKind(day, st.profile).padEnd(8), bl, day.notes.length ? '· ' + day.notes.join(' | ') : '');
+      console.log(day.date, day.intense ? 'INT' : '   ', (day.sessions.some(s => s.type !== 'descanso') ? 'entreno' : 'descanso').padEnd(8), bl, day.notes.length ? '· ' + day.notes.join(' | ') : '');
     }
   }
   console.log('proyección', JSON.stringify(E.project(st, today)), 'sin acel', JSON.stringify(E.project(st, today, 70, { noAccel: true })));

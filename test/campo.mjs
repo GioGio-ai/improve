@@ -9,7 +9,7 @@ const ROOT = path.join(path.dirname(new URL(import.meta.url).pathname), '..', 's
 const E = loadEngine(fs.readdirSync(ROOT).filter(f => /^0\d-/.test(f)).sort());
 const G = E.get;
 const parseTrainText = G('parseTrainText'), campoFromAi = G('campoFromAi'), isIntenseLog = G('isIntenseLog'), shotsWeek = G('shotsWeek');
-const ballHeaderCount = G('ballHeaderCount'), ballMinutesByWeek = G('ballMinutesByWeek'), dayKind = G('dayKind'), painToday = G('painToday');
+const ballHeaderCount = G('ballHeaderCount'), ballMinutesByWeek = G('ballMinutesByWeek'), painToday = G('painToday');
 const fails = [], ok = (c, m) => { if (!c) fails.push(m); };
 const clone = (o) => JSON.parse(JSON.stringify(o));
 const addDays = E.addDays;
@@ -99,15 +99,6 @@ const week = (today, extra) => { const st = E.deriveState(data(extra), today); c
   const painItem = (st) => ((st.criteria && st.criteria.items) || []).find(i => /dolor/i.test(i.label));
   ok(painItem(d5(0)) && painItem(d5(0)).ok, 'motor: sin dolor, el criterio de 14 días sin dolor no se cumple: ' + JSON.stringify(painItem(d5(0))));
   ok(painItem(d5(3)) && !painItem(d5(3)).ok, 'motor: el dolor 3/10 durante la cancha libre no cuenta para el criterio de 14 días: ' + JSON.stringify(painItem(d5(3))));
-}
-{
-  // Comida: un domingo de descanso con 2 h de cancha intensa no es «descanso»
-  const st = E.deriveState(data({ sessions: [free] }), SUN);
-  const sun = E.buildWeek(st, E.weekStartOf(SUN), SUN).find(d => d.date === SUN);
-  ok(dayKind(sun, st.profile, st.sessions) === 'alto', 'comida: el domingo con cancha libre intensa no es carga alta: ' + dayKind(sun, st.profile, st.sessions));
-  const st0 = E.deriveState(data(), SUN), sun0 = E.buildWeek(st0, E.weekStartOf(SUN), SUN).find(d => d.date === SUN);
-  ok(dayKind(sun0, st0.profile, st0.sessions.concat([soft])) === 'moderado', 'comida: un domingo con cancha suave debería ser moderado: ' + dayKind(sun0, st0.profile, st0.sessions.concat([soft])));
-  ok(dayKind(sun0, st0.profile, st0.sessions) === 'descanso', 'comida: el descanso sin nada registrado cambió');
 }
 
 console.log('campo · fallos: ' + fails.length);

@@ -5,8 +5,6 @@ const DATO_CATS = {
   prevencion: { n: 'Prevención', icon: 'shield', tone: 'blue' },
   sueno: { n: 'Sueño', icon: 'moon', tone: 'sleep' },
   recuperacion: { n: 'Recuperación', icon: 'leaf', tone: 'sleep' },
-  nutricion: { n: 'Nutrición', icon: 'fork', tone: 'food' },
-  hidratacion: { n: 'Hidratación', icon: 'drop', tone: 'water' },
   fuerza: { n: 'Fuerza', icon: 'dumb', tone: 'load' },
   velocidad: { n: 'Velocidad', icon: 'bolt', tone: 'load' },
   mente: { n: 'Mente', icon: 'spark', tone: 'blue' },
@@ -58,9 +56,9 @@ function datoContext(today) {
   if (((ST.profile || {}).trials || []).some(t => t >= today && diffDays(t, today) <= 2)) ctx.add('precompetencia');
   if (typeof molActiveToday === 'function' && molActiveToday().length) ctx.add('molestia');
   if (ST.injuryActive) ctx.add('lesion');
-  const ag = agendaFor(today);
-  if (ag.kind === 'descanso') ctx.add('descanso');
-  if (ag.kind === 'alto' || ag.kind === 'prueba') ctx.add('intenso');
+  const ag = agendaFor(today), day = dayPlan(today);
+  if (day && !dayBlocks(day).length) ctx.add('descanso');
+  if (day && (day.intense || day.trial || (day.sessions || []).some(s => s.type === 'prueba' || s.type === 'partido'))) ctx.add('intenso');
   ag.items.forEach(it => { if (it.key === 'gym') ctx.add('gimnasio'); if (it.key === 'campo' || it.key === 'club') ctx.add('cancha'); });
   return ctx;
 }
@@ -98,19 +96,6 @@ function catTile(cat, sm) { const c = DATO_CATS[cat] || { icon: 'book', tone: ''
 function pubmedLink(e) { return 'https://pubmed.ncbi.nlm.nih.gov/?term=' + encodeURIComponent(e.titulo); }
 
 /* Tarjeta de Hoy */
-function datoHoyCard(today) {
-  if (!DAT.list) {
-    if (!DAT.error) loadDatos().catch(() => {});
-    return DAT.error ? '' : '<section class="dato-card panel" aria-busy="true" aria-label="Dato del día"><div class="skel line sk-d1"></div><div class="skel sk-d2"></div><div class="skel line sk-d3"></div><div class="skel line sk-d4"></div></section>';
-  }
-  const d = datoDelDia(today); if (!d) return '';
-  const c = DATO_CATS[d.cat] || {}, A = aprendeDoc(), saved = A.guardados.includes(d.id);
-  return '<section class="dato-card panel k-' + (c.tone || 'blue') + '" aria-label="Dato del día">' +
-    '<div class="dato-top"><span class="kicker grow"><span class="d"></span>Dato del día · ' + esc(c.n || '') + '</span>' + nivelHtml(d.nivel, true) + '</div>' +
-    '<button class="dato-main" data-act="dato-open" data-id="' + esc(d.id) + '"><span class="dato-num">' + esc(d.cifra) + '</span><span class="dato-t">' + esc(d.titular) + '</span></button>' +
-    '<div class="dato-foot">' + mitoChip(d) + '<button class="linkbtn" data-act="dato-open" data-id="' + esc(d.id) + '">Leer más' + ic('chev') + '</button>' +
-    '<button class="iconbtn sm plain" data-act="dato-save" data-id="' + esc(d.id) + '" aria-pressed="' + saved + '" aria-label="' + (saved ? 'Quitar de guardados' : 'Guardar') + '">' + ic(saved ? 'bookmarkOn' : 'bookmark') + '</button></div></section>';
-}
 
 /* ---------- Ficha completa de un dato ---------- */
 function openDato(id) {
@@ -146,7 +131,6 @@ function viewAprende(st, today) {
   h += '<div class="seg blue" role="tablist" aria-label="Secciones">' + [['datos', 'Datos'], ['investigar', 'Investigar'], ['guias', 'Guías']].map(([k, l]) => '<button type="button" role="tab" aria-selected="' + (A.tab === k) + '" class="' + (A.tab === k ? 'on' : '') + '" data-act="apr-tab" data-v="' + k + '">' + l + '</button>').join('') + '</div>';
   if (A.tab === 'investigar') return h + researchPanel(st, today);
   if (A.tab === 'guias') return h + '<p class="sub">Guías prácticas con su evidencia.</p>' + guidesPanel(st) + '<div class="stack-sm">' +
-    '<button class="blk" data-act="guide" data-g="nutricion"><span class="c food">' + ic('fork') + '</span><div class="grow"><div class="t">Nutrición por evidencia</div><div class="s">Qué funciona, qué es preliminar y qué evitar</div></div>' + ic('chev') + '</button>' +
     '<button class="blk" data-act="guide" data-g="balon"><span class="c">' + ic('ball') + '</span><div class="grow"><div class="t">Guía de balón</div><div class="s">Estaciones, pierna derecha y tope de cabeceo</div></div>' + ic('chev') + '</button></div>';
   if (!DAT.list) {
     if (!DAT.error) loadDatos().catch(() => {});
@@ -154,7 +138,7 @@ function viewAprende(st, today) {
   }
   const ap = aprendeDoc(), dia = datoDelDia(today);
   if (dia && A.filter === 'todos' && !A.q) h += '<section class="panel dato-card k-' + ((DATO_CATS[dia.cat] || {}).tone || 'blue') + '"><div class="dato-top"><span class="kicker grow"><span class="d"></span>Hoy · ' + esc((DATO_CATS[dia.cat] || {}).n || '') + '</span>' + nivelHtml(dia.nivel, true) + '</div><button class="dato-main" data-act="dato-open" data-id="' + esc(dia.id) + '"><span class="dato-num">' + esc(dia.cifra) + '</span><span class="dato-t">' + esc(dia.titular) + '</span></button></section>';
-  h += '<label class="search"><span class="sr">Buscar</span>' + ic('search') + '<input id="apr-q" class="input" type="search" inputmode="search" enterkeyhint="search" autocomplete="off" placeholder="Buscar: sueño, creatina, sprint…" value="' + esc(A.q) + '" data-input="apr-q"></label>';
+  h += '<label class="search"><span class="sr">Buscar</span>' + ic('search') + '<input id="apr-q" class="input" type="search" inputmode="search" enterkeyhint="search" autocomplete="off" placeholder="Buscar: sueño, sprint, isquios…" value="' + esc(A.q) + '" data-input="apr-q"></label>';
   h += '<div class="scroll-x snap" role="toolbar" aria-label="Filtros">' + APR_FILTERS.map(([k, l]) => '<button class="pill' + (A.filter === k ? ' on' : '') + '" data-act="apr-filter" data-v="' + k + '">' + l + (k === 'guardados' && ap.guardados.length ? ' · ' + ap.guardados.length : k === 'aplico' && ap.aplico.length ? ' · ' + ap.aplico.length : '') + '</button>').join('') +
     Object.entries(DATO_CATS).map(([k, c]) => '<button class="pill' + (A.filter === k ? ' on' : '') + '" data-act="apr-filter" data-v="' + k + '">' + esc(c.n) + '</button>').join('') + '</div>';
   const q = A.q.trim().toLowerCase();

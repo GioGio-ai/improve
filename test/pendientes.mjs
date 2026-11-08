@@ -1,5 +1,5 @@
-// Pendientes sin registrar: siguen en la figura de inicio hasta registrarlos, «No comí», hora planificada,
-// lo de ayer hasta las 12:00 y número en la pestaña Hoy.
+// Pendientes sin registrar (v5.0, solo entrenos): siguen en la figura de inicio hasta registrarlos, la fila abre «Registrar»,
+// «Tal cual» guarda, lo de ayer sigue hasta las 12:00 y el número de la pestaña Hoy coincide. Sin comidas.
 // node test/pendientes.mjs <fixture.json> <outdir>
 import { createRequire } from 'node:module';
 import fs from 'node:fs';
@@ -14,8 +14,9 @@ for (const [col, v] of Object.entries(d)) {
   else if (v && typeof v === 'object') { const { id, ...rest } = v; store[col] = { main: rest }; }
 }
 const tz = new Intl.DateTimeFormat('en-CA', { timeZone: 'America/Asuncion', year: 'numeric', month: '2-digit', day: '2-digit' });
-const today = tz.format(new Date());
 const addDays = (s, n) => { const x = new Date(s + 'T12:00:00Z'); x.setUTCDate(x.getUTCDate() + n); return x.toISOString().slice(0, 10); };
+/* Un día con entrenamiento: el domingo es el descanso del fixture, así que se usa el sábado */
+const real = tz.format(new Date()), today = new Date(real + 'T12:00:00Z').getUTCDay() === 0 ? addDays(real, -1) : real;
 const at = (date, hhmm) => new Date(date + 'T' + hhmm + ':00-03:00');
 const fails = [], ok = (c, m) => { if (!c) fails.push(m); };
 const browser = await chromium.launch();
@@ -34,40 +35,34 @@ async function openAt(date, hhmm, seed) {
   return { ctx, page };
 }
 const shot = async (page, name) => { await page.waitForTimeout(350); await page.screenshot({ path: outDir + '/' + String(++n).padStart(2, '0') + '-' + name + '.png' }); };
-const meals = (page) => page.evaluate(() => Object.values(JSON.parse(localStorage.getItem('improve-local-v1') || '{}').meals || {}));
+const sessions = (page) => page.evaluate(() => Object.values(JSON.parse(localStorage.getItem('improve-local-v1') || '{}').sessions || {}));
 // Filas de HOY (las de ayer dicen «Ayer · …»)
 const rows = (page) => page.evaluate(() => [...document.querySelectorAll('.hero .pend-row .pend-main')].filter(b => !/^Ayer/.test(b.querySelector('.s').textContent)).map(b => b.querySelector('.t').textContent));
 const rowSel = (page, text) => page.locator('.hero .pend-row').filter({ hasText: text }).filter({ hasNotText: 'Ayer' });
 try {
-  // 1) Hoy 11:40 sin nada registrado: el desayuno sigue a la vista
+  // 1) Hoy 11:40 sin nada registrado: el gimnasio de la mañana sigue a la vista y no hay comidas
   let { ctx, page } = await openAt(today, '11:40', store);
   await shot(page, 'hoy-1140');
   const r1 = await rows(page);
-  ok(r1.some(t => /Desayuno/.test(t)), 'desayuno no aparece en pendientes: ' + r1.join(' | '));
+  ok(r1.some(t => /Gimnasio/.test(t)), 'el gimnasio pasado no aparece en pendientes: ' + r1.join(' | '));
+  ok(!r1.some(t => /Desayuno|Almuerzo|Merienda|Cena|Post entreno|Media mañana/.test(t)), 'quedan comidas en pendientes: ' + r1.join(' | '));
   const badge = await page.locator('#nav a[data-nav="hoy"] .badge').innerText().catch(() => '');
-  const total = Number((await page.locator('.hero .pend-h').innerText()).match(/(\d+)/)[1]);
-  ok(badge === (total > 9 ? '9+' : String(total)), 'número de la pestaña (' + badge + ') distinto al del panel (' + total + ')');
-  // 2) «Comí esto» del desayuno → se guarda a la hora planificada (07:45)
-  await rowSel(page, 'Desayuno').locator('[data-act="meal-ate"]').click();
+  const total = r1.length + (await page.locator('.hero .pend-main .s').allInnerTexts()).filter(t => /^Ayer/.test(t)).length;
+  ok(badge === (total > 9 ? '9+' : String(total)), 'número de la pestaña (' + badge + ') distinto al de la figura (' + total + ')');
+  // 2) La fila abre «Registrar» del bloque: tal cual, con cambios y no lo hice
+  await rowSel(page, 'Gimnasio').locator('.pend-main').click();
   await page.waitForTimeout(400);
-  const m1 = (await meals(page)).find(m => m.slot === 'desayuno' && m.date === today);
-  ok(m1 && m1.time === '07:45', 'hora del desayuno tardío: ' + (m1 && m1.time));
-  ok(!(await rows(page)).some(t => /Desayuno/.test(t)), 'desayuno sigue pendiente tras registrarlo');
-  // 3) Otro pendiente de comida → opciones → «No la comí»
-  const r2 = await rows(page);
-  const mealRow = r2.find(t => /Post entreno|Media mañana/.test(t));
-  if (mealRow) {
-    await rowSel(page, mealRow).locator('.pend-main').click();
-    await shot(page, 'opciones');
-    await page.locator('.sheet [data-act="meal-skip"]').click();
-    await page.waitForTimeout(400);
-    const sk = (await meals(page)).find(m => m.skipped && m.date === today);
-    ok(sk && sk.items.length === 0, 'no se guardó la comida saltada');
-    ok(!(await rows(page)).some(t => t === mealRow), mealRow + ' sigue pendiente tras «No comí»');
-    ok(await page.locator('.tl-blk.skipped').count() >= 1, 'la agenda no marca la comida saltada');
-  } else fails.push('no hay comida de media mañana o post entreno pendiente: ' + r2.join(' | '));
-  // 4) Entreno pasado sin registrar en el panel
-  ok((await rows(page)).some(t => /Gimnasio/.test(t)), 'el gimnasio pasado no aparece en pendientes');
+  await shot(page, 'registrar-bloque');
+  ok(await page.locator('.sheet [data-act="block-done"]').count() === 1 && await page.locator('.sheet [data-act="did-other"]').count() === 1 && await page.locator('.sheet [data-act="resched"]').count() === 1, 'la hoja Registrar del bloque no tiene las 3 opciones');
+  await page.locator('.sheet [data-act="close"]').click(); await page.waitForTimeout(350);
+  // 3) «Tal cual» desde la fila: se guarda y deja de estar pendiente
+  const before = (await sessions(page)).filter(s => s.date === today).length;
+  await rowSel(page, 'Gimnasio').locator('[data-act="block-done"]').click();
+  await page.waitForTimeout(400);
+  await page.locator('.sheet [data-act="qd-save"]').click();
+  await page.waitForTimeout(500);
+  ok((await sessions(page)).filter(s => s.date === today).length > before, '«Tal cual» no guardó la sesión');
+  ok(!(await rows(page)).some(t => /Gimnasio/.test(t)), 'el gimnasio sigue pendiente tras «Tal cual»');
   await shot(page, 'tras-registrar');
   await ctx.close();
 

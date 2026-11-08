@@ -633,7 +633,7 @@ const CAMPO_ACTS = [
   { id: 'cl_reducido', n: 'Partido reducido', cat: 'juego', pies: 'ambos', int: 'alta', min: 20, d: '3c3 a 5c5 en espacio chico: muchos cambios de ritmo y remates.' },
   { id: 'cl_partido', n: 'Partido informal', cat: 'juego', pies: 'ambos', int: 'alta', min: 40, d: 'Picado o partido sin calendario.' },
   { id: 'cl_aceleraciones', n: 'Aceleraciones y cambios de dirección', cat: 'sprint', pies: 'ninguno', int: 'alta', min: 10, d: 'Arranques de 5-20 m y frenadas, sin balón.' },
-  { id: 'cl_estiramiento', n: 'Estiramiento y caminata', cat: 'movilidad', pies: 'ninguno', int: 'baja', min: 10, d: 'Caminata suave, estiramientos y agua.' },
+  { id: 'cl_estiramiento', n: 'Estiramiento y caminata', cat: 'movilidad', pies: 'ninguno', int: 'baja', min: 10, d: 'Caminata suave y estiramientos.' },
 ];
 const CAMPO_ACT_INDEX = {};
 CAMPO_ACTS.forEach(a => { CAMPO_ACT_INDEX[a.id] = a; });

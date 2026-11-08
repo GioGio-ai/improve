@@ -102,7 +102,6 @@ function localAdapter() {
           { id: 'cl_def_primera', n: 'Control y definición de primera', cat: 'remate', min: 20, pies: 'ambos', int: 'alta' }, { id: 'cl_tiros_libres', n: 'Tiros libres', cat: 'balon_parado', min: 10, pies: 'ambos', int: 'alta' },
           { id: 'cl_1v1', n: '1 contra 1', cat: 'duelo', min: 15, pies: 'ambos', int: 'alta' }, { id: 'cl_cambio_frente', n: 'Cambios de frente largos', cat: 'pase_largo', min: 20, pies: 'ambos', int: 'alta' }, { id: 'cl_estiramiento', n: 'Estiramiento y caminata', cat: 'movilidad', min: 10, pies: 'ninguno', int: 'baja' }],
         golpesFuertes: { der: 'muchos', izq: 'muchos' }, cabezazos: 'no', sprints: 'varios', companeros: 1, ejercicios: [], nota: 'Valores de prueba del modo local.' };
-      if (schema && schema.properties && schema.properties.items) return { items: image ? [{ n: 'Huevo revuelto', g: 150, p: 19, c: 2, f: 16, kcal: 230, conf: 'alta' }, { n: 'Mandioca hervida', g: 200, p: 2.4, c: 64, f: 0.6, kcal: 270, conf: 'media' }, { n: 'Banana', g: 120, p: 1.3, c: 27.6, f: 0.4, kcal: 107, conf: 'alta' }] : [{ n: 'Huevo', g: 150, p: 19, c: 2, f: 16, kcal: 233, conf: 'alta' }], hora: '', nota: 'Valores de prueba del modo local.' };
       if (schema && schema.properties && schema.properties.consultas) return { tema: 'Sueño y sprint', consultas: ['sleep AND sprint', 'sleep extension AND athletes', 'sleep deprivation AND performance'], poblacion: 'athletes', resultado: 'sprint' };
       if (schema && schema.properties && schema.properties.respuesta) return {
         respuesta: 'Respuesta de prueba (modo local): dormir poco empeora el sprint y dormir más lo mejora.', veredicto: 'beneficia', nivel: 'A',
@@ -138,7 +137,7 @@ const AUTH_ERR = {
 };
 function loginHtml() {
   return '<div class="login" id="login"><form class="box" id="login-form" novalidate>' +
-    '<div class="logo"><div class="mk">' + LOGO_SVG + '</div><div class="wm">IMPROVE</div><div class="tag">Entrenamiento, recuperación y comida. Acceso privado.</div></div>' +
+    '<div class="logo"><div class="mk">' + LOGO_SVG + '</div><div class="wm">IMPROVE</div><div class="tag">Entrenamiento y recuperación. Acceso privado.</div></div>' +
     '<div class="card"><div class="stack">' +
     '<div class="field"><label for="lg-email">Correo</label><input class="input" id="lg-email" name="email" type="email" inputmode="email" autocomplete="username" autocapitalize="off" spellcheck="false" enterkeyhint="next" required></div>' +
     '<div class="field"><label for="lg-pass">Contraseña</label><input class="input" id="lg-pass" name="password" type="password" autocomplete="current-password" enterkeyhint="go" required></div>' +

@@ -28,7 +28,7 @@
 /* Ícono por categoría: solo el trazo en color */
 .dt-tile { width: 28px; height: 28px; flex: none; display: grid; place-items: center; color: var(--blue); }
 .dt-tile .ic { width: 20px; height: 20px; }
-.dt-tile.sleep { color: var(--violet); } .dt-tile.food { color: var(--teal); } .dt-tile.water { color: var(--cyan); }
+.dt-tile.sleep { color: var(--violet); }
 .dt-tile.load { color: var(--amber); } .dt-tile.lime { color: var(--lime); } .dt-tile.mute { color: var(--fg-3); }
 
 /* Nivel de evidencia: barras (4 = fuerte) + letra; sin rojo (reservado al dolor) */

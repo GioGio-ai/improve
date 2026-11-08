@@ -3,7 +3,7 @@
    ============================================================ */
 function viewEntreno(st, today) {
   if (!S.data.profile) return onboarding();
-  let h = '<div class="aura" aria-hidden="true"></div><div class="page-head"><h1 class="h1 grow">Entreno</h1><button class="btn sm" data-act="train-text" data-date="' + today + '">' + ic('spark') + 'Contar</button><button class="iconbtn" data-act="new-log" data-date="' + today + '" aria-label="Registrar sesión a mano">' + ic('plus') + '</button></div>';
+  let h = '<div class="aura" aria-hidden="true"></div><div class="page-head"><h1 class="h1 grow">Entreno</h1><button class="btn sm primary" data-act="reg" data-date="' + today + '">' + ic('plus') + 'Registrar</button></div>';
   h += trainingBanner();
   h += '<div class="seg blue" role="tablist">' + [['semana', 'Semana'], ['historial', 'Historial'], ['ejercicios', 'Ejercicios']].map(([k, l]) => '<button type="button" role="tab" aria-selected="' + (UI.enTab === k) + '" class="' + (UI.enTab === k ? 'on' : '') + '" data-act="en-tab" data-v="' + k + '">' + l + '</button>').join('') + '</div>';
   if (UI.enTab === 'historial') return h + historyPanel(st, today);

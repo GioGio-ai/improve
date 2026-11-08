@@ -36,8 +36,10 @@ try {
   await page.goto('http://127.0.0.1:8765/?local=1#entreno');
   await page.waitForSelector('.day-sec.is-today', { timeout: 15000 });
 
-  /* 1 · Contar con IA desde Entreno */
-  await tap('.page-head [data-act="train-text"]');
+  /* 1 · Contar con IA desde Entreno → Registrar → Contarlo */
+  await tap('.page-head [data-act="reg"]');
+  ok(await sheet.locator('[data-act="train-text"]').count() === 1 && await sheet.locator('[data-act="new-log"]').count() === 1, 'Registrar no ofrece «Contarlo» y «Cargar a mano»');
+  await tap('.sheet [data-act="train-text"]');
   ok(await sheet.locator('#tt-txt').count() === 1, 'no abre la hoja Contar el entreno');
   await sheet.locator('#tt-txt').fill(NOTE);
   await sheet.locator('#tt-start').fill('18:50');
@@ -114,7 +116,8 @@ try {
 
   /* 4 · Balón en el selector de ejercicios */
   await tap('.seg [data-act="en-tab"][data-v="semana"]');
-  await tap('.page-head [data-act="new-log"]');
+  await tap('.page-head [data-act="reg"]');
+  await tap('.sheet [data-act="new-log"]');
   await tap('.sheet [data-act="ed-add"]');
   await tap('.sheet [data-act="pick-tab"][data-v="balon"]');
   ok(await sheet.locator('[data-act="pick"][data-id="cl_1v1"]').count() === 1, 'el selector no tiene la pestaña Balón con 1 contra 1');
@@ -124,6 +127,7 @@ try {
   ok(await ed3.locator('.cl-item').count() === 1, 'el bloque elegido no aparece en el editor');
   ok((await ed3.locator('#ed-min').inputValue()).startsWith('15'), 'los minutos no siguen al bloque agregado');
   ok(await ed3.locator('[data-act="cl-band"][data-k="sprints"].on').getAttribute('data-v') !== 'no', 'el 1 contra 1 no suma sprints y duelos');
+  await tap('.sheet [data-act="close"]');
   await tap('.sheet [data-act="close"]');
 
   /* 5 · Biblioteca de balón y hoja del día */
@@ -135,7 +139,10 @@ try {
   await tap('.seg [data-act="en-tab"][data-v="semana"]');
   await page.locator('.day-sec.is-today [data-act="day"]').first().click();
   await page.waitForTimeout(400);
-  ok(await sheet.locator('[data-act="train-text"]').count() === 1, 'la hoja del día no ofrece «Contarla con IA»');
+  ok(await sheet.locator('[data-act="reg"]').count() === 1, 'la hoja del día no ofrece «Registrar»');
+  await tap('.sheet [data-act="reg"]');
+  ok(await page.locator('.sheet [data-act="train-text"]').count() === 1, 'Registrar desde el día no ofrece «Contarlo»');
+  await tap('.sheet [data-act="close"]');
   await tap('.sheet [data-act="close"]');
 
   /* 6 · Lunes: ¿cómo amaneció el recto femoral? → 4/10 manda sobre el plan */

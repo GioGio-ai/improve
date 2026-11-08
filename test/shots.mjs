@@ -66,8 +66,9 @@ async function run(w) {
     await shot(s.page, '07-entreno-historial', true);
     await click(s.page, '[data-act="en-tab"][data-v="ejercicios"]');
     await shot(s.page, '08-entreno-ejercicios', true);
-    await go(s.page, '#comida');
-    await shot(s.page, '09-comida', true);
+    await click(s.page, '.page-head [data-act="reg"]');
+    await shot(s.page, '09-registrar');
+    await click(s.page, '.sheet [data-act="close"]');
     await go(s.page, '#progreso');
     await shot(s.page, '10-progreso', true);
     await go(s.page, '#perfil');

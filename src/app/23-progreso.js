@@ -34,7 +34,6 @@ function viewProgreso(st, today) {
   h += perfCard(st);
   h += coverageCard(st, today);
   h += molestiasCard(st, today);
-  h += weightCard(st);
   return h;
 }
 function levelsCard(st) {
@@ -150,12 +149,6 @@ function coverageCard(st, today) {
     '<div class="h3">Patrones</div>' + hbars(patRows) + '<div class="h3">Zonas de prevención</div>' + hbars(zoneRows) + '</div></details>' +
     '<p class="credit">Siluetas: react-body-highlighter (MIT).</p></div></section>';
   return h;
-}
-function weightCard(st) {
-  const ws = st.weights;
-  return '<section class="card"><div class="stack-sm"><div class="ed-head"><span class="kicker">Peso</span><button class="btn sm" data-act="add-weight">' + ic('plus') + 'Registrar</button></div>' +
-    (ws.length >= 2 ? lineChart(ws.map(w => ({ x: w.date, y: Number(w.kg) })), { unit: ' kg', label: 'Peso' }) : '<p class="sub">' + (ws.length ? fmtNum(ws[0].kg) + ' kg el ' + fmtDate(ws[0].date) + '. ' : '') + 'Pésate una vez por semana.</p>') +
-    (st.profile.weightTarget ? '<div class="sub">' + ic('target') + ' ' + esc(st.profile.weightTarget) + '</div>' : '') + '</div></section>';
 }
 
 /* ---------- Test manual (se fusiona por fecha) ---------- */

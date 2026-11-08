@@ -1,10 +1,10 @@
 /* ============================================================
    NÚCLEO: datos, render, capas (hojas y entrenamiento), avisos
    ============================================================ */
-const VERSION = '4.6.0';
+const VERSION = '5.0.0';
 const COLS = {
   profile: 'single', settings: 'single', weights: 'list', injuries: 'list', tests: 'list', checkins: 'list', sessions: 'list',
-  custom: 'list', traducciones: 'list', templates: 'list', agenda: 'list', meals: 'list', nutri: 'list', foods: 'list', molestias: 'list',
+  custom: 'list', traducciones: 'list', templates: 'list', agenda: 'list', molestias: 'list',
   aprende: 'single', investigaciones: 'list',
 };
 const S = { mode: 'loading', user: null, data: {}, loaded: {}, canWrite: true, live: [], liveLoaded: false };
@@ -65,12 +65,12 @@ function engineData() {
 }
 
 /* ---------- Estado de interfaz ---------- */
-const TABS = [{ id: 'hoy', n: 'Hoy', icon: 'home' }, { id: 'entreno', n: 'Entreno', icon: 'dumb' }, { id: 'comida', n: 'Comida', icon: 'fork' }, { id: 'progreso', n: 'Progreso', icon: 'chart' }, { id: 'perfil', n: 'Perfil', icon: 'user' }];
+const TABS = [{ id: 'hoy', n: 'Hoy', icon: 'home' }, { id: 'entreno', n: 'Entreno', icon: 'dumb' }, { id: 'progreso', n: 'Progreso', icon: 'chart' }, { id: 'perfil', n: 'Perfil', icon: 'user' }];
 const PAGES = ['coach', 'aprende'];
 const UI = {
   view: 'hoy', hoyDate: null, weekOffset: 0, enTab: 'semana', exTab: 'banco', histLimit: 21,
   bank: { q: '', zone: '', phaseOk: true, limit: 30 }, lib: { q: '', muscle: '', limit: 40 }, pick: { q: '', tab: 'recientes' },
-  coach: { turns: [], busy: false, draft: '' }, breath: null, ed: null, menuVar: {},
+  coach: { turns: [], busy: false, draft: '' }, breath: null, ed: null,
   apr: { tab: 'datos', filter: 'todos', q: '', pending: null },
   inv: { q: '', privado: false, busy: false, step: 0, error: '', showPriv: false, n: 0, lastId: null },
 };
@@ -95,8 +95,6 @@ function render() {
   UI.view = currentView(); markNav();
   if (!allLoaded()) { $('#view').innerHTML = skeletonView(); return; }
   for (const k in memo) delete memo[k];
-  syncUserFoods();
-  refreshWeather();
   ST = deriveState(engineData(), todayStr());
   const fn = RENDERERS[UI.view] || RENDERERS.hoy;
   const view = $('#view');
@@ -125,8 +123,6 @@ function agendaFor(date) {
 function logsFor(date) { return (S.data.sessions || []).filter(s => s.date === date && !s.deleted).sort(byDate); }
 function findLog(date, type) { return (S.data.sessions || []).find(s => s.date === date && s.type === type && !s.deleted) || null; }
 function findPlanned(date, type) { const d = dayPlan(date); return d ? d.sessions.find(s => s.type === type) || null : null; }
-function mealsFor(date) { return (S.data.meals || []).filter(m => m.date === date).sort((a, b) => (a.time || '') < (b.time || '') ? -1 : 1); }
-function nutriDoc(date) { return (S.data.nutri || []).find(n => n.id === date) || null; }
 function checkinFor(date) { return (S.data.checkins || []).find(c => c.date === date) || null; }
 
 /* ---------- Capas: hojas y entrenamiento, con el botón atrás de Android ---------- */

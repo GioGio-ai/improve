@@ -54,7 +54,7 @@ ul, ol { list-style: none; }
 .num { font-family: var(--mono); font-variant-numeric: tabular-nums; letter-spacing: -0.02em; }
 .fg { color: var(--fg); } .fg2 { color: var(--fg-2); } .fg3 { color: var(--fg-3); } .fg4 { color: var(--fg-4); }
 .c-blue { color: var(--blue-ink); } .c-lime { color: var(--lime); } .c-load { color: var(--amber); } .c-pain { color: var(--red); }
-.c-sleep { color: var(--violet-ink); } .c-prot { color: var(--teal); } .c-carb { color: var(--gold); } .c-fat { color: var(--pink); } .c-water { color: var(--cyan); }
+.c-sleep { color: var(--violet-ink); }
 p { text-wrap: pretty; }
 b, strong { font-weight: var(--fw-3); }
 .u { font-size: var(--fs-1); font-weight: var(--fw-2); color: var(--fg-3); letter-spacing: 0; margin-left: 2px; }

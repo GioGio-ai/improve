@@ -5,7 +5,6 @@
    El color es señal, nunca decoración:
    azul = plan y acción · lima = hecho y logros · ámbar = carga e intensidad
    rojo = solo dolor · violeta = sueño y recuperación
-   verde agua = proteína · dorado = carbohidratos · rosa = grasas · cian = agua
    Contraste verificado con scripts/contrast.mjs (texto ≥ 4,5:1; iconos y bordes ≥ 3:1).
    ============================================================ */
 @font-face {
@@ -97,24 +96,6 @@
   --violet-ink: #D3C7FF;
   --violet-soft: rgba(164, 139, 255, 0.14);
   --violet-line: rgba(164, 139, 255, 0.36);
-
-  --teal: #3DD9B8;
-  --teal-ink: #A6EEDD;
-  --teal-soft: rgba(61, 217, 184, 0.12);
-  --teal-line: rgba(61, 217, 184, 0.34);
-
-  --gold: #F2C55C;
-  --gold-ink: #F8DD9E;
-  --gold-soft: rgba(242, 197, 92, 0.12);
-
-  --pink: #F2A7D3;
-  --pink-ink: #F8D0E7;
-  --pink-soft: rgba(242, 167, 211, 0.12);
-
-  --cyan: #4CC9F0;
-  --cyan-ink: #ABE6F8;
-  --cyan-soft: rgba(76, 201, 240, 0.12);
-  --cyan-line: rgba(76, 201, 240, 0.34);
 
   /* ---- Degradados modernos: auroras por contexto, acción, texto y líneas ---- */
   --grad-primary: linear-gradient(135deg, #3A6CF6 0%, #5A4FE6 100%);

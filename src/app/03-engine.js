@@ -2462,31 +2462,6 @@ function bestE1RM(exId, sessions) {
   return best;
 }
 
-/* ---------- Tipo de día para la nutrición ---------- */
-function dayKind(day, prof, logs) {
-  if (!day) return 'descanso';
-  /* Lo marcado «No la hice» no cuenta: el tipo de día se calcula con lo que queda */
-  const own = (logs || []).filter(l => l && l.date === day.date && !l.deleted);
-  const skip = new Set(own.filter(l => l.done === false).map(l => l.type));
-  const sess = skip.size ? day.sessions.filter(s => !skip.has(s.type)) : day.sessions;
-  const types = sess.map(s => s.type);
-  /* Lo hecho fuera del plan (cancha libre, un picado, gimnasio extra) también cuenta para la comida */
-  const extra = own.filter(l => l.done !== false && !day.sessions.some(s => s.type === l.type));
-  const intense = (skip.size ? (sess.some(s => s.intense) || own.some(isIntenseLog)) : day.intense) || extra.some(isIntenseLog);
-  const trials = (prof && prof.trials) || [];
-  if (types.includes('partido') || types.includes('prueba') || day.trial) return 'prueba';
-  if (trials.includes(addDays(day.date, 1)) || day.md === 'MD-1') return 'prueba';
-  /* Dos días antes de una prueba (aunque sea descanso) y el día después de una prueba o un partido: carbohidratos al menos
-     de carga media (llegar con el glucógeno lleno; tras un partido tarda más de 48 h en reponerse) */
-  const afterMatch = day.md === 'MD+1' || !!day.recover || (logs || []).some(l => l && l.date === addDays(day.date, -1) && l.done !== false && !l.deleted && ['partido', 'prueba'].includes(l.type));
-  if (trials.includes(addDays(day.date, 2)) || trials.includes(addDays(day.date, -1)) || afterMatch) return intense ? 'alto' : 'moderado';
-  if ((!types.length || types.every(t => t === 'descanso')) && !extra.length) return 'descanso';
-  if (intense) return 'alto';
-  if (extra.some(l => blockKind(l.type) === 'campo' || STRENGTH_TYPES.includes(l.type) || (num(l.minutes) || 0) >= 45)) return 'moderado';
-  if (types.every(t => ['movilidad', 'recuperacion', 'recupPiernas', 'descanso', 'prevencion', 'superior', 'superiorA', 'superiorB', 'activacion'].includes(t))) return 'bajo';
-  return 'moderado';
-}
-
 /* ---------- Estado global derivado ---------- */
 function deriveState(data, today) {
   const injury = (data.injuries || []).filter(i => i.status !== 'resuelta').sort(byDate).pop() || null;

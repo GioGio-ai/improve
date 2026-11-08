@@ -1,7 +1,7 @@
 {
   "name": "IMPROVE",
   "short_name": "IMPROVE",
-  "description": "Entrenamiento, recuperación y comida.",
+  "description": "Entrenamiento y recuperación.",
   "lang": "es",
   "id": "./",
   "start_url": "./#hoy",

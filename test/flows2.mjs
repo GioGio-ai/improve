@@ -50,7 +50,8 @@ await step('dia-pasado', async () => {
 await step('editor', async () => {
   await page.evaluate(() => { location.hash = '#entreno'; });
   await page.waitForTimeout(400);
-  await click('.page-head [data-act="new-log"]');
+  await click('.page-head [data-act="reg"]');
+  await click('.sheet [data-act="new-log"]');
   await shot('editor-nuevo');
   await click('[data-act="ed-add"]');
   await click('[data-act="pick-tab"][data-v="banco"]');

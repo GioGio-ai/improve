@@ -851,8 +851,6 @@ function saveFinish() {
   haptic(30);
 }
 function postHtml(date, hadField, intense, strength) {
-  const ag = agendaFor(date), now = nowMin();
-  const next = ag.items.find(x => x.kind === 'meal' && x.start >= now - 20 && !mealDone(x.slot, date).length);
   const P = UI.post || { sugg: [], applied: {} };
   let h = sheetHead('Sesión guardada', intense ? '<span class="c-load">Cuenta como día intenso para el RF</span>' : '<span class="c-lime">Buen trabajo</span>') + '<div class="sheet-body">';
   if (P.sugg.length) {
@@ -860,9 +858,7 @@ function postHtml(date, hadField, intense, strength) {
       (P.applied[i] ? '<span class="saved">' + ic('check') + 'Aplicado</span>' : s.kind === 'choice' ? '<button class="btn sm ' + (s.warn ? '' : 'primary') + '" data-act="post-apply" data-i="' + i + '">Aplicar al plan</button>' : s.kind === 'equip' && s.eq ? '<button class="btn sm" data-act="post-apply" data-i="' + i + '">Marcar sin ' + esc(s.eq) + '</button>' : '') + '</div></div>').join('') + '</div>';
   }
   h += '<div class="stack-sm"><div class="micro">Ahora</div>';
-  if (next) { const menu = mealMenuFor(date, next); h += '<button class="blk" data-act="ag-open" data-date="' + date + '" data-key="' + next.key + '"><span class="c food">' + ic('fork') + '</span><div class="grow"><div class="t">' + esc(next.title) + ' · ' + fmtHM(next.start) + '</div><div class="s">' + esc(menu.name) + ' · ' + menu.totals.p + ' g de proteína</div></div>' + ic('chev') + '</button>'; }
-  h += '<div class="blk"><span class="c water">' + ic('drop') + '</span><div class="grow"><div class="t">Repón líquido</div><div class="s">Agua o tereré con una pizca de sal. Orina clara antes de la próxima sesión.</div></div><button class="btn xs" data-act="water-add" data-date="' + date + '" data-ml="500">+500 ml</button></div>';
-  if (strength) h += '<div class="blk"><span class="c sleep">' + ic('moon') + '</span><div class="grow"><div class="t">Sin baños de hielo en las próximas horas</div><div class="s">Frenan la ganancia de fuerza. Beber agua fría no tiene problema.</div></div></div>';
+  if (strength) h += '<div class="blk"><span class="c sleep">' + ic('moon') + '</span><div class="grow"><div class="t">Sin baños de hielo en las próximas horas</div><div class="s">Frenan la ganancia de fuerza.</div></div></div>';
   h += '<button class="blk" data-act="guide" data-g="respiracion"><span class="c sleep">' + ic('wind') + '</span><div class="grow"><div class="t">Respiración 5 min</div><div class="s">Exhala largo: pasa a modo recuperación.</div></div>' + ic('chev') + '</button>';
   if (hadField) h += '<div class="blk"><span class="c pain">' + ic('cal') + '</span><div class="grow"><div class="t">Mañana te pregunto por el recto femoral</div><div class="s">Esa respuesta decide si subes de nivel.</div></div></div>';
   h += '</div><div class="sheet-foot"><button class="btn primary lg" data-act="close">Listo</button></div></div>';

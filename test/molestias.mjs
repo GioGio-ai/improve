@@ -157,7 +157,7 @@ try {
   const nueva = Object.entries(all).find(([id, m]) => id !== 'mol-ayer');
   ok(nueva && nueva[1].zona === 'isquio' && nueva[1].lado === 'd' && nueva[1].tipo === 'dolor' && nueva[1].nivel === 4, 'molestia nueva mal guardada: ' + JSON.stringify(nueva));
   await shot('hoy-ajustado');
-  ok(await page.locator('.topbar ~ .scroll-x [data-act="mol-open"]').count() >= 1, 'sin chip de molestia activa');
+  ok(await page.locator('.estado .mol-chips [data-act="mol-open"]').count() >= 1, 'sin chip de molestia activa');
   // Aviso compacto (una línea) que abre el detalle con «deshacer»; al abrirlo ya no vuelve a aparecer hoy
   const line = page.locator('.mini-alert [data-act="mol-adj"]');
   ok(await line.count() === 1, 'sin aviso compacto de ajuste en Hoy');
@@ -220,7 +220,7 @@ try {
   const undoBtn = page.locator('#toast [data-act="mol-undo-save"]');
   if (await undoBtn.count()) { await undoBtn.click(); await page.waitForTimeout(500); const pu = Object.values(await db()).find(m => m.zona === 'pantorrilla' && m.lado === 'i'); ok(pu && !pu.updates.some(u => u.nivel === 8) && pu.updates.some(u => u.nivel === 6), 'deshacer guardado no restauró: ' + JSON.stringify(pu && pu.updates)); }
   else fails.push('sin «Deshacer» tras guardar');
-  ok(await page.locator('.topbar ~ .scroll-x [data-act="mol-list"]').count() >= 1, 'sin chip unido de los dos lados');
+  ok(await page.locator('.estado .mol-chips [data-act="mol-list"]').count() >= 1, 'sin chip unido de los dos lados');
   await shot('hoy-varias');
 } catch (e) { fails.push('PASO: ' + e.message.split('\n')[0]); await shot('ERROR'); }
 // 13) «¿Siguen?» agrupado para varias molestias de ayer
