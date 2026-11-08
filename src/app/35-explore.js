@@ -124,6 +124,25 @@ function guideHtml(g) {
       rows.map(([t, items]) => '<div class="stack-sm"><div class="h3">' + t + '</div><ul class="crit">' + items.map(x => '<li><span class="mk ok">' + ic('check') + '</span><div class="small fg2">' + esc(x) + '</div><span></span></li>').join('') + '</ul></div>').join('') +
       '<p class="sub">Agrega las fechas de tus pruebas en Perfil: el plan ajusta los días anteriores y el posterior.</p></div>';
   }
+  if (g === 'pretemporada') {
+    const bi = ST ? blockInfo(ST, todayStr()) : null;
+    const li = (rows, mk) => '<ul class="crit">' + rows.map(([t, d]) => '<li><span class="mk' + (mk ? ' ok' : '') + '">' + ic(mk ? 'check' : 'info') + '</span><div class="small"><b>' + t + '</b><div class="fg3">' + d + '</div></div><span></span></li>').join('') + '</ul>';
+    return sheetHead('Pretemporada', bi ? 'Día ' + bi.day + ' de ' + bi.total + (bi.trial ? ' · prueba el ' + fmtDateLong(bi.trial) : '') : 'Bloque corto hacia una prueba') + '<div class="sheet-body">' +
+      '<p class="body">Dos semanas no alcanzan para cambiar tu motor aeróbico de cero, pero sí para recuperar lo que se pierde en unos días parado, repetir sprints con menos fatiga y llegar fresco. La clave es alternar días altos y medios, y bajar el volumen la última semana sin bajar la intensidad.</p>' +
+      '<div class="stack-sm"><div class="h3">La semana</div>' + li([
+        ['Días altos (mar, jue, sáb)', 'Fuerza o potencia, golpeo, sprint de tu escalera y, por turno, sprints repetidos, agilidad o simulación de partido. Nunca dos seguidos.'],
+        ['Días medios (lun, mié, vie)', 'Intervalos de resistencia (10/10, 4 × 4 con balón y 15/15 con giro), balón y tren superior o prevención. No cargan el recto femoral al máximo.'],
+        ['Golpeo cada 48 h', 'Nunca dos días seguidos, ni leve: el día después, balón sin remates.'],
+        ['Domingo', 'Descanso completo.'],
+      ], true) + '</div>' +
+      '<div class="stack-sm"><div class="h3">Por qué así</div>' + li([
+        ['10/10 al ritmo alto', 'En jugadores jóvenes, 10 s rápido y 10 s suave mejoró el Yo-Yo IR1 más que el 15/15 y con menos esfuerzo percibido (ensayo de 6 semanas, 2024).'],
+        ['Sprints repetidos', 'En un metaanálisis de ensayos con futbolistas, mejoraron el sprint corto, la capacidad de repetir sprints y los cambios de dirección; poco efecto sobre el VO2máx.'],
+        ['Velocidad alta, sin saltarse la escalera', 'Exponerse a más del 95 % de la velocidad máxima se asoció con menos lesiones, y la sobreexposición con más (estudio de cohorte en fútbol gaélico). Por eso el sprint sigue tu nivel S.'],
+        ['Afinamiento', 'Desde 6 días antes de la prueba: misma intensidad y ~40 % menos volumen. Un metaanálisis encontró el mejor resultado con unas 2 semanas y 41-60 % menos volumen.'],
+      ]) + '</div>' +
+      note('warn', '<b>Lo que no cambia:</b> un nivel de golpeo y de sprint cada 48 h como máximo, nada nuevo a 5 días o menos de la prueba y las reglas de dolor del recto femoral. Si un día amaneces pesado, márcalo en el check-in: el plan baja solo.') + '</div>';
+  }
   if (g === 'balon') {
     const L = effLevels(ST), les = ST.side === 'i' ? 'izquierda' : 'derecha', sana = ST.side === 'i' ? 'derecha' : 'zurda';
     return sheetHead('Guía de balón', 'Estaciones técnicas en la cancha') + '<div class="sheet-body">' +

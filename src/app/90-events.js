@@ -130,6 +130,15 @@ document.addEventListener('click', (e) => {
     case 'trial-del': { const v = g('v'); updateProfile(p => { p.trials = (p.trials || []).filter(x => x !== v); }); return; }
     case 'sched-nap': setSchedule('nap', !(scheduleOf(S.data.profile).nap !== false)); return;
     case 'partners': updateProfile(p => { p.partners = !(p.partners === true); }); return;
+    case 'block-edit': openPreBlock(); return;
+    case 'block-save': saveBlock(); return;
+    case 'block-end': endBlock(); return;
+    case 'blk-trial': UI.blk.trial = !UI.blk.trial; refreshSheet(true); return;
+    case 'sick-new': openSick(); return;
+    case 'sick-kind': UI.sick.kind = g('v'); refreshSheet(true); return;
+    case 'sick-mark': UI.sick.mark = !UI.sick.mark; refreshSheet(true); return;
+    case 'sick-save': saveSick(); return;
+    case 'sick-del': deleteSick(g('v')); return;
     case 'emphasis': updateProfile(p => { if (g('v')) p.emphasis = g('v'); else delete p.emphasis; }); return;
     case 'geo': toggleGeo(); return;
     case 'export': exportData(); return;
@@ -351,6 +360,8 @@ function handleBind(el, isChange) {
     case 'test-date': if (v) UI.test.date = v; return;
     case 'test-n': UI.test[el.getAttribute('data-key')] = parseNum(v); return;
     case 'pf': UI.pf[name] = v; return;
+    case 'sick': if (UI.sick) UI.sick[name] = v; return;
+    case 'blk': if (UI.blk) UI.blk[name] = v; return;
     case 'ij': UI.ij[name] = v; return;
     case 'wt': UI.wt[name] = v; return;
     case 'wt-step': UI.wt.kg = parseNum(v); return;

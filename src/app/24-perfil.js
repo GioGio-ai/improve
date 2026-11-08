@@ -39,6 +39,7 @@ function viewPerfil(st, today) {
     '<div class="field"><span class="lab">Días de partido</span>' + dayBtns('matchDays', true) + '<span class="hint">Desde F5, el plan se organiza por día de partido.</span></div>' +
     toggleHtml('partners', p.partners === true, 'Tengo con quién jugar', 'Para el juego reducido. Si no, el plan pone una simulación de partido individual.') +
     '<div class="field"><span class="lab">Énfasis al volver a jugar (F5-F6)</span><div class="pills">' + [['', 'Equilibrado'], ['velocidad', 'Velocidad'], ['fuerza', 'Fuerza'], ['potencia', 'Potencia']].map(([k, n]) => { const on = (p.emphasis || '') === k; return '<button type="button" class="pill' + (on ? ' on' : '') + '" data-act="emphasis" data-v="' + k + '" aria-pressed="' + on + '">' + n + '</button>'; }).join('') + '</div><span class="hint">Cambia qué fuerza y qué trabajo de cancha lleva cada día intenso.</span></div></div></section>';
+  h += blockCardHtml(st, today) + sickCardHtml(st, today);
   const places = placesOf(p);
   h += '<section class="card"><div class="stack"><div class="stack-sm"><span class="kicker">Lugares</span><p class="sub">Desmarca lo que no tengas: el plan elige alternativas.</p></div>' +
     PLACES.map(pl => '<div class="field"><span class="lab">' + PLACE_NAMES[pl] + '</span><div class="pills">' + PLACES_DEFAULT[pl].eq.map(e => { const on = places[pl].eq.includes(e); return '<button type="button" class="pill' + (on ? ' on' : '') + '" data-act="place-eq" data-place="' + pl + '" data-v="' + esc(e) + '" aria-pressed="' + on + '">' + esc(e) + '</button>'; }).join('') + '</div></div>').join('') +
@@ -73,7 +74,7 @@ function profileHtml() {
 function saveProfile() {
   const p = clone(UI.pf); delete p.id;
   p.heightCm = num(p.heightCm);
-  ['restDay', 'teamDays', 'matchDays', 'equipmentOff', 'places', 'trials', 'schedule', 'partners', 'emphasis', 'geo'].forEach(k => { if (p[k] === undefined && S.data.profile && S.data.profile[k] !== undefined) p[k] = S.data.profile[k]; });
+  ['restDay', 'teamDays', 'matchDays', 'equipmentOff', 'places', 'trials', 'schedule', 'partners', 'emphasis', 'geo', 'sick', 'block'].forEach(k => { if (p[k] === undefined && S.data.profile && S.data.profile[k] !== undefined) p[k] = S.data.profile[k]; });
   if (p.restDay === undefined) p.restDay = 6;
   put('profile', 'main', p).then(() => toast('Perfil guardado.'));
   closeSheet();
@@ -191,3 +192,103 @@ function importData(ev) {
   };
   r.readAsText(file);
 }
+
+/* ---------- Pretemporada (v4.6) ---------- */
+const BLOCK_FASE_N = { carga: 'Carga', afinamiento: 'Afinamiento', previa: 'Previa a la prueba', prueba: 'Día de la prueba' };
+function blockCardHtml(st, today) {
+  const b = (S.data.profile || {}).block;
+  const active = !!(b && b.tipo === 'pretemporada' && (!b.hasta || b.hasta >= today));
+  let h = '<section class="card"><div class="stack"><div class="ed-head"><span class="kicker">Pretemporada</span>' + (active ? '<button class="btn xs" data-act="block-edit">Editar</button>' : '') + '</div>';
+  if (active) {
+    const bi = blockInfo(st, today);
+    h += '<div class="h3">' + capFirst(fmtDate(b.desde)) + (b.hasta ? ' → ' + fmtDate(b.hasta) : '') + '</div>' +
+      '<p class="sub">' + (bi ? 'Día ' + bi.day + ' de ' + bi.total + ' · ' + BLOCK_FASE_N[bi.fase] : 'Empieza el ' + fmtDateLong(b.desde)) + '. Intervalos de resistencia, sprint, agilidad, potencia y balón; afinamiento desde 6 días antes de la prueba.</p>';
+    if (st.phase < 3) h += note('warn', 'Se aplica desde F3: en ' + PHASES[st.phase].n + ' manda la rehabilitación.');
+    h += '<div class="grid2"><button class="btn sm ghost" data-act="guide" data-g="pretemporada">' + ic('info') + 'Cómo funciona</button><button class="btn sm ghost" data-act="block-end">' + ic('x') + 'Terminar</button></div>';
+  } else {
+    h += '<p class="sub">Un bloque corto hacia una prueba: días altos y medios alternados, intervalos de resistencia, sprints repetidos y afinamiento al final.</p>' +
+      '<button class="btn sm" data-act="block-edit">' + ic('plus') + 'Empezar una pretemporada</button>';
+  }
+  return h + '</div></section>';
+}
+function openPreBlock() {
+  const p = S.data.profile || {}, b = p.block && p.block.tipo === 'pretemporada' ? p.block : null, today = todayStr();
+  const trial = ((p.trials || []).filter(t => t > today).sort()[0]) || '';
+  UI.blk = { desde: b ? b.desde : addDays(today, 1), hasta: b ? (b.hasta || '') : trial, trial: true };
+  openSheet({ id: 'block', render: preBlockSheetHtml });
+}
+function preBlockSheetHtml() {
+  const q = UI.blk;
+  return sheetHead('Pretemporada', 'Hacia la prueba') + '<div class="sheet-body">' +
+    '<div class="grid2"><div class="field"><label for="blk-desde">Desde</label><input class="input" type="date" id="blk-desde" value="' + esc(q.desde || '') + '" data-bind="blk" data-name="desde"></div>' +
+    '<div class="field"><label for="blk-hasta">Hasta</label><input class="input" type="date" id="blk-hasta" value="' + esc(q.hasta || '') + '" data-bind="blk" data-name="hasta"></div></div>' +
+    toggleHtml('blk-trial', q.trial, 'Ese día tengo una prueba', 'Se suma a tus pruebas: el plan afina desde 6 días antes, descansa en P-2 y activa en P-1.') +
+    '<p class="sub">Días altos (mar, jue, sáb): fuerza o potencia, golpeo, sprint y sprints repetidos, agilidad o juego. Días medios (lun, mié, vie): intervalos de resistencia, balón y tren superior o prevención. Las escaleras K y S y las reglas de dolor no cambian.</p>' +
+    '<div class="sheet-foot"><button class="btn primary lg" data-act="block-save">Guardar</button></div></div>';
+}
+function saveBlock() {
+  const q = UI.blk;
+  const desde = ($('#blk-desde') || {}).value || q.desde, hasta = ($('#blk-hasta') || {}).value || q.hasta;
+  if (!desde) { toast('Elige desde cuándo.', 'warn'); return; }
+  if (hasta && hasta < desde) { toast('La fecha final va después del inicio.', 'warn'); return; }
+  updateProfile(p => {
+    p.block = { tipo: 'pretemporada', desde, hasta: hasta || null };
+    if (hasta && q.trial) { const t = (p.trials || []).slice(); if (!t.includes(hasta)) t.push(hasta); p.trials = t.sort(); }
+  }).then(() => toast('Pretemporada guardada: el plan ya cambió.'));
+  closeSheet();
+}
+function endBlock() { updateProfile(p => { delete p.block; }).then(() => toast('Pretemporada terminada: vuelve la semana normal.')); }
+
+/* ---------- Enfermedad (v4.6) ---------- */
+function sickCardHtml(st, today) {
+  const list = ((S.data.profile || {}).sick || []).slice().sort((a, b) => (a.from < b.from ? 1 : -1)).slice(0, 3);
+  let h = '<section class="card"><div class="stack"><span class="kicker">Enfermedad</span>';
+  if (list.length) h += '<div class="stack-sm">' + list.map(r => '<div class="lrow"><span class="fg2">' + capFirst(fmtDate(r.from)) + (r.to && r.to !== r.from ? ' → ' + fmtDate(r.to) : '') + '<br><span class="sub">' + esc((SICK_KINDS[r.kind] || SICK_KINDS.leve).n) + '</span></span>' +
+    '<button class="iconbtn sm plain" data-act="sick-del" data-v="' + esc(r.from) + '" aria-label="Quitar la enfermedad del ' + fmtDate(r.from) + '">' + ic('x') + '</button></div>').join('') + '</div>';
+  const rr = sickReturn(st, today);
+  if (rr) h += note('info', 'Vuelta gradual: día ' + rr.day + ' de ' + rr.n + (rr.hard ? ', hoy nada intenso.' : ', hoy sin estrenar nivel.'));
+  h += '<p class="sub">Lo planificado esos días queda como no hecho y no se recupera; al volver, el plan arranca de a poco.</p><button class="btn sm" data-act="sick-new">' + ic('plus') + 'Estuve enfermo</button>';
+  return h + '</div></section>';
+}
+function openSick() {
+  const today = todayStr();
+  UI.sick = { from: addDays(today, -1), to: today, kind: 'leve', mark: true };
+  openSheet({ id: 'sick', render: sickSheetHtml });
+}
+function sickSheetHtml() {
+  const q = UI.sick;
+  return sheetHead('Estuve enfermo', 'El plan vuelve de a poco') + '<div class="sheet-body">' +
+    '<div class="grid2"><div class="field"><label for="sick-from">Desde</label><input class="input" type="date" id="sick-from" value="' + esc(q.from) + '" data-bind="sick" data-name="from"></div>' +
+    '<div class="field"><label for="sick-to">Hasta</label><input class="input" type="date" id="sick-to" value="' + esc(q.to) + '" data-bind="sick" data-name="to"></div></div>' +
+    '<div class="field"><span class="lab">¿Cómo fue?</span><div class="pills">' + Object.keys(SICK_KINDS).map(k => '<button type="button" class="pill' + (q.kind === k ? ' on' : '') + '" data-act="sick-kind" data-v="' + k + '" aria-pressed="' + (q.kind === k) + '">' + esc(SICK_KINDS[k].n) + '</button>').join('') + '</div>' +
+    '<span class="hint">Vuelta gradual: ' + plural(SICK_KINDS[q.kind].ramp, 'día', 'días') + (SICK_KINDS[q.kind].hard ? ', el primero sin nada intenso' : ' sin estrenar nivel') + '.</span></div>' +
+    (SICK_KINDS[q.kind].doctor ? note('warn', 'Con dolor de pecho o falta de aire, consulta al médico antes de volver a entrenar fuerte.') : '') +
+    toggleHtml('sick-mark', q.mark, 'Marcar lo planificado como no hecho', 'Lo que ya registraste como hecho se mantiene.') +
+    '<div class="sheet-foot"><button class="btn primary lg" data-act="sick-save">Guardar</button></div></div>';
+}
+function saveSick() {
+  const q = UI.sick, today = todayStr();
+  const from = ($('#sick-from') || {}).value || q.from, to0 = ($('#sick-to') || {}).value || q.to;
+  if (!from) { toast('Elige desde cuándo.', 'warn'); return; }
+  const to = to0 && to0 >= from ? to0 : from;
+  /* Primero lo planificado (antes de que el perfil cambie el plan), después el perfil */
+  const marks = [], freeze = {}, plan = ((S.data.settings || {}).plan) || {};
+  if (q.mark) for (let d = from; d <= to && d <= today; d = addDays(d, 1)) {
+    const day = dayPlan(d);
+    if (!day) continue;
+    if (!plan[d]) freeze[d] = { types: day.sessions.map(s => s.type) };
+    for (const s of day.sessions) {
+      if (s.type === 'descanso' || FIXED_TYPES.includes(s.type) || findLog(d, s.type)) continue;
+      marks.push({ id: 's-' + d + '-' + s.type, doc: { date: d, type: s.type, title: s.title, done: false, source: 'app', sick: true, notes: 'Enfermo', exercises: [] } });
+    }
+  }
+  if (Object.keys(freeze).length) setPlanDays(freeze);
+  marks.forEach(m => put('sessions', m.id, m.doc));
+  updateProfile(p => {
+    const list = (p.sick || []).filter(r => !(r.from <= to && (r.to || r.from) >= from));
+    list.push({ from, to, kind: q.kind || 'leve' });
+    p.sick = list.sort((a, b) => (a.from < b.from ? -1 : 1));
+  }).then(() => toast(marks.length ? plural(marks.length, 'sesión marcada', 'sesiones marcadas') + ' como no hechas. El plan vuelve de a poco.' : 'Guardado. El plan vuelve de a poco.'));
+  closeSheet();
+}
+function deleteSick(from) { updateProfile(p => { p.sick = (p.sick || []).filter(r => r.from !== from); }).then(() => toast('Enfermedad quitada.')); }

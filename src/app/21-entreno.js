@@ -149,6 +149,6 @@ function templatesPanel() {
 }
 function guidesPanel(st) {
   const g = (id, icon, tone, t, s) => '<button class="blk" data-act="guide" data-g="' + id + '"><span class="c ' + tone + '">' + ic(icon) + '</span><div class="grow"><div class="t">' + t + '</div><div class="s">' + s + '</div></div>' + ic('chev') + '</button>';
-  return '<div class="stack-sm">' + g('respiracion', 'wind', 'sleep', 'Respiración guiada', '5 minutos para pasar a modo recuperación') + g('prueba', 'trophy', 'lime', 'Día de prueba', 'Qué hacer antes, durante y después') +
+  return '<div class="stack-sm">' + g('respiracion', 'wind', 'sleep', 'Respiración guiada', '5 minutos para pasar a modo recuperación') + g('prueba', 'trophy', 'lime', 'Día de prueba', 'Qué hacer antes, durante y después') + g('pretemporada', 'run', 'load', 'Pretemporada', 'Resistencia, velocidad y afinamiento hacia la prueba') +
     g('recuperacion', 'moon', 'sleep', 'Recuperación por evidencia', 'Qué funciona y qué evitar') + g('porque', 'book', '', 'Por qué este plan', 'El recto femoral se entrena largo') + g('fks', 'info', '', 'Qué significan F, K y S', 'Fases, golpeo y sprint en 1 minuto') + '</div>';
 }

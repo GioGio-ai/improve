@@ -432,6 +432,22 @@ const BANK = [
     'Boca arriba, banda en la planta del pie, pierna extendida hacia arriba. 30-45 s por lado, sin rebotes.', null),
   X('mov_gluteo_supino', 'Movilidad de glúteo y piriforme (boca arriba)', 'movilidad', '—', 'T', 'U', 'MOV', 1, 'gluteo cadera', 'foam mov_cadera', 1, 'peso corporal', 'Glúteo, rotadores',
     'Boca arriba, tobillo sobre la rodilla contraria; lleva las piernas al pecho. Respira 45 s por lado. Reemplaza al rodillo en casa.', null),
+
+  // ---------- PRETEMPORADA (v4.6): resistencia intermitente, sprints repetidos y agilidad ----------
+  X('int_1010', 'Intervalos 10/10', 'resistencia', 'conc', 'S', 'B', 'RE', 3, 'cuad isquio pantorrilla', 'intervalos', 3, 'conos', 'Resistencia aeróbica de alta intensidad',
+    '10 s rápido hasta el cono (≈ 45-50 m) y 10 s de trote suave. Cada bloque dura 6 min: el pitido marca el cambio. RPE 7-8: el último igual de rápido que el primero.', null),
+  X('int_4x4', 'Intervalos 4 × 4 min con balón', 'resistencia', 'conc', 'S', 'B', 'RE', 4, 'cuad isquio pantorrilla', 'intervalos', 3, 'conos,balón', 'Potencia aeróbica',
+    'Conducción en circuito por la cancha con cambios de ritmo, slalom y paredes, al 90-95 % de tu pulso máximo: solo puedes decir palabras sueltas. Entre series, 3 min de trote.', null),
+  X('int_1515', 'Intervalos 15/15 con giro', 'resistencia', 'conc', 'S', 'B', 'RE', 3, 'cuad isquio aductor', 'intervalos', 3, 'conos', 'Resistencia con frenadas',
+    '15 s de ida y vuelta (≈ 2 × 25 m con giro de 180°) y 15 s caminando. Frena en pasos cortos y gira con la cadera baja. El pitido marca el cambio.', null),
+  X('rsa_20', 'Sprints repetidos de 20 m', 'sprint', 'conc', 'S', 'B', 'V', 4, 'isquio gluteo rf', 'rsa', 3, 'conos', 'Capacidad de repetir sprints',
+    'Salida de pie, 20 m al porcentaje del día y vuelta caminando en la pausa. Entre series, 4 min caminando o tocando balón suave.', null),
+  X('agil_escalera', 'Pies rápidos en escalera o conos', 'cod', 'pliom', 'S', 'B', 'V', 2, 'pantorrilla tobillo', 'agil', 2, 'conos', 'Frecuencia y coordinación de pasos',
+    'Contactos cortos sobre la punta del pie, brazos activos y mirada al frente. Cambia el dibujo en cada serie (dentro-fuera, lateral, dos pies).', null),
+  X('cod_cortes', 'Cambios de dirección a 45° y 90°', 'cod', 'mixta', 'F', 'B', 'V', 3, 'aductor isquio rodilla tobillo', 'agil', 3, 'conos', 'Frenada y cambio de dirección',
+    '10 m de carrera, frena en 2-3 pasos, corta a 45° o 90° con el apoyo por fuera del cuerpo y acelera 5-10 m. Alterna el lado en cada repetición.', null),
+  X('cod_reactivo', 'Cambio de dirección reactivo', 'cod', 'mixta', 'F', 'B', 'V', 4, 'aductor isquio rodilla', 'agil', 4, 'conos', 'Agilidad con decisión',
+    'Dos conos a 5 m a cada lado. Alguien te marca el lado, o lo decides al llegar a la marca: reacciona, corta y acelera. Como en el área.', null),
 ];
 
 /* -------- Progresión de golpeo (K) -------- */
@@ -507,7 +523,7 @@ const PLACES_DEFAULT = {
   casa: { eq: ['banda', 'pared'], space: false },
 };
 /* Ejercicios que necesitan espacio para correr o patear (solo en la cancha) */
-const SPACE_IDS = ['trote_suave', 'bounds', 'triple_salto', 'pases_prog', 'rt_circuito', 'salto_cabeceo', 'acel_prog', 'skips', 'a_skip', 'fifa11'];
+const SPACE_IDS = ['trote_suave', 'bounds', 'triple_salto', 'pases_prog', 'rt_circuito', 'salto_cabeceo', 'acel_prog', 'skips', 'a_skip', 'fifa11', 'int_1010', 'int_4x4', 'int_1515'];
 function needsSpace(ex) {
   if (!ex) return false;
   if (SPACE_IDS.includes(ex.id)) return true;

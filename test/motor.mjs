@@ -432,7 +432,9 @@ if (freezeTargets) {
   const p7 = kFirst7 && A.plans.find(x => x.date === kFirst7.date);
   ok(!kFirst7 || (p7 && ses(p7.day, 'golpeo').field.target === 30), 'Sim F2: la primera sesión de K7 no es el paso 1');
   const k8s = A.plans.filter(x => (ses(x.day, 'golpeo') || {}).level === 8);
-  ok(k8s.every(x => ses(x.day, 'golpeo').field.pre || types(x.day).includes('rt')), 'Sim F2: K8 sin fatiga previa el ' + k8s.filter(x => !ses(x.day, 'golpeo').field.pre && !types(x.day).includes('rt')).map(x => x.date).join(','));
+  /* v4.6: los sprints repetidos o el juego del día también dan la fatiga previa del K8 */
+  const fat = (x) => ses(x.day, 'golpeo').field.pre || ['rt', 'rsa', 'juego'].some(t => types(x.day).includes(t));
+  ok(k8s.every(fat), 'Sim F2: K8 sin fatiga previa el ' + k8s.filter(x => !fat(x)).map(x => x.date).join(','));
   const days48 = A.plans.filter(x => (ses(x.day, 'golpeo') || {}).level >= 1).length;
   ok(days48 > 0, 'Sim F2: sin golpeo');
   console.log('  sim F2 → fase final F' + A.plans[A.plans.length - 1].phase + ' · subidas K ' + A.levelUps.k.join(' ') + ' · S ' + A.levelUps.s.join(' '));

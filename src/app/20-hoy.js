@@ -39,6 +39,11 @@ function statusChips(st, today) {
   if (st.injury && st.phase <= 5) chips.push('<a class="chip blue" href="#progreso">' + PHASES[st.phase].n + ' · ' + esc(PHASES[st.phase].t) + '</a>');
   const goal = prof.targetDate;
   if (goal) { const left = diffDays(goal, today); if (left >= 0) chips.push('<a class="chip ' + (left <= 7 ? 'lime' : '') + '" href="#progreso">' + ic('target') + (left === 0 ? 'Objetivo hoy' : 'Listo en ' + plural(left, 'día', 'días')) + '</a>'); }
+  /* Pretemporada y enfermedad (v4.6) */
+  const bi = blockInfo(st, today), sk = sickOn(st, today), rr = sk ? null : sickReturn(st, today);
+  if (sk) chips.push('<a class="chip sleep" href="#perfil">' + ic('moon') + 'Enfermo · descanso</a>');
+  else if (rr) chips.push('<a class="chip" href="#perfil">' + ic('leaf') + 'Vuelta gradual · día ' + rr.day + ' de ' + rr.n + '</a>');
+  if (bi && st.phase >= 3) chips.push('<button class="chip load" data-act="guide" data-g="pretemporada">' + ic('run') + 'Pretemporada · día ' + bi.day + ' de ' + bi.total + ' · ' + esc((BLOCK_FASE_N[bi.fase] || '').toLowerCase()) + '</button>');
   const kind = agendaFor(today).kind;
   chips.push('<span class="chip ' + (kind === 'alto' || kind === 'prueba' ? 'load' : kind === 'descanso' ? 'sleep' : '') + '">' + ic(kind === 'descanso' ? 'moon' : 'flame') + esc(KIND_N[kind] || '') + '</span>');
   chips.push(molChips(today));

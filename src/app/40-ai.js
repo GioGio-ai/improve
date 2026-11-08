@@ -216,6 +216,8 @@ function coachContext(st, today) {
     lesion: st.injury ? { zona: st.injury.zone, lado: st.injury.side === 'i' ? 'izquierdo' : 'derecho', fecha: st.injury.date, localizacion: st.injury.location, ecografia: (st.injury.imaging || []).map(i => i.text), mecanismo: st.injury.mechanism, recaidas: st.injury.recurrences } : null,
     fase: st.injury ? PHASES[st.phase].n + ' ' + PHASES[st.phase].t : 'Rendimiento',
     criteriosSiguienteFase: st.criteria ? st.criteria.items.map(i => ({ criterio: i.label, cumplido: i.ok, dato: i.detail, obligatorio: i.req })) : null,
+    pretemporada: (() => { const bi = blockInfo(st, today); return bi ? { desde: bi.b.desde, hasta: bi.end, prueba: bi.trial, dia: bi.day, total: bi.total, fase: bi.fase, enfoque: 'resistencia intermitente (10/10, 4×4 con balón, 15/15), velocidad, agilidad, potencia y balón; afinamiento desde P-6' } : null; })(),
+    enfermedad: (() => { const sk = sickOn(st, today), rr = sickReturn(st, today), last = sickRanges(st).slice(-1)[0]; return sk || rr || (last && last.to >= addDays(today, -14)) ? { enfermoHoy: !!sk, vuelta: rr ? { dia: rr.day, de: rr.n } : null, ultima: last || null } : null; })(),
     golpeoDemostradoEnCancha: st.kick.demo ? { nivel: 'K' + st.kick.demo.level, fecha: st.kick.demo.date } : null,
     cargaDeMas: (() => { const c = carryRule(st, today, today); return c ? { nivel: c.tier, carga: c.load, fecha: c.date, regla: c.note } : null; })(),
     niveles: { golpeo: 'K' + st.kick.level + ' (' + st.kick.streak + '/' + st.kick.req + ')', sprint: 'S' + st.sprint.level + ' (' + st.sprint.streak + '/' + st.sprint.req + ')', rt: RT_LEVELS[st.rt.idx] },

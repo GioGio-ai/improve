@@ -60,7 +60,7 @@ function exStepFromItem(it, date, sess) {
     kind: 'ex', sess: sess || null, id: it.id, n: it.n || ex.n, slot: it.slot || null, spec: it.spec || { s: 3, r: [8, 10] }, side: !!it.side,
     rest: it.rest !== undefined ? it.rest : restFor(ex, it.spec, it.slot), mode: specMode(it.spec), sets: sg.sets, note: sg.note,
     lastDate: lp ? fmtDate(lp.date) : '', lastTxt: lp ? fmtSetsShort(lp.sets) : '', lastNote: lp && lp.notes ? lp.notes : '', lastFb: lp ? lp.fb : null,
-    pain: null, notes: '', fb: null, group: it.group || null, tags: it.tags || null, img: ex.img || it.img || null, rf: (ex.z || []).includes('rf'), inc: incFor(ex), eq: ex.eq || [], doms: !!it.doms, isoTrial: !!it.isoTrial,
+    pain: null, notes: '', fb: null, group: it.group || null, tags: it.tags || null, img: ex.img || it.img || null, rf: (ex.z || []).includes('rf'), inc: incFor(ex), eq: ex.eq || [], doms: !!it.doms, isoTrial: !!it.isoTrial, cycle: it.cycle || null, run: ['intervalos', 'rsa', 'agil'].includes(it.slot),
   };
 }
 function warmStep(w) {
@@ -161,6 +161,12 @@ function updateTimers() {
   const t = TR.hold || TR.rest;
   if (!t) return;
   const rem = (t.until - now) / 1000, sec = Math.ceil(rem);
+  /* Intervalos (10/10, 15/15): un pitido en cada cambio entre rápido y suave */
+  const hs = TR.hold ? TR.steps[TR.hold.step] : null;
+  if (hs && hs.cycle) {
+    const ci = Math.floor(Math.max(0, t.total - rem) / hs.cycle);
+    if (TR.hold.ci !== ci) { const first = TR.hold.ci === undefined; TR.hold.ci = ci; if (!first && rem > 1) beep(1, ci % 2 ? 520 : 990, false); const lb = $('#tr-hold-lbl'); if (lb) lb.textContent = holdPhase(hs, ci); }
+  }
   $$('[data-timer-v]').forEach(el => setDigits(el, mmss(sec)));
   const ring = $('#tr-ring'); if (ring) { const c = Number(ring.getAttribute('data-c')); ring.setAttribute('stroke-dasharray', (c * clamp(rem / t.total, 0, 1)).toFixed(1) + ' ' + c.toFixed(1)); }
   const ov = $('#tr-rest'); if (ov && TR.rest) ov.classList.toggle('last', sec <= 10);
@@ -313,14 +319,14 @@ function quickRow(s) {
 }
 function setValText(stp, x) {
   const mode = stp.mode, kg = num(x.kg);
-  const v = mode === 'min' ? (num(x.secs) !== null ? fmtNum(Math.round(x.secs / 6) / 10) + ' min' : '—') : mode === 'time' ? (num(x.secs) !== null ? fmtNum(x.secs) + ' s' : '—') : mode === 'dist' ? (num(x.m) !== null ? fmtNum(x.m) + ' m' : '—') : mode === 'contacts' ? (num(x.c) !== null ? fmtNum(x.c) + ' cont.' : '—') : (num(x.reps) !== null ? fmtNum(x.reps) + ' rep' : '— rep');
+  const v = mode === 'min' ? (num(x.secs) !== null ? fmtNum(Math.round(x.secs / 6) / 10) + ' min' : '—') : mode === 'time' ? (num(x.secs) !== null ? (x.secs >= 120 && x.secs % 60 === 0 ? fmtNum(x.secs / 60) + ' min' : fmtNum(x.secs) + ' s') : '—') : mode === 'dist' ? (num(x.m) !== null ? fmtNum(x.m) + ' m' : '—') : mode === 'contacts' ? (num(x.c) !== null ? fmtNum(x.c) + ' cont.' : '—') : (num(x.reps) !== null ? fmtNum(x.reps) + ' rep' : '— rep');
   return (kg ? fmtNum(kg) + ' kg × ' : '') + v;
 }
 function setRowHtml(stp, x, k, P, curK) {
   const mode = stp.mode, attrs = (f) => 'data-k="' + k + '" data-f="' + f + '"';
   const sides = stp.side ? 2 : 1, setNo = Math.floor(k / sides) + 1;
   const injured = x.side && x.side === ST.side && ST.injuryActive && stepIsLeg(stp);
-  const showKg = !(mode === 'contacts' || mode === 'min' || (stp.warmup && mode !== 'reps'));
+  const showKg = !(stp.run || mode === 'contacts' || mode === 'min' || (stp.warmup && mode !== 'reps'));
   const editK = P === 'tr' && TR.edit !== undefined && TR.edit !== null ? TR.edit : curK;
   const open = P !== 'tr' || k === editK;
   const label = '<span class="i">' + setNo + (x.side ? '<small class="' + (injured ? 'inj' : '') + '">' + fmtSide(x.side) + '</small>' : '') + '</span>';
@@ -334,7 +340,7 @@ function setRowHtml(stp, x, k, P, curK) {
   else if (mode === 'dist') val = stepperHtml(P + '-' + k + '-m', x.m, P + '-step', attrs('m'), 'm');
   else if (mode === 'contacts') val = stepperHtml(P + '-' + k + '-c', x.c, P + '-step', attrs('c'), 'cont');
   else val = stepperHtml(P + '-' + k + '-reps', x.reps, P + '-step', attrs('reps'), 'rep');
-  const title = x.side ? sideLong(x.side) + (injured ? ' · ' + legSideTag() : '') : 'Serie ' + setNo;
+  const title = x.side ? sideLong(x.side) + (injured ? ' · ' + legSideTag() : '') : (stp.slot === 'intervalos' ? 'Bloque ' : stp.run && mode === 'dist' ? 'Sprint ' : 'Serie ') + setNo;
   return '<div class="set open' + (x.done ? ' done' : ' cur') + '"><div class="sh">' + label + '<span class="st-t">' + esc(title) + (stp.side ? '<small> · serie ' + setNo + '</small>' : '') + '</span>' + go + '</div>' +
     '<div class="sg' + (showKg ? '' : ' one') + '">' + (showKg ? stepperHtml(P + '-' + k + '-kg', x.kg, P + '-step', attrs('kg'), 'kg') : '') + val + '</div></div>';
 }
@@ -354,7 +360,7 @@ function trExHtml(s) {
   if (molS && !s.warmup) h += '<div class="note pain">' + ic('warn') + '<div>Dolor ' + molS.nivelAct + '/10 en ' + esc(zoneName(molS.zona, molS.lado).toLowerCase()) + ': este ejercicio carga la zona. Mejor saltarlo hoy.<div><button class="btn sm" data-act="tr-skip">' + ic('chev') + 'Saltar este ejercicio</button></div></div></div>';
   if (s.doneAs) h += note('blue', 'Variante de hoy en lugar de ' + esc((exInfo(s.doneAs.from) || {}).n || s.doneAs.from) + '.');
   if (!s.warmup) {
-    h += '<div class="target">' + (s.lastTxt ? '<span>Última vez · ' + esc(s.lastDate) + (s.lastFb && FEEDBACK[s.lastFb] ? ' · ' + FEEDBACK[s.lastFb].n.toLowerCase() : '') + '</span><b>' + esc(s.lastTxt) + '</b>' : '<span>Primera vez con este ejercicio</span><b>Anota el peso</b>') + '</div>';
+    h += '<div class="target">' + (s.lastTxt ? '<span>Última vez · ' + esc(s.lastDate) + (s.lastFb && FEEDBACK[s.lastFb] ? ' · ' + FEEDBACK[s.lastFb].n.toLowerCase() : '') + '</span><b>' + esc(s.lastTxt) + '</b>' : '<span>Primera vez con este ejercicio</span><b>' + (s.run ? 'Toca cada ' + (s.slot === 'intervalos' ? 'bloque' : 'repetición') : 'Anota el peso') + '</b>') + '</div>';
     if (s.note) h += note('blue', esc(s.note));
     if (s.lastNote) h += '<div class="lastnote">' + ic('pen') + ' Tu nota: “' + esc(s.lastNote) + '”</div>';
   }
@@ -550,6 +556,7 @@ function setDesc(s, x, k) {
   const v = s.mode === 'time' ? fmtNum(x.secs) + ' s' : s.mode === 'min' ? Math.round((num(x.secs) || 0) / 60) + ' min' : s.mode === 'dist' ? fmtNum(x.m) + ' m' : s.mode === 'contacts' ? fmtNum(x.c) + ' contactos' : (num(x.reps) !== null ? fmtNum(x.reps) + ' rep' : '');
   return 'Serie ' + (Math.floor(k / sides) + 1) + (x.side ? ' · ' + sideLong(x.side).toLowerCase() : '') + ' · ' + v + (num(x.kg) ? ' · ' + fmtKg(x.kg) : '');
 }
+function holdPhase(step, ci) { return ci % 2 ? 'Suave · ' + step.cycle + ' s' : 'Rápido · ' + step.cycle + ' s'; }
 function timerSpan(cls, t) { const v = mmss(Math.ceil((t.until - Date.now()) / 1000)); return '<span class="' + cls + '" data-timer-v data-v="' + v + '">' + digitsHtml(v) + '</span>'; }
 function restOverlay(enter) {
   enter = enter === undefined ? true : enter;
@@ -559,7 +566,7 @@ function restOverlay(enter) {
   const nx = TR.rest ? nextSetInfo() : null;
   const hs = TR.hold ? TR.steps[TR.hold.step] : null;
   return '<div class="rest' + (TR.hold ? ' hold' : '') + (enter ? ' enter' : '') + '" id="tr-rest" role="timer" aria-live="off">' +
-    '<div class="top"><span class="lbl">' + (TR.hold ? 'Aguanta' : 'Descanso') + '</span><button class="btn sm glass" data-act="tr-rest-min">' + ic('min') + 'Ver ejercicio</button></div>' +
+    '<div class="top"><span class="lbl" id="tr-hold-lbl">' + (TR.hold ? (hs && hs.cycle ? holdPhase(hs, TR.hold.ci || 0) : 'Aguanta') : 'Descanso') + '</span><button class="btn sm glass" data-act="tr-rest-min">' + ic('min') + 'Ver ejercicio</button></div>' +
     '<div class="dial"><svg viewBox="0 0 ' + size + ' ' + size + '"><circle cx="' + size / 2 + '" cy="' + size / 2 + '" r="' + r + '" fill="none" stroke="rgba(255,255,255,.1)" stroke-width="' + sw + '"/><circle id="tr-ring" data-c="' + c.toFixed(1) + '" cx="' + size / 2 + '" cy="' + size / 2 + '" r="' + r + '" fill="none" stroke="url(#' + (TR.hold ? 'lg-lime' : 'lg-white') + ')" stroke-width="' + sw + '" stroke-linecap="round" stroke-dasharray="' + c.toFixed(1) + ' ' + c.toFixed(1) + '"/></svg>' + timerSpan('digits', t) + '</div>' +
     (nx ? '<div class="next"><span class="k">Siguiente</span><span class="n">' + esc(nx.n) + '</span>' + (nx.d ? '<span class="d">' + esc(nx.d) + '</span>' : '') + '</div>' : hs ? '<div class="next"><span class="k">En curso</span><span class="n">' + esc(hs.n) + '</span><span class="d">' + esc(setDesc(hs, hs.sets[TR.hold.k], TR.hold.k)) + '</span></div>' : '<span></span>') +
     '<div class="ctl">' + (TR.hold ? '<button class="w" data-act="tr-hold-cancel">Cancelar</button><button data-act="tr-hold-add" data-d="' + (TR.hold.total > 90 ? 30 : 5) + '" aria-label="Sumar tiempo">+' + (TR.hold.total > 90 ? 30 : 5) + '</button><button class="skip w" data-act="tr-hold-stop">Terminé</button>'
