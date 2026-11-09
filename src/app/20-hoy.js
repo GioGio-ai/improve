@@ -3,6 +3,8 @@
    ============================================================ */
 const PX_MIN = 1.25;
 const MIN_BLK = 46;
+/* Alto mínimo (px) para mostrar el bloque en dos líneas y en tres (hora, título y detalle) */
+const TL_TWO_LINES = 50, TL_THREE_LINES = 68;
 const DRAG = { active: false };
 
 function viewHoy(st, today) {
@@ -15,7 +17,7 @@ function viewHoy(st, today) {
   const hero = isToday ? nextHero(day, ag, today) : dayHero(day, date, today);
   const tone = /class="hero k-rest/.test(hero) ? ' k-rest' : /class="hero k-done/.test(hero) ? ' k-done' : '';
   let h = '<div class="aura' + tone + '" aria-hidden="true"></div><div class="section hoy-head"><header class="topbar"><div class="grow"><h1 class="h1">' + capFirst(DOW_LONG[weekday(today)]) + ' ' + d.getDate() + '</h1></div>' +
-    '<a class="iconbtn" href="#aprende" aria-label="Aprende: datos e investigación">' + ic('book') + '</a><a class="iconbtn glow" href="#coach" aria-label="Coach con IA">' + ic('spark') + '</a><a class="avatar" href="#perfil" aria-label="Perfil">' + avatarImg() + '</a></header>';
+    '<a class="iconbtn" href="#aprende" aria-label="Aprende: datos e investigación">' + ic('book') + '</a><a class="iconbtn glow" href="#coach" aria-label="Coach con IA">' + ic('spark') + '</a><a class="avatar-hit" href="#perfil" aria-label="Perfil"><span class="avatar">' + avatarImg() + '</span></a></header>';
   h += statusChips(st, today) + weekStrip(today, date) + '</div>';
   /* Entrenamiento abierto o sin enviar: siempre arriba */
   const live = trainingBanner();
@@ -152,7 +154,7 @@ function pendingHero(pend, today, now) {
   if (pend.length === 1) {
     const p = pend[0];
     return '<section class="hero k-pend"><span class="tag"><span class="d"></span>Sin registrar · ' + esc(pendWhen(p, today, now)) + '</span><div class="t">' + esc(pendQuestion(p)) + '</div>' +
-      '<div class="cta">' + pendQuickBtn(p, 'lime lg').replace('btn sm', 'btn') + '<button class="btn lg" data-act="pend-opts" data-date="' + p.date + '" data-key="' + p.it.key + '">' + ic('more') + 'Otras opciones</button></div></section>';
+      '<div class="cta">' + pendQuickBtn(p, 'lime lg').replace('btn sm', 'btn') + '<button class="btn lg" data-act="pend-opts" data-date="' + p.date + '" data-key="' + p.it.key + '">' + ic('dots') + 'Otras opciones</button></div></section>';
   }
   return '<section class="hero k-pend"><span class="tag"><span class="d"></span>Sin registrar</span><div class="t">Te faltan ' + pend.length + ' registros</div>' + pendingPanel(pend, today, now, true) + '</section>';
 }
@@ -288,13 +290,15 @@ function timelineHtml(ag, date, today) {
     }
     let done = false, skipped = false, sub = it.sub || '';
     if (it.kind === 'train' || it.kind === 'recup') { const d = blockDone(it.block, date); done = d.all; skipped = done && blockSkipped(it.block, date); sub = skipped ? 'No la hiciste' : it.block.short + (d.some && !d.all ? ' · en parte' : ''); if (skipped) done = false; }
-    const compact = l.hgt < 54;
+    /* Tres alturas: una línea (< 50 px), dos líneas con la hora al lado del título (< 68 px) y la completa.
+       Antes, entre 54 y 67 px (≈ 45-53 min) las tres líneas no entraban y el título quedaba cortado. */
+    const compact = l.hgt < TL_TWO_LINES, mid = !compact && l.hgt < TL_THREE_LINES, short = compact || mid;
     const isNow = now !== null && now >= it.start && now < it.end;
     const late = now !== null && !done && !skipped && !it.optional && !it.marker && it.kind !== 'nap' && now > it.end + PEND_GRACE.train;
     if (late) sub = 'Sin registrar' + (sub ? ' · ' + sub : '');
-    const cls = 'tl-blk k-' + it.kind + (it.intense ? ' int' : '') + (it.optional ? ' optional' : '') + (done ? ' done' : '') + (skipped ? ' skipped' : '') + (late ? ' late' : '') + (warnKeys.has(it.key) ? ' warn' : '') + (compact ? ' compact' : '') + (isNow ? ' now-on' : '');
+    const cls = 'tl-blk k-' + it.kind + (it.intense ? ' int' : '') + (it.optional ? ' optional' : '') + (done ? ' done' : '') + (skipped ? ' skipped' : '') + (late ? ' late' : '') + (warnKeys.has(it.key) ? ' warn' : '') + (compact ? ' compact' : mid ? ' mid' : '') + (isNow ? ' now-on' : '');
     h += '<div class="' + cls + '" data-key="' + it.key + '" style="top:' + l.top + 'px;height:' + l.hgt + 'px">' +
-      '<button class="main" data-act="ag-open" data-date="' + date + '" data-key="' + it.key + '" aria-label="' + esc(it.title + ', ' + fmtHM(it.start) + ' a ' + fmtHM(it.end) + (sub ? ', ' + sub : '') + (done ? ', hecho' : '')) + '"><span class="tm">' + fmtHM(it.start) + (compact ? '' : '–' + fmtHM(it.end)) + '</span><span class="ti">' + esc(it.title) + (compact && sub ? '<span class="su-in"> · ' + esc(sub) + '</span>' : '') + '</span>' + (sub && !compact ? '<span class="su">' + esc(sub) + '</span>' : '') + '</button>' +
+      '<button class="main" data-act="ag-open" data-date="' + date + '" data-key="' + it.key + '" aria-label="' + esc(it.title + ', ' + fmtHM(it.start) + ' a ' + fmtHM(it.end) + (sub ? ', ' + sub : '') + (done ? ', hecho' : '')) + '"><span class="tm">' + fmtHM(it.start) + (short ? '' : '–' + fmtHM(it.end)) + '</span><span class="ti">' + esc(it.title) + (compact && sub ? '<span class="su-in"> · ' + esc(sub) + '</span>' : '') + '</span>' + (sub && !compact ? '<span class="su">' + esc(sub) + '</span>' : '') + '</button>' +
       '<div class="side">' + (done ? '<span class="ok" aria-label="Hecho">' + ic('check') + '</span>' : skipped ? '<span class="ok skip" aria-label="No hecho">' + ic('x') + '</span>' : '') + (it.movable ? '<span class="grip" data-drag="' + it.key + '" data-date="' + date + '" role="button" tabindex="0" aria-label="Mover ' + esc(it.title) + '">' + ic('grip') + '</span>' : '') + '</div></div>';
   }
   if (now !== null && now >= r0 && now <= r1) h += '<div class="tl-now" style="top:' + ((now - r0) * PX_MIN) + 'px"><span>' + fmtHM(now) + '</span></div>';

@@ -25,6 +25,7 @@
 .tprog i.w.c { background: var(--amber); }
 .tstage { display: flex; align-items: center; justify-content: space-between; gap: var(--s-2); font-size: var(--fs-2); color: var(--fg-3); }
 .tstage .chip { min-height: 32px; }
+.tstage .chip::after { inset: -6px -6px; } /* «Ya calenté · saltar»: 44 px para tocar */
 
 .excard { display: grid; gap: var(--s-4); }
 .exhead { display: grid; grid-template-columns: 88px minmax(0, 1fr); gap: 14px; align-items: center; }
@@ -70,7 +71,9 @@
 .set.open .stepper { grid-template-columns: 44px minmax(0, 1fr) 44px; gap: var(--s-1); }
 .set.open .stepper > button { height: 52px; border-radius: var(--r-sm); font-size: var(--fs-5); }
 .set.open .stepper input { height: 52px; font-size: 20px; padding: 0 22px 0 var(--s-1); }
-@media (max-width: 379px) { .set.open .stepper { grid-template-columns: 38px minmax(0, 1fr) 38px; gap: 2px; } .set.open .stepper input { font-size: var(--fs-4); padding: 0 16px 0 2px; } }
+/* Teléfonos angostos (< 380 px): kg y repeticiones uno debajo del otro, con botones de 44 px y lugar para «102,5».
+   Antes se achicaban los botones a 38 px y el campo a 49 px. */
+@media (max-width: 379px) { .set.open .sg { grid-template-columns: minmax(0, 1fr); gap: var(--s-2); } }
 .set.cur { background: linear-gradient(165deg, rgba(91, 140, 255, 0.16), rgba(255, 255, 255, 0.03)); border-color: var(--blue-line); box-shadow: 0 18px 40px -26px rgba(74, 98, 255, 0.7); }
 .set.done .sv { color: var(--fg-2); }
 .set .go { width: 56px; height: 52px; border-radius: var(--r-md); display: grid; place-items: center; color: var(--fg-2); background: var(--fill-2); transition: transform var(--dur-1) var(--ease-out); }

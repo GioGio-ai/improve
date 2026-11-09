@@ -1,7 +1,7 @@
 /* ============================================================
    NÚCLEO: datos, render, capas (hojas y entrenamiento), avisos
    ============================================================ */
-const VERSION = '5.1.0';
+const VERSION = '5.1.1';
 const COLS = {
   profile: 'single', settings: 'single', weights: 'list', injuries: 'list', tests: 'list', checkins: 'list', sessions: 'list',
   custom: 'list', traducciones: 'list', templates: 'list', agenda: 'list', molestias: 'list',
@@ -82,7 +82,7 @@ function markNav() {
 }
 
 /* ---------- Render ---------- */
-let renderQueued = false, deferRender = false, ST = null, lastView = null;
+let renderQueued = false, deferRender = false, ST = null, lastView = null, renderedDay = null;
 let TR = { open: false };
 const memo = {};
 function scheduleRender() { if (renderQueued) return; renderQueued = true; const go = () => { if (!renderQueued) return; renderQueued = false; render(); }; requestAnimationFrame(go); setTimeout(go, 60); }
@@ -95,7 +95,7 @@ function render() {
   UI.view = currentView(); markNav();
   if (!allLoaded()) { $('#view').innerHTML = skeletonView(); return; }
   for (const k in memo) delete memo[k];
-  ST = deriveState(engineData(), todayStr());
+  ST = deriveState(engineData(), todayStr()); renderedDay = todayStr();
   const fn = RENDERERS[UI.view] || RENDERERS.hoy;
   const view = $('#view');
   const y = window.scrollY, changed = lastView !== UI.view;
@@ -165,8 +165,17 @@ function clearLayers() { while (LAYERS.length) { const l = LAYERS.pop(); if (l.k
 function renderSheet(resetScroll) {
   const root = $('#sheet-root');
   const t = LAYERS.length && LAYERS[LAYERS.length - 1].kind === 'sheet' ? LAYERS[LAYERS.length - 1] : null;
-  if (!t) { root.innerHTML = ''; document.body.style.overflow = TR && TR.open ? 'hidden' : ''; return; }
-  const old = root.querySelector('.sheet');
+  if (!t) {
+    /* Al cerrar la última hoja, baja y el fondo se desvanece (antes desaparecía de golpe). No recibe toques mientras sale. */
+    const sc = root.querySelector('.scrim:not(.out)');
+    if (sc && !(window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches)) {
+      sc.classList.add('out'); sc.removeAttribute('data-act');
+      const sh = sc.querySelector('.sheet'); if (sh) { sh.removeAttribute('role'); sh.removeAttribute('aria-modal'); sh.setAttribute('aria-hidden', 'true'); }
+      setTimeout(() => { if (sc.parentNode) sc.parentNode.removeChild(sc); }, 260);
+    } else root.innerHTML = '';
+    document.body.style.overflow = TR && TR.open ? 'hidden' : ''; return;
+  }
+  const old = root.querySelector('.scrim:not(.out) .sheet');
   const y = old && !resetScroll ? old.scrollTop : 0;
   const sameSheet = old && old.getAttribute('data-sid') === String(t.id);
   root.innerHTML = '<div class="scrim' + (sameSheet ? ' still' : '') + '" data-act="scrim"><div class="sheet' + (t.full ? ' full' : '') + (sameSheet ? ' still' : '') + '" data-sid="' + esc(t.id) + '" role="dialog" aria-modal="true" aria-labelledby="sheet-title">' +
@@ -213,6 +222,13 @@ window.addEventListener('popstate', () => {
 });
 window.addEventListener('hashchange', () => { clearLayers(); const ae = document.activeElement; if (ae && ae !== document.body && $('#view').contains(ae) && ae.blur) ae.blur(); deferRender = false; scheduleRender(); });
 document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && LAYERS.length) { const t = LAYERS[LAYERS.length - 1]; if (t.kind === 'sheet') closeSheet(); } });
+/* Al volver a la app (pantalla bloqueada, otra app, la PWA en segundo plano) se pone al día: si cambió la fecha,
+   Hoy vuelve a hoy; si estás en Hoy, se actualizan «lo siguiente» y la línea de la hora. Antes quedaba todo como al salir. */
+document.addEventListener('visibilitychange', () => {
+  if (document.visibilityState !== 'visible' || !renderedDay || (TR && TR.open) || DRAG.active) return;
+  if (todayStr() !== renderedDay) { UI.hoyDate = null; scheduleRender(); }
+  else if (UI.view === 'hoy' && !LAYERS.length) scheduleRender();
+});
 
 let toastTimer = null;
 function toast(msg, kind, action) {
@@ -222,6 +238,11 @@ function toast(msg, kind, action) {
   t.hidden = false; t.style.animation = 'none'; void t.offsetWidth; t.style.animation = '';
   clearTimeout(toastTimer); toastTimer = setTimeout(() => { t.hidden = true; }, action ? 5200 : 3200);
 }
+/* Tocar el aviso lo cierra (tapaba «Terminar» y la flecha del entrenamiento hasta 5 s); su botón sigue funcionando */
+document.addEventListener('click', (e) => {
+  const t = e.target.closest && e.target.closest('#toast');
+  if (t && !e.target.closest('button')) { clearTimeout(toastTimer); t.hidden = true; }
+});
 
 /* ---------- Biblioteca de imágenes ---------- */
 const LIB = { data: null, loading: null, chunks: {}, chunkLoading: {}, index: {} };

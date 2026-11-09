@@ -63,9 +63,12 @@ button.card, a.card { display: block; width: 100%; text-align: left; }
 .btn.lime .ok { color: inherit; }
 .btn.sm { min-height: 44px; padding: 0 var(--s-4); }
 .btn.xs { min-height: 36px; padding: 0 var(--s-3); font-size: var(--fs-2); }
-.btn.xs::after { content: ''; position: absolute; inset: -4px 0; }
+/* El área táctil llega a 44 px: el pseudoelemento se mide desde el borde interior (36 − 2 de borde + 10) */
+.btn.xs::after { content: ''; position: absolute; inset: -5px 0; }
 .btn.lg { min-height: 56px; padding: 0 var(--s-6); font-size: var(--fs-4); }
 .btn.block { width: 100%; }
+/* Dos botones lado a lado: menos relleno para que «Exportar copia» o «Cómo funciona» no se partan en dos líneas a 360 px */
+.grid2 > .btn, .grid2 > .btn.sm { padding-inline: 10px; gap: 6px; min-width: 0; }
 .btn[disabled], .btn.disabled { opacity: 0.4; pointer-events: none; }
 .btn.busy { pointer-events: none; }
 @media (hover: hover) {
@@ -91,11 +94,12 @@ button.card, a.card { display: block; width: 100%; text-align: left; }
 .ic svg { width: 100%; height: 100%; }
 
 /* ---------- Formularios ---------- */
-.field { display: grid; gap: var(--s-2); min-width: 0; }
+/* Columna que puede achicarse: un <input type=date> no empuja a la columna vecina (pasaba en las grillas de 2 a 360-390 px) */
+.field { display: grid; grid-template-columns: minmax(0, 1fr); gap: var(--s-2); min-width: 0; }
 .field > label, .field > .lab { font-size: var(--fs-2); font-weight: var(--fw-2); color: var(--fg-2); }
 .field .hint { font-size: var(--fs-1); color: var(--fg-3); }
 .input {
-  width: 100%; min-height: 48px; padding: var(--s-3) 14px; border-radius: var(--r-sm);
+  width: 100%; min-width: 0; min-height: 48px; padding: var(--s-3) 14px; border-radius: var(--r-sm);
   font-size: var(--fs-4); line-height: 1.3; color: var(--fg);
   background: var(--fill-1); border: 1px solid var(--line-2);
   -webkit-appearance: none; appearance: none;
@@ -105,20 +109,29 @@ button.card, a.card { display: block; width: 100%; text-align: left; }
 .input.invalid { border-color: var(--amber-line); }
 textarea.input { resize: vertical; min-height: 88px; }
 select.input { background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%238B91A0' stroke-width='2.4' stroke-linecap='round'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right var(--s-3) center; background-size: 18px; padding-right: var(--s-10); }
-input[type='date'].input, input[type='time'].input { min-height: 48px; }
+input[type='date'].input, input[type='time'].input { min-height: 48px; min-width: 0; }
+input[type='date'].input { padding-left: 12px; padding-right: 10px; }
 .input.num { text-align: center; font-family: var(--mono); font-size: var(--fs-4); font-weight: var(--fw-2); }
 .err { color: var(--amber-ink); font-size: var(--fs-2); }
 
-.seg { display: flex; gap: var(--s-4); min-width: 0; border-bottom: 1px solid var(--hair); overflow-x: auto; scrollbar-width: none; }
+/* El espacio entre pestañas se achica en pantallas angostas: las 5 de Ejercicios entran a 360 px */
+.seg { display: flex; gap: clamp(8px, 4vw - 6px, 16px); min-width: 0; border-bottom: 1px solid var(--hair); overflow-x: auto; scrollbar-width: none; }
 .seg::-webkit-scrollbar { display: none; }
-.seg > button { flex: 1 0 auto; min-height: 44px; padding: 0 2px; font-size: var(--fs-3); font-weight: var(--fw-2); color: var(--fg-3); white-space: nowrap; box-shadow: inset 0 -2px 0 transparent; }
+.seg > button { position: relative; flex: 1 0 auto; min-height: 44px; padding: 0 2px; font-size: var(--fs-3); font-weight: var(--fw-2); color: var(--fg-3); white-space: nowrap; box-shadow: inset 0 -2px 0 transparent; }
 .seg > button.on { color: var(--fg); box-shadow: inset 0 -2px 0 var(--fg); }
 .seg.blue > button.on { box-shadow: inset 0 -2px 0 var(--blue); }
+.seg > button::after { content: ''; position: absolute; inset: 0 -4px; } /* «Míos» medía 38 px de ancho */
+.seg > button:last-child::after { right: 0; left: -8px; } /* sin desborde a la derecha: la barra no se desliza sola */
+/* Si aun así no entran (pantallas de 320 px o letra grande), el borde derecho se desvanece hasta llegar al final */
+@supports (animation-timeline: scroll()) {
+  .seg { animation: segFade linear both; animation-timeline: scroll(self inline); }
+  @keyframes segFade { from, 96% { -webkit-mask-image: linear-gradient(90deg, #000 calc(100% - 28px), transparent); mask-image: linear-gradient(90deg, #000 calc(100% - 28px), transparent); } to { -webkit-mask-image: none; mask-image: none; } }
+}
 
 .pills { display: flex; flex-wrap: wrap; gap: var(--s-2); }
 .pill { position: relative; min-height: 40px; padding: 0 14px; border-radius: var(--r-pill); display: inline-flex; align-items: center; gap: 6px; font-size: var(--fs-2); font-weight: var(--fw-2); color: var(--fg-2);
   background: var(--fill-1); border: 1px solid var(--line-2); transition: transform var(--dur-1) var(--ease-out); }
-.pill::after { content: ''; position: absolute; inset: -2px 0; }
+.pill::after { content: ''; position: absolute; inset: -3px 0; } /* 40 − 2 de borde + 6 = 44 px */
 .pill:active { transform: scale(0.96); }
 .pill .ic { width: 16px; height: 16px; }
 .pill.on { color: var(--blue-ink); background: var(--blue-soft); border-color: var(--blue-line); }
@@ -150,6 +163,12 @@ a.chip:active, button.chip:active { transform: scale(0.96); }
 .scale.pain button.hi:not(.on) { color: var(--red-ink); }
 .scale.sleep button.on { color: var(--on-accent); background: var(--violet); }
 .scale.load button.on { color: var(--on-accent); background: var(--amber); }
+.scale.mol { grid-template-columns: repeat(10, minmax(0, 1fr)); } /* 1-10: antes quedaba una columna vacía */
+/* En el teléfono, 0-10 en dos filas: cada número mide 44 px o más (en una fila eran 26 px y era fácil tocar el 3 en vez del 2) */
+@media (max-width: 479px) {
+  .scale { grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 6px; }
+  .scale.mol { grid-template-columns: repeat(5, minmax(0, 1fr)); }
+}
 .legend { display: flex; justify-content: space-between; gap: var(--s-2); font-size: var(--fs-1); color: var(--fg-3); }
 
 .stepper { display: grid; grid-template-columns: 44px minmax(0, 1fr) 44px; align-items: center; gap: 6px; min-width: 0; }
@@ -193,7 +212,10 @@ body.training .tabbar, body.locked .tabbar { transform: translateY(100%); opacit
 .page-head { display: flex; align-items: center; gap: var(--s-1); min-height: 52px; }
 .avatar { position: relative; width: 40px; height: 40px; margin: 2px 0 0 var(--s-1); border-radius: 50%; overflow: hidden; flex: none; border: 1px solid var(--line-2); background: var(--surface-3); }
 .avatar::before { content: ''; position: absolute; inset: 0; background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%238B91A0' stroke-width='1.8' stroke-linecap='round'%3E%3Ccircle cx='12' cy='9' r='3.6'/%3E%3Cpath d='M5.5 19.5c1.4-3 3.8-4.4 6.5-4.4s5.1 1.4 6.5 4.4'/%3E%3C/svg%3E") center / 20px no-repeat; }
-.avatar::after { content: ''; position: absolute; inset: -2px; }
+/* El enlace mide 44 × 44 y el círculo sigue en 40 (antes el ::after quedaba recortado por overflow: hidden) */
+.avatar-hit { width: 44px; height: 44px; flex: none; display: grid; place-items: center; margin-left: 2px; border-radius: 50%; transition: transform var(--dur-1) var(--ease-out); }
+.avatar-hit:active { transform: scale(0.94); }
+.avatar-hit .avatar { margin: 0; }
 .avatar img { position: relative; width: 100%; height: 100%; object-fit: cover; }
 .brand { display: inline-flex; align-items: center; gap: var(--s-2); font-weight: var(--fw-3); letter-spacing: 0.16em; font-size: var(--fs-2); }
 .brand .mk { width: 24px; height: 24px; border-radius: var(--r-xs); display: grid; place-items: center; background: var(--blue-fill); }
@@ -202,7 +224,7 @@ body.training .tabbar, body.locked .tabbar { transform: translateY(100%); opacit
 /* ---------- Hojas ---------- */
 .scrim { position: fixed; inset: 0; z-index: 60; display: flex; align-items: flex-end; justify-content: center; background: var(--scrim); backdrop-filter: blur(3px); -webkit-backdrop-filter: blur(3px); animation: fadeIn var(--dur-3) var(--ease-out); }
 .sheet {
-  position: relative; width: 100%; max-width: 560px; max-height: 92dvh; overflow-y: auto; overscroll-behavior: contain; -webkit-overflow-scrolling: touch;
+  position: relative; width: 100%; max-width: 560px; max-height: 92dvh; overflow-x: hidden; overflow-y: auto; overscroll-behavior: contain; -webkit-overflow-scrolling: touch;
   border-radius: var(--r-xl) var(--r-xl) 0 0; padding: 0 calc(var(--s-5) + var(--safe-r)) calc(var(--s-6) + var(--safe-b)) calc(var(--s-5) + var(--safe-l));
   background: radial-gradient(90% 260px at 0% 0%, rgba(70, 110, 255, 0.16), transparent 70%), radial-gradient(70% 220px at 100% 0%, rgba(140, 96, 255, 0.12), transparent 70%), var(--surface-2);
   border: 1px solid var(--line-2); border-bottom: 0; box-shadow: var(--elev-2);
@@ -311,6 +333,8 @@ button.blk:active, a.blk:active { transform: scale(0.99); }
 .exrow:last-child { border-bottom: 1px solid var(--hair); }
 .exlist:has(> .exrow) { gap: 0; }
 .exrow:active { transform: scale(0.985); }
+.exrow > button.left { align-self: stretch; min-height: 44px; } /* toda la fila se puede tocar, no solo las dos líneas de texto */
+.ex-link { position: relative; } .ex-link::after { content: ''; position: absolute; inset: -11px -4px; } /* nombre del ejercicio en una sesión registrada: 44 px para tocar */
 .exrow .t { font-weight: var(--fw-2); font-size: var(--fs-4); letter-spacing: -0.015em; line-height: 1.3; }
 .exrow .s { font-size: var(--fs-2); color: var(--fg-3); margin-top: 2px; line-height: 1.35; }
 .exrow .f { font: var(--fw-2) var(--fs-1)/1 var(--mono); color: var(--fg-3); padding-right: var(--s-1); }
@@ -414,6 +438,11 @@ details > .in { padding: 0 0 var(--s-5); display: grid; gap: var(--s-3); }
 
 /* Hoja que se vuelve a pintar (mismo contenido): sin animación de entrada */
 .scrim.still, .sheet.still { animation: none; }
+/* Salida de la última hoja: baja con la misma curva con la que entra y el fondo se desvanece */
+.scrim.out { pointer-events: none; animation: scrimOut 220ms var(--ease-out) both; }
+.scrim.out .sheet { animation: sheetOut 220ms cubic-bezier(0.4, 0, 1, 1) both; }
+@keyframes scrimOut { to { background-color: transparent; -webkit-backdrop-filter: blur(0); backdrop-filter: blur(0); } }
+@keyframes sheetOut { to { transform: translateY(100%); } }
 .lrow.c3 { grid-template-columns: 30px 1fr 1fr; } .lrow.c2 { grid-template-columns: 30px 1fr; } .lrow.nob { border: 0; }
 .seg.full { width: 100%; }
 button.mini-alert { width: 100%; text-align: left; }

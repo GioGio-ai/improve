@@ -51,7 +51,7 @@ function viewPerfil(st, today) {
   h += '<section class="card"><div class="stack"><span class="kicker">Colores</span><ul class="legend-list">' + L.map(([k, n, d]) => '<li><span class="sw ' + k + '"></span><div class="mw0"><b>' + n + '</b><div class="sub">' + d + '</div></div></li>').join('') + '</ul></div></section>';
   // Datos y cuenta
   h += '<section class="card"><div class="stack"><div class="stack-sm"><span class="kicker">Tus datos</span><p class="sub">' + (S.mode === 'cloud' ? 'En tu cuenta, cifrados en tránsito. Solo tú los ves. Funcionan sin conexión.' : 'Modo local de prueba: solo en este navegador.') + '</p></div>' +
-    '<div class="grid2"><button class="btn sm" data-act="export">' + ic('down') + 'Exportar copia</button><label class="btn sm" for="import-file">' + ic('up') + 'Importar copia</label></div><input type="file" id="import-file" accept="application/json,.json" hidden></div></section>';
+    '<div class="grid2 btns"><button class="btn sm" data-act="export">' + ic('download') + 'Exportar copia</button><label class="btn sm" for="import-file">' + ic('upload') + 'Importar copia</label></div><input type="file" id="import-file" accept="application/json,.json" hidden></div></section>';
   h += '<section class="card"><div class="stack"><div class="row between nowrap"><div class="grow stack-xs"><span class="kicker">Cuenta</span><div class="body ellipsis">' + esc((S.user && S.user.email) || 'Sin sesión') + '</div></div>' + (S.mode === 'cloud' ? '<button class="btn sm" data-act="sign-out">' + ic('logout') + 'Salir</button>' : '') + '</div>' +
     '<div class="row between"><span class="brand"><span class="mk"><i></i></span>IMPROVE</span><span class="sub num">v' + VERSION + '</span></div></div></section>';
   return h;
@@ -181,7 +181,7 @@ function blockCardHtml(st, today) {
         : 'Intervalos de resistencia, sprint, agilidad, potencia y balón; afinamiento desde 6 días antes de la prueba.') + '</p>';
     if (vj && vj.fecha && vj.fecha >= today) h += '<div class="lrow"><span class="fg2">' + ic('pin') + 'Viaje</span><b>' + capFirst(fmtDateLong(vj.fecha)) + (num(vj.horas) ? ' · ' + num(vj.horas) + ' h' : '') + '</b></div>';
     if (st.phase < 3) h += note('warn', 'Se aplica desde F3: en ' + PHASES[st.phase].n + ' manda la rehabilitación.');
-    h += '<div class="grid2"><button class="btn sm ghost" data-act="guide" data-g="' + (nine ? 'puesto9' : 'pretemporada') + '">' + ic('info') + 'Cómo funciona</button><button class="btn sm ghost" data-act="block-end">' + ic('x') + 'Terminar</button></div>';
+    h += '<div class="grid2 btns"><button class="btn sm ghost" data-act="guide" data-g="' + (nine ? 'puesto9' : 'pretemporada') + '">' + ic('info') + 'Cómo funciona</button><button class="btn sm ghost" data-act="block-end">' + ic('x') + 'Terminar</button></div>';
   } else {
     h += '<p class="sub">Un bloque corto hacia una prueba: días altos y medios alternados, intervalos de resistencia, sprints repetidos y afinamiento al final.</p>' +
       '<button class="btn sm" data-act="block-edit">' + ic('plus') + 'Empezar una pretemporada</button>';

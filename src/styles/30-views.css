@@ -13,8 +13,11 @@
 .ic-tile.lime { color: var(--lime); background: var(--lime-soft); }
 
 /* Estado del día en palabras (sin cajas): el color va en el texto */
-.hoy-head .scroll-x { gap: var(--s-5); padding-top: 0; padding-bottom: 0; }
+/* El estado del día pasa a otra línea si no entra (antes «Puesta a punto · 9 · día 1 de 15» quedaba cortado a 360 px).
+   Sin recorte, el área táctil de cada chip llega a 44 px con el ::after aunque se vea de 32. */
+.hoy-head .scroll-x { flex-wrap: wrap; column-gap: var(--s-5); row-gap: 0; overflow: visible; scroll-snap-type: none; -webkit-mask-image: none; mask-image: none; padding-top: 0; padding-bottom: 0; }
 .hoy-head .scroll-x .chip { background: none; padding: 0; min-height: 32px; font-size: var(--fs-2); color: var(--fg-2); }
+.hoy-head .scroll-x .chip::after { inset: -6px -6px; }
 .hoy-head .scroll-x .chip.blue { color: var(--blue-ink); } .hoy-head .scroll-x .chip.lime { color: var(--lime-ink); }
 .hoy-head .scroll-x .chip.load, .hoy-head .scroll-x .chip.warn { color: var(--amber-ink); } .hoy-head .scroll-x .chip.pain { color: var(--red-ink); }
 .hoy-head .scroll-x .chip.sleep { color: var(--violet-ink); }
@@ -45,7 +48,8 @@
 /* Hoy en tres piezas (v5.0): estado del día → la sesión → la agenda. La cifra del estado no compite con la sesión. */
 .section.estado { gap: var(--s-4); }
 .estado .ready-big .n { font-size: var(--fs-6); }
-.estado .mol-chips { gap: var(--s-2); padding-top: 0; padding-bottom: 0; }
+.estado .mol-chips { gap: var(--s-2); padding-top: 0; padding-bottom: 0; margin-block: -4px; }
+.estado .mol-chips .chip { min-height: 44px; }
 .day-notes .more-notes { border-bottom: 0; }
 .day-notes .more-notes > summary { min-height: 44px; font-size: var(--fs-2); color: var(--fg-3); }
 .day-notes .more-notes > summary .ic { width: 16px; height: 16px; }
@@ -94,8 +98,11 @@ button.stat .k .ic { width: 12px; height: 12px; vertical-align: -1px; }
 .tl-blk .su-in { font-weight: var(--fw-1); color: var(--fg-3); font-size: var(--fs-2); }
 .tl-blk.compact .main { grid-template-columns: auto minmax(0, 1fr); column-gap: var(--s-2); align-items: center; padding-top: 0; padding-bottom: 0; }
 .tl-blk.compact .su { display: none; }
+/* Dos líneas (≈ 40-53 min): hora y título en la primera, el detalle debajo */
+.tl-blk.mid .main { grid-template-columns: auto minmax(0, 1fr); column-gap: var(--s-2); row-gap: 1px; align-items: baseline; padding-top: 4px; padding-bottom: 4px; }
+.tl-blk.mid .su { grid-column: 1 / -1; }
 .tl-blk .side { display: flex; align-items: center; gap: 2px; padding-right: var(--s-1); flex: none; }
-.tl-blk .grip { width: 40px; height: 44px; display: grid; place-items: center; color: var(--fg-3); touch-action: none; cursor: grab; border-radius: var(--r-sm); }
+.tl-blk .grip { width: 44px; height: 44px; display: grid; place-items: center; color: var(--fg-3); touch-action: none; cursor: grab; border-radius: var(--r-sm); }
 .tl-blk .grip:active { cursor: grabbing; }
 .tl-blk .grip .ic { width: 18px; height: 18px; }
 .tl-blk .ok { width: 22px; height: 22px; border-radius: 50%; display: grid; place-items: center; background: var(--lime); color: var(--on-accent); margin-right: 2px; animation: checkIn var(--dur-2) var(--ease-out); }
@@ -109,7 +116,9 @@ button.stat .k .ic { width: 12px; height: 12px; vertical-align: -1px; }
   color: var(--fg-2); background: var(--bg); border: 1px solid var(--line-2); }
 .tl-mark .pill-m > .ic:first-child { width: 16px; height: 16px; color: var(--violet); }
 .tl-mark .pill-m.wake > .ic:first-child { color: var(--blue); }
-.tl-mark .pill-m .grip { width: 32px; height: 30px; display: grid; place-items: center; touch-action: none; color: var(--fg-3); }
+.tl-mark .pill-m .grip { position: relative; width: 32px; height: 30px; display: grid; place-items: center; touch-action: none; color: var(--fg-3); }
+/* Se ve chico, pero el área para arrastrar llega a 44 × 44 */
+.tl-mark .pill-m .grip::after { content: ''; position: absolute; inset: -7px -6px; }
 .tl-mark .pill-m .grip .ic { width: 15px; height: 15px; }
 .tl-mark::after { content: ''; flex: 1; border-top: 1px dashed var(--line-2); }
 .tl-drag-time { position: absolute; left: -56px; z-index: 9; font: var(--fw-3) var(--fs-1)/1 var(--mono); color: var(--on-blue); padding: 5px 6px; border-radius: var(--r-xs); background: var(--blue-fill); transform: translateY(-50%); pointer-events: none; box-shadow: var(--elev-1); }
@@ -307,7 +316,7 @@ body.locked #view, body.locked #nav { display: none; }
 .pend-main .t { font-size: var(--fs-3); font-weight: var(--fw-2); letter-spacing: -0.012em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .pend-main .s { font-size: var(--fs-2); color: var(--fg-3); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-variant-numeric: tabular-nums; }
 .pend-main > .ic:last-child { width: 14px; height: 14px; color: var(--fg-3); flex: none; }
-.pend-row > .btn { flex: none; min-height: 40px; padding: 0 14px; gap: 6px; font-size: var(--fs-2); }
+.pend-row > .btn { flex: none; min-height: 44px; padding: 0 14px; gap: 6px; font-size: var(--fs-2); }
 .pend-row > .btn .ic { width: 15px; height: 15px; }
 .pend-more { justify-self: start; margin-top: var(--s-1); }
 @keyframes pendPulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.35; } }

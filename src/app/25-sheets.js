@@ -161,7 +161,7 @@ function sessionReviewHtml(log, planned) {
       const trend = delta === null ? '' : delta > 0.5 ? chip('+' + fmtNum(delta) + ' %', 'lime', 'up') : delta < -0.5 ? chip(fmtNum(delta) + ' %', 'warn', 'down') : chip('igual', '');
       const fb = e.fb && FEEDBACK[e.fb] ? chip(FEEDBACK[e.fb].n, e.fb === 'facil' ? 'lime' : e.fb === 'dificil' ? 'load' : e.fb === 'molestia' ? 'pain' : 'blue') : '';
       const pend = (e.sets || []).filter(x => x && x.done === false).length;
-      return '<div class="card flat tight"><div class="stack-sm"><div class="row nowrap">' + thumbHtml(Object.assign({}, ex, { n: e.n || ex.n, img: e.img || ex.img })) + '<div class="grow"><button class="h3 left" data-act="ex" data-id="' + esc(e.id) + '">' + esc(e.n || ex.n || e.id) + '</button><div class="row mt-1">' + trend + fb + (num(e.pain) !== null ? chip('dolor ' + e.pain, painTone(e.pain)) : '') + (e.doneAs ? chip('variante', 'blue', 'swap') : '') + (pend ? chip(pend + ' sin hacer', '') : '') + '</div></div></div>' +
+      return '<div class="card flat tight"><div class="stack-sm"><div class="row nowrap">' + thumbHtml(Object.assign({}, ex, { n: e.n || ex.n, img: e.img || ex.img })) + '<div class="grow"><button class="h3 left ex-link" data-act="ex" data-id="' + esc(e.id) + '">' + esc(e.n || ex.n || e.id) + '</button><div class="row mt-1">' + trend + fb + (num(e.pain) !== null ? chip('dolor ' + e.pain, painTone(e.pain)) : '') + (e.doneAs ? chip('variante', 'blue', 'swap') : '') + (pend ? chip(pend + ' sin hacer', '') : '') + '</div></div></div>' +
         setsTableHtml(e) + (pv ? '<div class="sub">Anterior · ' + fmtDate(pv.date) + ' · ' + esc(fmtSetsShort((pv.e.sets || []).filter(x => x && x.done !== false))) + '</div>' : '') + (e.notes ? '<div class="small fg2">“' + esc(e.notes) + '”</div>' : '') + '</div></div>';
     }).join('') + '</div>';
   }
@@ -210,8 +210,9 @@ function dayHtml(date) {
 function openCheckin() {
   const today = todayStr(), ci = checkinFor(today), sch = scheduleOf(S.data.profile), now = nowMin();
   const v = Object.assign({ sleepH: null, sleepQ: null, fatigue: null, soreness: null, stress: null, rfPain: null }, ci || {});
-  // Hora de levantarse: la ya guardada; si no, la hora actual si es de mañana (el check-in se hace al despertar); si no, la habitual
-  if (!v.wakeTime) v.wakeTime = now >= 4 * 60 && now <= hm(sch.wake) + 300 ? fmtHM(Math.floor(now / 5) * 5) : sch.wake;
+  // Hora de levantarse: la ya guardada; si no, la hora actual si es de mañana (el check-in se hace al despertar); si no, la habitual.
+  // Hasta 3 h después de la hora habitual (antes 5 h: un check-in a las 11:30, después del gimnasio, daba «14 h de sueño»)
+  if (!v.wakeTime) v.wakeTime = now >= 4 * 60 && now <= hm(sch.wake) + 180 ? fmtHM(Math.floor(now / 5) * 5) : sch.wake;
   if (!v.bedTime) v.bedTime = num(v.sleepH) !== null ? fmtHM(hm(v.wakeTime) - Math.round(num(v.sleepH) * 60)) : sch.sleep;
   v.sleepH = Math.round(sleepSpan(v.bedTime, v.wakeTime) / 60 * 100) / 100;
   UI.checkinDraft = v;
