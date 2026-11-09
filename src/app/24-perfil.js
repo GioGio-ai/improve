@@ -38,7 +38,7 @@ function viewPerfil(st, today) {
     '<div class="field"><span class="lab">Días de partido</span>' + dayBtns('matchDays', true) + '<span class="hint">Desde F5, el plan se organiza por día de partido.</span></div>' +
     toggleHtml('partners', p.partners === true, 'Tengo con quién jugar', 'Para el juego reducido. Si no, el plan pone una simulación de partido individual.') +
     '<div class="field"><span class="lab">Énfasis al volver a jugar (F5-F6)</span><div class="pills">' + [['', 'Equilibrado'], ['velocidad', 'Velocidad'], ['fuerza', 'Fuerza'], ['potencia', 'Potencia']].map(([k, n]) => { const on = (p.emphasis || '') === k; return '<button type="button" class="pill' + (on ? ' on' : '') + '" data-act="emphasis" data-v="' + k + '" aria-pressed="' + on + '">' + n + '</button>'; }).join('') + '</div><span class="hint">Cambia qué fuerza y qué trabajo de cancha lleva cada día intenso.</span></div></div></section>';
-  h += blockCardHtml(st, today) + sickCardHtml(st, today);
+  h += rolCardHtml() + blockCardHtml(st, today) + sickCardHtml(st, today);
   const places = placesOf(p);
   h += '<section class="card"><div class="stack"><div class="stack-sm"><span class="kicker">Lugares</span><p class="sub">Desmarca lo que no tengas: el plan elige alternativas.</p></div>' +
     PLACES.map(pl => '<div class="field"><span class="lab">' + PLACE_NAMES[pl] + '</span><div class="pills">' + PLACES_DEFAULT[pl].eq.map(e => { const on = places[pl].eq.includes(e); return '<button type="button" class="pill' + (on ? ' on' : '') + '" data-act="place-eq" data-place="' + pl + '" data-v="' + esc(e) + '" aria-pressed="' + on + '">' + esc(e) + '</button>'; }).join('') + '</div></div>').join('') +
@@ -171,13 +171,17 @@ const BLOCK_FASE_N = { carga: 'Carga', afinamiento: 'Afinamiento', previa: 'Prev
 function blockCardHtml(st, today) {
   const b = (S.data.profile || {}).block;
   const active = !!(b && b.tipo === 'pretemporada' && (!b.hasta || b.hasta >= today));
-  let h = '<section class="card"><div class="stack"><div class="ed-head"><span class="kicker">Pretemporada</span>' + (active ? '<button class="btn xs" data-act="block-edit">Editar</button>' : '') + '</div>';
+  const nine = active && b.enfoque === 'puesto', vj = (S.data.profile || {}).viaje;
+  let h = '<section class="card"><div class="stack"><div class="ed-head"><span class="kicker">' + (nine ? 'Puesta a punto · 9' : 'Pretemporada') + '</span>' + (active ? '<button class="btn xs" data-act="block-edit">Editar</button>' : '') + '</div>';
   if (active) {
     const bi = blockInfo(st, today);
     h += '<div class="h3">' + capFirst(fmtDate(b.desde)) + (b.hasta ? ' → ' + fmtDate(b.hasta) : '') + '</div>' +
-      '<p class="sub">' + (bi ? 'Día ' + bi.day + ' de ' + bi.total + ' · ' + BLOCK_FASE_N[bi.fase] : 'Empieza el ' + fmtDateLong(b.desde)) + '. Intervalos de resistencia, sprint, agilidad, potencia y balón; afinamiento desde 6 días antes de la prueba.</p>';
+      '<p class="sub">' + (bi ? 'Día ' + bi.day + ' de ' + bi.total + ' · ' + BLOCK_FASE_N[bi.fase] : 'Empieza el ' + fmtDateLong(b.desde)) + '. ' +
+      (nine ? 'Lo que te hace único: juego aéreo, de espaldas, giro, paredes y área. Resistencia y velocidad en dosis mínima; afinamiento desde 6 días antes de la prueba.'
+        : 'Intervalos de resistencia, sprint, agilidad, potencia y balón; afinamiento desde 6 días antes de la prueba.') + '</p>';
+    if (vj && vj.fecha && vj.fecha >= today) h += '<div class="lrow"><span class="fg2">' + ic('pin') + 'Viaje</span><b>' + capFirst(fmtDateLong(vj.fecha)) + (num(vj.horas) ? ' · ' + num(vj.horas) + ' h' : '') + '</b></div>';
     if (st.phase < 3) h += note('warn', 'Se aplica desde F3: en ' + PHASES[st.phase].n + ' manda la rehabilitación.');
-    h += '<div class="grid2"><button class="btn sm ghost" data-act="guide" data-g="pretemporada">' + ic('info') + 'Cómo funciona</button><button class="btn sm ghost" data-act="block-end">' + ic('x') + 'Terminar</button></div>';
+    h += '<div class="grid2"><button class="btn sm ghost" data-act="guide" data-g="' + (nine ? 'puesto9' : 'pretemporada') + '">' + ic('info') + 'Cómo funciona</button><button class="btn sm ghost" data-act="block-end">' + ic('x') + 'Terminar</button></div>';
   } else {
     h += '<p class="sub">Un bloque corto hacia una prueba: días altos y medios alternados, intervalos de resistencia, sprints repetidos y afinamiento al final.</p>' +
       '<button class="btn sm" data-act="block-edit">' + ic('plus') + 'Empezar una pretemporada</button>';
@@ -187,30 +191,71 @@ function blockCardHtml(st, today) {
 function openPreBlock() {
   const p = S.data.profile || {}, b = p.block && p.block.tipo === 'pretemporada' ? p.block : null, today = todayStr();
   const trial = ((p.trials || []).filter(t => t > today).sort()[0]) || '';
-  UI.blk = { desde: b ? b.desde : addDays(today, 1), hasta: b ? (b.hasta || '') : trial, trial: true };
+  UI.blk = { desde: b ? b.desde : addDays(today, 1), hasta: b ? (b.hasta || '') : trial, trial: true,
+    enfoque: b ? (b.enfoque === 'puesto' ? 'puesto' : 'general') : (p.rol ? 'puesto' : 'general'),
+    viaje: p.viaje && p.viaje.fecha >= today ? p.viaje.fecha : '', horas: p.viaje && num(p.viaje.horas) !== null ? String(p.viaje.horas) : '' };
   openSheet({ id: 'block', render: preBlockSheetHtml });
 }
 function preBlockSheetHtml() {
   const q = UI.blk;
-  return sheetHead('Pretemporada', 'Hacia la prueba') + '<div class="sheet-body">' +
+  const nine = q.enfoque === 'puesto';
+  return sheetHead(nine ? 'Puesta a punto · 9' : 'Pretemporada', 'Hacia la prueba') + '<div class="sheet-body">' +
+    '<div class="field"><span class="lab">Enfoque</span><div class="pills">' + [['general', 'General'], ['puesto', 'Mi puesto · 9']].map(([k, n]) => '<button type="button" class="pill' + (q.enfoque === k ? ' on' : '') + '" data-act="blk-enf" data-v="' + k + '" aria-pressed="' + (q.enfoque === k) + '">' + n + '</button>').join('') + '</div></div>' +
     '<div class="grid2"><div class="field"><label for="blk-desde">Desde</label><input class="input" type="date" id="blk-desde" value="' + esc(q.desde || '') + '" data-bind="blk" data-name="desde"></div>' +
     '<div class="field"><label for="blk-hasta">Hasta</label><input class="input" type="date" id="blk-hasta" value="' + esc(q.hasta || '') + '" data-bind="blk" data-name="hasta"></div></div>' +
     toggleHtml('blk-trial', q.trial, 'Ese día tengo una prueba', 'Se suma a tus pruebas: el plan afina desde 6 días antes, descansa en P-2 y activa en P-1.') +
-    '<p class="sub">Días altos (mar, jue, sáb): fuerza o potencia, golpeo, sprint y sprints repetidos, agilidad o juego. Días medios (lun, mié, vie): intervalos de resistencia, balón y tren superior o prevención. Las escaleras K y S y las reglas de dolor no cambian.</p>' +
+    '<div class="grid2"><div class="field"><label for="blk-viaje">Viaje (opcional)</label><input class="input" type="date" id="blk-viaje" value="' + esc(q.viaje || '') + '" data-bind="blk" data-name="viaje"></div>' +
+    '<div class="field"><label for="blk-horas">Horas de viaje</label><input class="input num" id="blk-horas" inputmode="numeric" enterkeyhint="done" autocomplete="off" placeholder="—" value="' + esc(q.horas || '') + '" data-bind="blk" data-name="horas"></div></div>' +
+    '<p class="sub">' + (nine
+      ? 'Días altos (mar, jue, sáb): fuerza o potencia, golpeo, aceleraciones y trabajo de 9 con juego aéreo; el sábado, simulación de 9. Días medios (lun, mié, vie): tren superior o prevención con cuello y trabajo de 9 de espaldas y paredes. Resistencia en dosis mínima. El día de viaje no se entrena.'
+      : 'Días altos (mar, jue, sáb): fuerza o potencia, golpeo, sprint y sprints repetidos, agilidad o juego. Días medios (lun, mié, vie): intervalos de resistencia, balón y tren superior o prevención.') + ' Las escaleras K y S y las reglas de dolor no cambian.</p>' +
     '<div class="sheet-foot"><button class="btn primary lg" data-act="block-save">Guardar</button></div></div>';
 }
 function saveBlock() {
   const q = UI.blk;
   const desde = ($('#blk-desde') || {}).value || q.desde, hasta = ($('#blk-hasta') || {}).value || q.hasta;
+  const viaje = ($('#blk-viaje') || {}).value || q.viaje || '', horas = num(String(($('#blk-horas') || {}).value || q.horas || '').replace(',', '.'));
   if (!desde) { toast('Elige desde cuándo.', 'warn'); return; }
   if (hasta && hasta < desde) { toast('La fecha final va después del inicio.', 'warn'); return; }
   updateProfile(p => {
     p.block = { tipo: 'pretemporada', desde, hasta: hasta || null };
+    if (q.enfoque === 'puesto') p.block.enfoque = 'puesto';
+    if (viaje) p.viaje = horas !== null ? { fecha: viaje, horas } : { fecha: viaje }; else delete p.viaje;
     if (hasta && q.trial) { const t = (p.trials || []).slice(); if (!t.includes(hasta)) t.push(hasta); p.trials = t.sort(); }
-  }).then(() => toast('Pretemporada guardada: el plan ya cambió.'));
+  }).then(() => toast((q.enfoque === 'puesto' ? 'Puesta a punto de 9' : 'Pretemporada') + ' guardada: el plan ya cambió.'));
   closeSheet();
 }
 function endBlock() { updateProfile(p => { delete p.block; }).then(() => toast('Pretemporada terminada: vuelve la semana normal.')); }
+
+/* ---------- Mi rol (v5.1): puesto, fortalezas y claves para la prueba ---------- */
+function rolCardHtml() {
+  const p = S.data.profile || {}, r = rolOf(p);
+  const fort = FORTALEZAS_9.filter(([k]) => r.fortalezas.includes(k)).map(x => x[1]);
+  return '<section class="card"><div class="stack"><div class="ed-head"><span class="kicker">Mi rol</span><button class="btn xs" data-act="rol-edit">' + (r.set ? 'Editar' : 'Definir') + '</button></div>' +
+    '<div class="h3">' + esc(PUESTOS[r.puesto] ? PUESTOS[r.puesto].n : 'Centrodelantero') + '</div>' +
+    (fort.length ? '<p class="sub">' + esc(fort.join(' · ')) + '</p>' : '') +
+    '<div class="field"><span class="lab">Claves para la prueba</span><ol class="claves">' + r.claves.map(c => '<li>' + esc(c) + '</li>').join('') + '</ol></div>' +
+    (r.set ? '' : '<span class="hint">Lo que te hace único. Lo usan la puesta a punto de 9, el día de la prueba y el coach.</span>') + '</div></section>';
+}
+function openRol() {
+  const r = rolOf(S.data.profile || {});
+  UI.rol = { fortalezas: r.fortalezas.slice(), claves: r.claves.concat(['', '', '', '']).slice(0, 4) };
+  openSheet({ id: 'rol', render: rolSheetHtml });
+}
+function rolSheetHtml() {
+  const q = UI.rol;
+  return sheetHead('Mi rol', 'Centrodelantero de referencia') + '<div class="sheet-body">' +
+    '<div class="field"><span class="lab">Lo que te hace único</span><div class="pills">' + FORTALEZAS_9.map(([k, n]) => { const on = q.fortalezas.includes(k); return '<button type="button" class="pill' + (on ? ' on' : '') + '" data-act="rol-fort" data-v="' + k + '" aria-pressed="' + on + '">' + esc(n) + '</button>'; }).join('') + '</div></div>' +
+    '<div class="field"><span class="lab">Claves para la prueba</span>' + q.claves.map((c, i) => '<input class="input" id="rol-c' + i + '" autocomplete="off" enterkeyhint="next" maxlength="60" placeholder="' + esc(CLAVES_9[i] || 'Otra clave') + '" aria-label="Clave ' + (i + 1) + '" value="' + esc(c) + '" data-bind="rol" data-name="' + i + '">').join('') +
+    '<span class="hint">Frases cortas en primera persona. Las ves el día antes y el día de la prueba.</span></div>' +
+    '<div class="sheet-foot"><button class="btn primary lg" data-act="rol-save">Guardar</button></div></div>';
+}
+function saveRol() {
+  const q = UI.rol;
+  const claves = q.claves.map((c, i) => String((($('#rol-c' + i) || {}).value ?? c) || '').trim()).filter(Boolean);
+  updateProfile(p => { p.rol = { puesto: '9', fortalezas: q.fortalezas.slice(), claves }; }).then(() => toast('Rol guardado.'));
+  closeSheet();
+}
 
 /* ---------- Enfermedad (v4.6) ---------- */
 function sickCardHtml(st, today) {

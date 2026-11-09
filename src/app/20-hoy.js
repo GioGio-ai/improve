@@ -24,10 +24,19 @@ function viewHoy(st, today) {
   if (isToday) h += estadoHoy(st, today, day, ag, ci, adv);
   /* 2 · La sesión: qué toca, cuánto y por qué cambió */
   const notes = (day.notes || []).filter(n => n && !(isToday && /^Molestia en /.test(n)));
-  h += '<div class="section lead">' + hero + dayNotesHtml(notes) + '</div>';
+  h += '<div class="section lead">' + hero + dayNotesHtml(notes) + clavesHoy(st, date) + '</div>';
   /* 3 · Agenda de entreno y sueño */
   h += agendaCard(ag, day, date, today);
   return h;
+}
+/* Claves del 9 (v5.1): la víspera y el día de la prueba, si hay rol o puesta a punto de 9 */
+function clavesHoy(st, date) {
+  const p = st.profile || {}, trials = p.trials || [];
+  if (!trials.includes(date) && !trials.includes(addDays(date, 1))) return '';
+  if (!p.rol && !(p.block && p.block.enfoque === 'puesto')) return '';
+  const R = rolOf(p);
+  return '<section class="panel claves-panel"><span class="kicker">Tus claves de 9</span><ol class="claves">' + R.claves.map(c => '<li>' + esc(c) + '</li>').join('') + '</ol>' +
+    '<span class="hint">' + (trials.includes(date) ? 'Haz tu trabajo excelente; lo demás lo hacen tus compañeros.' : 'Mañana, la prueba. Repásalas antes de dormir.') + '</span></section>';
 }
 /* Estado del día en una sección: check-in, molestias activas y preguntas que cambian el plan */
 function estadoHoy(st, today, day, ag, ci, adv) {
@@ -58,7 +67,7 @@ function statusChips(st, today) {
   const bi = blockInfo(st, today), sk = sickOn(st, today), rr = sk ? null : sickReturn(st, today);
   if (sk) chips.push('<a class="chip sleep" href="#perfil">' + ic('moon') + 'Enfermo · descanso</a>');
   else if (rr) chips.push('<a class="chip" href="#perfil">' + ic('leaf') + 'Vuelta gradual · día ' + rr.day + ' de ' + rr.n + '</a>');
-  if (bi && st.phase >= 3) chips.push('<button class="chip load" data-act="guide" data-g="pretemporada">' + ic('run') + 'Pretemporada · día ' + bi.day + ' de ' + bi.total + ' · ' + esc((BLOCK_FASE_N[bi.fase] || '').toLowerCase()) + '</button>');
+  if (bi && st.phase >= 3) chips.push('<button class="chip load" data-act="guide" data-g="' + (bi.b.enfoque === 'puesto' ? 'puesto9' : 'pretemporada') + '">' + ic(bi.b.enfoque === 'puesto' ? 'target' : 'run') + (bi.b.enfoque === 'puesto' ? 'Puesta a punto · 9' : 'Pretemporada') + ' · día ' + bi.day + ' de ' + bi.total + ' · ' + esc((BLOCK_FASE_N[bi.fase] || '').toLowerCase()) + '</button>');
   if (!chips.length) return '';
   return '<div class="scroll-x">' + chips.join('') + '</div>';
 }

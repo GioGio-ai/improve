@@ -108,7 +108,10 @@ function guideHtml(g) {
       ['Después', ['Agua fría 10-15 min: acá sí sirve.', 'Respiración 5 min y a dormir temprano.', 'Mañana: check-in y dolor del recto femoral.']],
     ];
     const ready = !ST.injuryActive || ST.phase >= 5;
+    const R = rolOf(ST.profile || {}), vj = (ST.profile || {}).viaje;
+    if (vj && vj.fecha) rows.unshift(['El viaje', ['Llega al menos un día antes si puedes; el día de viaje no se entrena.', 'Muchas horas sentado: camina y moviliza la cadera en cada parada.', 'Si llegas la víspera: activación corta al llegar y a dormir temprano.']]);
     return sheetHead('Día de prueba', 'Antes, durante y después') + '<div class="sheet-body">' + (ready ? '' : note('warn', 'Todavía estás en ' + PHASES[ST.phase].n + '. Jugar a máxima intensidad requiere F5.')) +
+      '<section class="panel claves-panel"><span class="kicker">Tus claves de 9</span><ol class="claves">' + R.claves.map(c => '<li>' + esc(c) + '</li>').join('') + '</ol><span class="hint">Haz tu trabajo excelente; lo demás lo hacen tus compañeros.</span></section>' +
       rows.map(([t, items]) => '<div class="stack-sm"><div class="h3">' + t + '</div><ul class="crit">' + items.map(x => '<li><span class="mk ok">' + ic('check') + '</span><div class="small fg2">' + esc(x) + '</div><span></span></li>').join('') + '</ul></div>').join('') +
       '<p class="sub">Agrega las fechas de tus pruebas en Perfil: el plan ajusta los días anteriores y el posterior.</p></div>';
   }
@@ -130,6 +133,30 @@ function guideHtml(g) {
         ['Afinamiento', 'Desde 6 días antes de la prueba: misma intensidad y ~40 % menos volumen. Un metaanálisis encontró el mejor resultado con unas 2 semanas y 41-60 % menos volumen.'],
       ]) + '</div>' +
       note('warn', '<b>Lo que no cambia:</b> un nivel de golpeo y de sprint cada 48 h como máximo, nada nuevo a 5 días o menos de la prueba y las reglas de dolor del recto femoral. Si un día amaneces pesado, márcalo en el check-in: el plan baja solo.') + '</div>';
+  }
+  if (g === 'puesto9') {
+    const bi = ST ? blockInfo(ST, todayStr()) : null;
+    const li = (rows, mk) => '<ul class="crit">' + rows.map(([t, d]) => '<li><span class="mk' + (mk ? ' ok' : '') + '">' + ic(mk ? 'check' : 'info') + '</span><div class="small"><b>' + t + '</b><div class="fg3">' + d + '</div></div><span></span></li>').join('') + '</ul>';
+    return sheetHead('Puesta a punto · 9', bi ? 'Día ' + bi.day + ' de ' + bi.total + (bi.trial ? ' · prueba el ' + fmtDateLong(bi.trial) : '') : 'Hacia la prueba, desde tu puesto') + '<div class="sheet-body">' +
+      '<p class="body">En dos semanas no se gana una capacidad nueva: se mantiene lo que hay y se afila lo que te hace único. Haz pocas cosas, todas de tu puesto, y llega fresco. Ser un jugador completo sigue siendo la meta, en los bloques que vienen después de la prueba.</p>' +
+      '<div class="stack-sm"><div class="h3">La semana</div>' + li([
+        ['Días altos (mar, jue, sáb)', 'Fuerza o potencia, golpeo de tu escalera, aceleraciones y trabajo de 9 con juego aéreo. El sábado, simulación de 9. Nunca dos seguidos.'],
+        ['Días medios (lun, mié, vie)', 'Tren superior o prevención con cuello y trabajo de 9 de espaldas y paredes. Sin remates el día después de patear.'],
+        ['Resistencia', 'Dosis mínima: el 10/10 corto del lunes y la simulación de 9. Sin 4 × 4, 15/15, sprints repetidos ni agilidad.'],
+        ['Domingo', 'Descanso completo.'],
+      ], true) + '</div>' +
+      '<div class="stack-sm"><div class="h3">Trabajo de 9</div>' + li([
+        ['De espaldas', 'Juego de espaldas, pecho y protección, descarga de primera.'],
+        ['Giro y remate', 'Recibes de espaldas, giras y rematas en dos toques.'],
+        ['Primer palo', 'Arranque de 5-10 m y remate de primera: la acción más típica antes de un gol.'],
+        ['Juego aéreo', 'Cabeceo con salto (fuerza alta) 5 el martes y 5 el jueves. El resto con el balón lanzado con la mano: cabezazo de definición y peinada, de fuerza baja.'],
+      ], true) + '</div>' +
+      '<div class="stack-sm"><div class="h3">Por qué así</div>' + li([
+        ['Mantener con menos', 'La resistencia y la fuerza se sostienen con bastante menos volumen si la intensidad no baja. Bajar lo general no te cuesta nada para la prueba.'],
+        ['Velocidad corta, sí', 'Antes de un gol, lo más frecuente es un sprint recto, y la combinación más común es sprint y salto. Y llegar sin correr rápido en las semanas previas es riesgo de lesión.'],
+        ['Cabeceo: calidad', 'La guía inglesa recomienda como máximo 10 cabezazos de fuerza alta por semana de entrenamiento. El momento, la carrera y la dirección se entrenan con fuerza baja. Cuello fuerte, tres veces por semana.'],
+      ]) + '</div>' +
+      note('warn', '<b>Lo que no cambia:</b> un nivel de golpeo y de sprint cada 48 h como máximo, nunca golpeo dos días seguidos, nada nuevo a 5 días o menos de la prueba y las reglas de dolor del recto femoral.') + '</div>';
   }
   if (g === 'balon') {
     const L = effLevels(ST), les = ST.side === 'i' ? 'izquierda' : 'derecha', sana = ST.side === 'i' ? 'derecha' : 'zurda';

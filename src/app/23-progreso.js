@@ -76,7 +76,14 @@ function ballCard(st, today) {
   let h = '<section class="card"><div class="stack-sm"><div class="ed-head"><span class="kicker">Balón</span>' + chip('cabeceo fuerza alta ' + headers + '/' + BALL_HEADER_CAP, headers >= BALL_HEADER_CAP ? 'warn' : headers >= 7 ? 'load' : '') + '</div>';
   if (mins.some(m => m.min)) h += barChart(mins.map(m => ({ label: fmtDate(m.start), value: m.min })), { cur: mins.length - 1, tone: 'lime', label: 'Minutos con balón por semana' }) + '<div class="sub">Minutos con balón por semana</div>';
   if (!rows.length) h += '<p class="sub">Sin récords todavía.</p>';
-  else h += '<div class="stack-xs">' + rows.map(r => '<div class="lrow ball-row"><span class="fg2">' + esc(r.d.n) + (r.p ? ' <span class="fg3">· ' + (r.p === 'der' ? 'derecha' : 'izquierda') + '</span>' : '') + '<br><span class="fg3 small">' + fmtDate(r.b.date) + '</span></span>' + sparkline(r.pts, r.d.lowerBetter) + '<b class="num c-lime">' + fmtNum(r.b.val) + (r.d.metric === 'aciertos' ? '' : ' <small class="fg3">' + esc(r.d.unit) + '</small>') + '</b></div>').join('') + '</div>';
+  else {
+    /* Acciones de 9 (v5.1): lo que te hace único, aparte */
+    const is9 = (d) => !!d.only9 || d.id === 'espaldas' || d.id === 'cabeceo_salto';
+    const row = (r) => '<div class="lrow ball-row"><span class="fg2">' + esc(r.d.n) + (r.p ? ' <span class="fg3">· ' + (r.p === 'der' ? 'derecha' : 'izquierda') + '</span>' : '') + '<br><span class="fg3 small">' + fmtDate(r.b.date) + '</span></span>' + sparkline(r.pts, r.d.lowerBetter) + '<b class="num c-lime">' + fmtNum(r.b.val) + (r.d.metric === 'aciertos' ? '' : ' <small class="fg3">' + esc(r.d.unit) + '</small>') + '</b></div>';
+    const r9 = rows.filter(r => is9(r.d)), rO = rows.filter(r => !is9(r.d));
+    if (r9.length) h += '<div class="field"><span class="lab">Acciones de 9</span><div class="stack-xs">' + r9.map(row).join('') + '</div></div>';
+    if (rO.length) h += r9.length ? '<div class="field"><span class="lab">Técnica</span><div class="stack-xs">' + rO.map(row).join('') + '</div></div>' : '<div class="stack-xs">' + rO.map(row).join('') + '</div>';
+  }
   return h + '</div></section>';
 }
 function testsCard(st) {

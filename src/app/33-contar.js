@@ -116,7 +116,7 @@ function campoRefresh(e) {
 function campoAddBlock(e, id) {
   const a = CAMPO_ACT_INDEX[id], d = BALL_DRILL_INDEX[id]; if (!a && !d) return;
   const f = d ? ballSideFoot(d.foot, (ST && ST.side) || 'd') : null;
-  const b = a ? { id, n: a.n, cat: a.cat, min: a.min, pies: a.pies, int: a.int } : { id, n: d.n, cat: ballDrillCat(d), min: d.min, pies: f === 'izq' ? 'izq' : f === 'der' ? 'der' : 'ambos', int: 'media' };
+  const b = a ? { id, n: a.n, cat: a.cat, min: a.min, pies: a.pies, int: a.int } : { id, n: d.n, cat: ballDrillCat(d), min: d.min, pies: f === 'izq' ? 'izq' : f === 'der' ? 'der' : f === 'cabeza' ? 'ninguno' : 'ambos', int: 'media' };
   if (!e.campo) e.campo = campoEmpty();
   e.campo.bloques.push(b);
   if (e.type === 'libre') e.type = 'cancha';

@@ -114,6 +114,7 @@ const CAMPO_RX = [
   ['cl_partido', /picad|partido|partidito/],
   ['cl_def_ambas', /defini|remat|tiros? al arco|patea\w* al arco|\bgoles\b/],
   ['cl_cabeceo', /cabece|cabezazo/],
+  ['cl_espaldas', /de espaldas|aguant\w* (el|la) (balon|pelota)|descarg|pivote|proteg\w* (el|la) (balon|pelota)/],
   ['cl_conduccion', /conduc|regate|gambeta|slalom/],
   ['cl_pases', /pases? (cortos?|con)|paredes|toque y pase/],
   ['dominio_libre', /dominio|jueguito/],

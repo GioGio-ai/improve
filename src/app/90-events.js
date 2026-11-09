@@ -133,6 +133,10 @@ document.addEventListener('click', (e) => {
     case 'block-save': saveBlock(); return;
     case 'block-end': endBlock(); return;
     case 'blk-trial': UI.blk.trial = !UI.blk.trial; refreshSheet(true); return;
+    case 'blk-enf': UI.blk.enfoque = g('v') === 'puesto' ? 'puesto' : 'general'; refreshSheet(true); return;
+    case 'rol-edit': openRol(); return;
+    case 'rol-fort': { const v = g('v'), f = UI.rol.fortalezas, i = f.indexOf(v); if (i >= 0) f.splice(i, 1); else f.push(v); refreshSheet(true); return; }
+    case 'rol-save': saveRol(); return;
     case 'sick-new': openSick(); return;
     case 'sick-kind': UI.sick.kind = g('v'); refreshSheet(true); return;
     case 'sick-mark': UI.sick.mark = !UI.sick.mark; refreshSheet(true); return;
@@ -338,6 +342,7 @@ function handleBind(el, isChange) {
     case 'pf': UI.pf[name] = v; return;
     case 'sick': if (UI.sick) UI.sick[name] = v; return;
     case 'blk': if (UI.blk) UI.blk[name] = v; return;
+    case 'rol': if (UI.rol) UI.rol.claves[Number(name)] = v; return;
     case 'ij': UI.ij[name] = v; return;
     case 'wt': UI.wt[name] = v; return;
     case 'wt-step': UI.wt.kg = parseNum(v); return;

@@ -559,9 +559,9 @@ const BALL_DRILLS = [
     d: 'Conduce entre conos con interior y exterior de ambos pies, cambios de ritmo suaves. Limpia = sin tocar conos.' },
   { id: 'conduccion_slalom', n: 'Conducción en slalom cronometrada', foot: 'ambos', metric: 'tiempo', unit: 's', lowerBetter: true, n0: 6, min: 7, minPhase: 2, sMin: 2, tags: ['conduccion'],
     d: 'Zigzag entre 5 conos a 1,5 m y vuelta, lo más rápido posible sin perder el balón. Anota cada pasada.' },
-  { id: 'cabeceo_tec', n: 'Cabeceo técnico', foot: 'ambos', metric: 'aciertos', unit: 'a la zona', n0: 12, min: 6, minPhase: 2, header: 'tec', tags: ['cabeceo'],
+  { id: 'cabeceo_tec', n: 'Cabeceo técnico', foot: 'cabeza', metric: 'aciertos', unit: 'a la zona', n0: 12, min: 6, minPhase: 2, header: 'tec', tags: ['cabeceo'],
     d: 'Sin salto, de pie o con un paso. Frente, ojos abiertos, cuello firme: busca dirección, no fuerza.' },
-  { id: 'cabeceo_salto', n: 'Cabeceo con salto', foot: 'ambos', metric: 'aciertos', unit: 'a la zona', n0: 6, min: 6, minPhase: 3, sMin: 2, header: 'alta', tags: ['cabeceo'],
+  { id: 'cabeceo_salto', n: 'Cabeceo con salto', foot: 'cabeza', metric: 'aciertos', unit: 'a la zona', n0: 6, min: 6, minPhase: 3, sMin: 2, header: 'alta', tags: ['cabeceo'],
     d: 'Carrera corta, impulso y ataque al balón en el punto más alto. Fuerza alta: cuenta para el tope de 10 por semana.' },
   { id: 'zurda_parado', n: 'Definición con zurda · balón parado', foot: 'izq', metric: 'aciertos', unit: 'goles', n0: 10, min: 7, minPhase: 1, tags: ['zurda'],
     d: 'Remate con la zurda desde 11-14 m con el balón quieto. Elige palo antes de patear.' },
@@ -573,6 +573,19 @@ const BALL_DRILLS = [
     d: 'Recibe de espaldas al arco, protege con el cuerpo y gira hacia el espacio libre o descarga de primera.' },
   { id: 'volea_centro_der', n: 'Voleas y centros con la derecha', foot: 'der', kRight: 7, metric: 'aciertos', unit: 'buenos', n0: 10, min: 7, minPhase: 4, tags: ['zurda', 'derecha'],
     d: 'Voleas a la pared y centros largos con la derecha. Solo desde K7: el empeine fuerte sigue la escalera de golpeo.' },
+  /* Trabajo de 9 (v5.1): solo dentro de la puesta a punto de puesto (only9). Todas se pueden hacer solo. */
+  { id: 'descarga', n: 'Descarga de primera', foot: 'ambos', metric: 'aciertos', unit: 'descargas buenas', n0: 16, min: 6, minPhase: 2, only9: true, tags: ['nueve', 'paredes', 'espaldas'],
+    d: 'De espaldas a la pared a 6-8 m: llega el rebote y lo devuelves de primera con el interior, a un cono a un lado. Alterna pies. Buena = tensa, al cono y sin controlar.' },
+  { id: 'pecho_prot', n: 'Pecho y protección', foot: 'ambos', metric: 'aciertos', unit: 'balones aguantados', n0: 10, min: 6, minPhase: 2, only9: true, tags: ['nueve', 'espaldas'],
+    d: 'Balón alto contra la pared: control de pecho, brazo abierto y cuerpo entre el balón y el rival imaginario; giro del cuerpo para protegerlo 3 s. Aguantado = no se te escapa.' },
+  { id: 'giro_remate', n: 'Giro y remate', foot: 'izq', metric: 'aciertos', unit: 'goles', n0: 8, min: 7, minPhase: 3, only9: true, tags: ['nueve', 'giro', 'zurda'],
+    d: 'De espaldas al arco, pase fuerte a la pared: giro por dentro, por fuera o con control orientado y remate con la zurda en dos toques como máximo.' },
+  { id: 'primer_palo', n: 'Ataque al primer palo', foot: 'izq', metric: 'aciertos', unit: 'goles', n0: 8, min: 7, minPhase: 3, sMin: 2, only9: true, tags: ['nueve', 'primer_palo', 'zurda'],
+    d: 'Balón quieto en un cono a 8 m del primer palo: arranca desde el borde del área (5-10 m), gana la posición y remata de primera con la zurda. Cuenta como aceleración, no como sprint.' },
+  { id: 'cabeceo_mano', n: 'Cabezazo de definición · balón lanzado', foot: 'cabeza', metric: 'aciertos', unit: 'a los palos', n0: 12, min: 6, minPhase: 2, header: 'tec', only9: true, tags: ['nueve', 'aereo', 'cabeceo'],
+    d: 'Lánzate el balón alto con las manos, de pie o con un paso, y cabecea picado al suelo hacia un palo marcado con conos. Fuerza baja: no cuenta para el tope.' },
+  { id: 'peinada', n: 'Peinada', foot: 'cabeza', metric: 'aciertos', unit: 'peinadas', n0: 10, min: 5, minPhase: 2, header: 'tec', only9: true, tags: ['nueve', 'aereo', 'cabeceo'],
+    d: 'Balón lanzado alto con las manos o rebotado de la pared: desvíalo de cabeza hacia atrás o al costado, a una zona de conos para el que llega. Fuerza baja.' },
 ];
 const BALL_DRILL_INDEX = {};
 BALL_DRILLS.forEach(d => { BALL_DRILL_INDEX[d.id] = d; });
@@ -589,6 +602,26 @@ const BALL_FOCUS = [
   { tags: ['dominio', 'pase'], min: 20, t: 'dominio y pase' },
 ];
 const BALL_HEADER_CAP = 10; // cabezazos de fuerza alta por semana (plan + registros)
+/* Trabajo de 9 (v5.1), lunes = 0: estaciones en orden de prioridad. Los 10 cabezazos de fuerza alta van 5 el martes y
+   5 el jueves (días de golpeo, con el cuerpo fresco); el resto del cabeceo es de fuerza baja (balón lanzado).
+   Miércoles y viernes vienen después de un día de golpeo: sin remates (48 h), por eso son de espaldas y paredes. */
+const BALL_FOCUS_9 = [
+  { ids: ['espaldas', 'descarga', 'pecho_prot', 'control_aereo', 'cabeceo_mano'], min: 25, t: 'de espaldas y paredes' },
+  { ids: ['cabeceo_salto', 'giro_remate', 'zurda_control', 'descarga', 'cabeceo_mano'], min: 25, t: 'giro, remate y juego aéreo' },
+  { ids: ['espaldas', 'pecho_prot', 'descarga', 'cabeceo_mano', 'peinada', 'control_aereo'], min: 35, t: 'de espaldas' },
+  { ids: ['cabeceo_salto', 'primer_palo', 'zurda_rebote', 'peinada', 'descarga'], min: 25, t: 'primer palo y juego aéreo' },
+  { ids: ['descarga', 'control_or', 'pase_pared', 'cabeceo_mano', 'espaldas'], min: 25, t: 'paredes y control' },
+  { ids: ['espaldas', 'descarga', 'cabeceo_mano'], min: 20, t: 'de espaldas' },
+  { ids: ['espaldas', 'descarga'], min: 20, t: 'de espaldas' },
+];
+const BALL_HEADER_9 = 5; // cabezazos de fuerza alta por día de juego aéreo en la puesta a punto de 9
+/* Simulación de 9 (v5.1): la carga del juego reducido con las acciones del puesto, entrenando solo */
+const SIM9_STEPS = [
+  { n: 'Bloque 1 · Primer palo', d: '4 min sin parar: balón en un cono a 8 m del primer palo, arranque desde el borde del área y remate de primera con la zurda. Vuelta trotando y otra vez.', min: 6 },
+  { n: 'Bloque 2 · De espaldas', d: '4 min: pase fuerte a la pared de espaldas, control de pecho o de pie, protección 2-3 s, descarga de primera al cono y entrada al área.', min: 6 },
+  { n: 'Bloque 3 · Giro y remate', d: '4 min: recibe de espaldas, giro por dentro o por fuera y remate en dos toques. Alterna el lado del giro.', min: 6 },
+  { n: 'Bloque 4 · Centro y rebote', d: '4 min: lánzate el balón alto, cabezazo de fuerza baja al palo, atento al rebote del arco o de la pared y remate de primera.', min: 6 },
+];
 
 /* -------- Cancha libre: lo que se cuenta sin contar (con un compañero, un picado, una sesión propia) --------
    Las cantidades exactas no se saben: se registran por banda. Una banda es una estimación, no un conteo. */
@@ -628,6 +661,7 @@ const CAMPO_ACTS = [
   { id: 'cl_pases', n: 'Pases con compañero', cat: 'pase', pies: 'ambos', int: 'media', min: 10, d: 'Pase y control a uno y dos toques, a distintas distancias.' },
   { id: 'cl_1v1', n: '1 contra 1', cat: 'duelo', pies: 'ambos', int: 'alta', min: 15, d: 'Duelos de ataque y defensa: regate, cambio de ritmo y remate.' },
   { id: 'cl_conduccion', n: 'Conducción y regate', cat: 'conduccion', pies: 'ambos', int: 'media', min: 10, d: 'Conducir con cambios de ritmo y de dirección, regate ante un cono o un rival.' },
+  { id: 'cl_espaldas', n: 'Juego de espaldas y descargas', cat: 'pase', pies: 'ambos', int: 'media', min: 15, d: 'Recibir de espaldas, aguantar con el cuerpo, descargar de primera o girar: el trabajo del 9 de referencia.' },
   { id: 'cl_cabeceo', n: 'Cabeceo con centros', cat: 'cabeceo', pies: 'ninguno', int: 'media', min: 10, d: 'Ataque al balón que llega del centro: dirección antes que fuerza.' },
   { id: 'cl_rondo', n: 'Rondo', cat: 'juego', pies: 'ambos', int: 'media', min: 15, d: 'Posesión en espacio corto a pocos toques.' },
   { id: 'cl_reducido', n: 'Partido reducido', cat: 'juego', pies: 'ambos', int: 'alta', min: 20, d: '3c3 a 5c5 en espacio chico: muchos cambios de ritmo y remates.' },
